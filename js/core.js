@@ -1,102 +1,319 @@
 // ============================================================
 // SKY FIT PRO
-// Shared Core Utilities & UI Engine
+// Core Runtime & Shared UI System
 // File: js/core.js
+//
+// PART 1 / 2
+//
+// Bu fayl bütün layihənin ortaq frontend nüvəsidir.
+// Duplicate helper, ikinci modal sistemi, ikinci toast sistemi,
+// ikinci product-card sistemi yaradılmayacaq.
 // ============================================================
 
 import {
   supabase,
   APP_CONFIG,
-  UI_CONFIG,
-  STORAGE_KEYS,
   TABLES,
-  USER_ROLES,
+  UI_CONFIG,
 } from './config.js';
 
 
 // ============================================================
-// 01. DOM HELPERS
+// 01. GLOBAL CONSTANTS
 // ============================================================
 
-export function $(selector, root = document) {
-  return root.querySelector(selector);
-}
+export const SKYFIT_EVENTS = Object.freeze({
+  authChange:
+    'skyfit:authchange',
 
-export function $$(selector, root = document) {
-  return [...root.querySelectorAll(selector)];
-}
+  profileChange:
+    'skyfit:profilechange',
+
+  favoritesChange:
+    'skyfit:favoriteschange',
+
+  themeChange:
+    'skyfit:themechange',
+
+  modalOpen:
+    'skyfit:modalopen',
+
+  modalClose:
+    'skyfit:modalclose',
+
+  loaderChange:
+    'skyfit:loaderchange',
+});
+
+
+export const STORAGE_KEYS =
+  Object.freeze({
+    theme:
+      'skyfit-theme',
+
+    favorites:
+      'skyfit-favorites',
+
+    installDismissed:
+      'skyfit-install-dismissed',
+  });
+
+
+export const PAYMENT_METHODS =
+  Object.freeze({
+    cash: 'cash',
+    card: 'card',
+    transfer: 'transfer',
+  });
+
+
+export const PAYMENT_STATUSES =
+  Object.freeze({
+    paid: 'paid',
+    debt: 'debt',
+    cancelled: 'cancelled',
+    refunded: 'refunded',
+  });
+
+
+export const USER_ROLES =
+  Object.freeze({
+    admin: 'admin',
+    staff: 'staff',
+    member: 'member',
+  });
+
+
+export const SALE_MODES =
+  Object.freeze({
+    unit: 'unit',
+    portion: 'portion',
+  });
+
+
+// ============================================================
+// 02. BASIC DOM HELPERS
+// ============================================================
 
 export function byId(id) {
-  return document.getElementById(id);
+  if (!id) {
+    return null;
+  }
+
+  return document.getElementById(
+    id
+  );
 }
 
-export function createElement(
-  tag,
-  {
-    className = '',
-    text = '',
-    html = '',
-    attrs = {},
-    dataset = {},
-  } = {}
+
+export function $(
+  selector,
+  root = document
 ) {
-  const element = document.createElement(tag);
-
-  if (className) {
-    element.className = className;
+  if (
+    !selector ||
+    !root
+  ) {
+    return null;
   }
 
-  if (text !== '') {
-    element.textContent = text;
+  return root.querySelector(
+    selector
+  );
+}
+
+
+export function $$(
+  selector,
+  root = document
+) {
+  if (
+    !selector ||
+    !root
+  ) {
+    return [];
   }
 
-  if (html !== '') {
-    element.innerHTML = html;
+  return Array.from(
+    root.querySelectorAll(
+      selector
+    )
+  );
+}
+
+
+export function createElement(
+  tagName,
+  options = {}
+) {
+  const element =
+    document.createElement(
+      tagName
+    );
+
+
+  if (
+    options.className
+  ) {
+    element.className =
+      options.className;
   }
 
-  Object.entries(attrs).forEach(
-    ([key, value]) => {
-      if (
-        value !== null &&
-        value !== undefined
-      ) {
+
+  if (
+    options.text !==
+    undefined
+  ) {
+    element.textContent =
+      String(
+        options.text
+      );
+  }
+
+
+  if (
+    options.html !==
+    undefined
+  ) {
+    element.innerHTML =
+      String(
+        options.html
+      );
+  }
+
+
+  if (
+    options.attrs &&
+    typeof options.attrs ===
+      'object'
+  ) {
+    Object.entries(
+      options.attrs
+    ).forEach(
+      ([
+        key,
+        value,
+      ]) => {
+        if (
+          value ===
+            null ||
+          value ===
+            undefined ||
+          value ===
+            false
+        ) {
+          return;
+        }
+
+
+        if (
+          value === true
+        ) {
+          element.setAttribute(
+            key,
+            ''
+          );
+
+          return;
+        }
+
+
         element.setAttribute(
           key,
           String(value)
         );
       }
-    }
-  );
+    );
+  }
 
-  Object.entries(dataset).forEach(
-    ([key, value]) => {
-      if (
-        value !== null &&
-        value !== undefined
-      ) {
+
+  if (
+    options.dataset &&
+    typeof options.dataset ===
+      'object'
+  ) {
+    Object.entries(
+      options.dataset
+    ).forEach(
+      ([
+        key,
+        value,
+      ]) => {
+        if (
+          value ===
+            null ||
+          value ===
+            undefined
+        ) {
+          return;
+        }
+
         element.dataset[key] =
           String(value);
       }
-    }
-  );
+    );
+  }
+
 
   return element;
 }
 
 
-export function clearElement(element) {
-  if (!element) return;
-
-  while (element.firstChild) {
-    element.removeChild(
-      element.firstChild
-    );
+export function clearElement(
+  element
+) {
+  if (!element) {
+    return;
   }
+
+  element.replaceChildren();
 }
 
 
-export function showElement(element) {
-  if (!element) return;
+export function setText(
+  element,
+  value = ''
+) {
+  if (!element) {
+    return;
+  }
+
+  element.textContent =
+    value ===
+      null ||
+    value ===
+      undefined
+      ? ''
+      : String(value);
+}
+
+
+export function setHtml(
+  element,
+  value = ''
+) {
+  if (!element) {
+    return;
+  }
+
+  element.innerHTML =
+    value ===
+      null ||
+    value ===
+      undefined
+      ? ''
+      : String(value);
+}
+
+
+export function showElement(
+  element
+) {
+  if (!element) {
+    return;
+  }
+
+  element.hidden = false;
 
   element.classList.remove(
     'is-hidden'
@@ -104,8 +321,14 @@ export function showElement(element) {
 }
 
 
-export function hideElement(element) {
-  if (!element) return;
+export function hideElement(
+  element
+) {
+  if (!element) {
+    return;
+  }
+
+  element.hidden = true;
 
   element.classList.add(
     'is-hidden'
@@ -117,40 +340,16 @@ export function toggleElement(
   element,
   visible
 ) {
-  if (!element) return;
-
-  element.classList.toggle(
-    'is-hidden',
-    !visible
-  );
-}
-
-
-export function setText(
-  target,
-  value,
-  fallback = '—'
-) {
-  const element =
-    typeof target === 'string'
-      ? $(target)
-      : target;
-
-  if (!element) return;
-
-  const normalized =
-    value === null ||
-    value === undefined ||
-    value === ''
-      ? fallback
-      : String(value);
-
-  element.textContent = normalized;
+  if (visible) {
+    showElement(element);
+  } else {
+    hideElement(element);
+  }
 }
 
 
 // ============================================================
-// 02. SAFE VALUES
+// 03. STRING HELPERS
 // ============================================================
 
 export function normalizeString(
@@ -158,24 +357,145 @@ export function normalizeString(
   fallback = ''
 ) {
   if (
-    value === null ||
-    value === undefined
+    value ===
+      null ||
+    value ===
+      undefined
   ) {
     return fallback;
   }
 
-  return String(value).trim();
+
+  const normalized =
+    String(value)
+      .replace(
+        /\s+/g,
+        ' '
+      )
+      .trim();
+
+
+  return (
+    normalized ||
+    fallback
+  );
 }
 
 
-export function normalizeNumber(
+export function normalizeSearch(
+  value
+) {
+  return normalizeString(
+    value
+  ).toLocaleLowerCase(
+    'az-AZ'
+  );
+}
+
+
+export function escapeHtml(
+  value
+) {
+  return normalizeString(
+    value
+  )
+    .replaceAll(
+      '&',
+      '&amp;'
+    )
+    .replaceAll(
+      '<',
+      '&lt;'
+    )
+    .replaceAll(
+      '>',
+      '&gt;'
+    )
+    .replaceAll(
+      '"',
+      '&quot;'
+    )
+    .replaceAll(
+      "'",
+      '&#039;'
+    );
+}
+
+
+export function initials(
+  value,
+  fallback = 'SK'
+) {
+  const source =
+    normalizeString(
+      value
+    );
+
+
+  if (!source) {
+    return fallback;
+  }
+
+
+  const parts =
+    source
+      .split(' ')
+      .filter(Boolean);
+
+
+  if (
+    parts.length === 1
+  ) {
+    return parts[0]
+      .slice(
+        0,
+        2
+      )
+      .toLocaleUpperCase(
+        'az-AZ'
+      );
+  }
+
+
+  return (
+    parts[0][0] +
+    parts[
+      parts.length - 1
+    ][0]
+  ).toLocaleUpperCase(
+    'az-AZ'
+  );
+}
+
+
+// ============================================================
+// 04. NUMBER HELPERS
+// ============================================================
+
+export function number(
   value,
   fallback = 0
 ) {
-  const number = Number(value);
+  if (
+    value ===
+      null ||
+    value ===
+      undefined ||
+    value ===
+      ''
+  ) {
+    return fallback;
+  }
 
-  return Number.isFinite(number)
-    ? number
+
+  const parsed =
+    Number(value);
+
+
+  return Number.isFinite(
+    parsed
+  )
+    ? parsed
     : fallback;
 }
 
@@ -186,131 +506,105 @@ export function clamp(
   max
 ) {
   return Math.min(
-    Math.max(value, min),
+    Math.max(
+      number(value),
+      min
+    ),
     max
   );
 }
 
 
-export function escapeHtml(value) {
-  return normalizeString(value)
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
-}
-
-
 // ============================================================
-// 03. DATE / NUMBER FORMATTERS
+// 05. MONEY
 // ============================================================
 
-const currencyFormatter =
+const moneyFormatter =
   new Intl.NumberFormat(
-    APP_CONFIG.locale,
+    'az-AZ',
     {
-      style: 'currency',
-      currency: APP_CONFIG.currency,
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }
   );
 
 
-const numberFormatter =
-  new Intl.NumberFormat(
-    APP_CONFIG.locale,
-    {
-      maximumFractionDigits: 2,
-    }
-  );
+export function money(
+  value,
+  options = {}
+) {
+  const amount =
+    number(value);
 
+
+  const currency =
+    normalizeString(
+      options.currency,
+      '₼'
+    );
+
+
+  return `${
+    moneyFormatter.format(
+      amount
+    )
+  } ${currency}`;
+}
+
+
+// ============================================================
+// 06. DATE HELPERS
+// ============================================================
 
 const dateFormatter =
   new Intl.DateTimeFormat(
-    APP_CONFIG.locale,
+    'az-AZ',
     {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
-    }
-  );
-
-
-const dateTimeFormatter =
-  new Intl.DateTimeFormat(
-    APP_CONFIG.locale,
-    {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
     }
   );
 
 
 const timeFormatter =
   new Intl.DateTimeFormat(
-    APP_CONFIG.locale,
+    'az-AZ',
     {
       hour: '2-digit',
       minute: '2-digit',
+      hour12: false,
     }
   );
 
 
-export function money(value) {
-  return currencyFormatter.format(
-    normalizeNumber(value)
+const dateTimeFormatter =
+  new Intl.DateTimeFormat(
+    'az-AZ',
+    {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }
   );
-}
 
 
-export function number(value) {
-  return numberFormatter.format(
-    normalizeNumber(value)
-  );
-}
+export function validDate(
+  value
+) {
+  if (!value) {
+    return null;
+  }
 
-
-export function formatDate(value) {
-  const date = toDate(value);
-
-  if (!date) return '—';
-
-  return dateFormatter.format(date);
-}
-
-
-export function formatDateTime(value) {
-  const date = toDate(value);
-
-  if (!date) return '—';
-
-  return dateTimeFormatter.format(
-    date
-  );
-}
-
-
-export function formatTime(value) {
-  const date = toDate(value);
-
-  if (!date) return '—';
-
-  return timeFormatter.format(date);
-}
-
-
-export function toDate(value) {
-  if (!value) return null;
 
   const date =
     value instanceof Date
       ? value
       : new Date(value);
+
 
   return Number.isNaN(
     date.getTime()
@@ -320,12 +614,98 @@ export function toDate(value) {
 }
 
 
+export function formatDate(
+  value,
+  fallback = '—'
+) {
+  const date =
+    validDate(value);
+
+
+  if (!date) {
+    return fallback;
+  }
+
+
+  return dateFormatter.format(
+    date
+  );
+}
+
+
+export function formatTime(
+  value,
+  fallback = '—'
+) {
+  const date =
+    validDate(value);
+
+
+  if (!date) {
+    return fallback;
+  }
+
+
+  return timeFormatter.format(
+    date
+  );
+}
+
+
+export function formatDateTime(
+  value,
+  fallback = '—'
+) {
+  const date =
+    validDate(value);
+
+
+  if (!date) {
+    return fallback;
+  }
+
+
+  return dateTimeFormatter.format(
+    date
+  );
+}
+
+
+export function todayIso() {
+  const now =
+    new Date();
+
+
+  const offset =
+    now.getTimezoneOffset();
+
+
+  const local =
+    new Date(
+      now.getTime() -
+      offset * 60000
+    );
+
+
+  return local
+    .toISOString()
+    .slice(
+      0,
+      10
+    );
+}
+
+
 export function daysBetween(
   start,
   end
 ) {
-  const startDate = toDate(start);
-  const endDate = toDate(end);
+  const startDate =
+    validDate(start);
+
+  const endDate =
+    validDate(end);
+
 
   if (
     !startDate ||
@@ -334,260 +714,2199 @@ export function daysBetween(
     return 0;
   }
 
-  const diff =
-    endDate.getTime() -
-    startDate.getTime();
 
-  return Math.ceil(
-    diff / 86400000
-  );
-}
+  const startUtc =
+    Date.UTC(
+      startDate.getFullYear(),
+      startDate.getMonth(),
+      startDate.getDate()
+    );
 
 
-export function daysLeft(endDate) {
-  const end = toDate(endDate);
+  const endUtc =
+    Date.UTC(
+      endDate.getFullYear(),
+      endDate.getMonth(),
+      endDate.getDate()
+    );
 
-  if (!end) return 0;
 
-  const now = new Date();
-
-  now.setHours(
-    0,
-    0,
-    0,
-    0
-  );
-
-  end.setHours(
-    0,
-    0,
-    0,
-    0
-  );
-
-  return Math.ceil(
+  return Math.round(
     (
-      end.getTime() -
-      now.getTime()
-    ) / 86400000
+      endUtc -
+      startUtc
+    ) /
+    86400000
   );
 }
 
 
 // ============================================================
-// 04. ASYNC HELPERS
+// 07. DEBOUNCE
 // ============================================================
-
-export function sleep(ms) {
-  return new Promise(
-    resolve =>
-      setTimeout(resolve, ms)
-  );
-}
-
 
 export function debounce(
   callback,
-  delay = UI_CONFIG.debounceDelay
+  delay = 220
 ) {
-  let timeoutId = null;
+  let timer = null;
+
 
   return function debounced(
     ...args
   ) {
-    clearTimeout(timeoutId);
+    clearTimeout(timer);
 
-    timeoutId = setTimeout(
-      () => {
-        callback.apply(
-          this,
-          args
-        );
-      },
-      delay
-    );
+
+    timer =
+      setTimeout(
+        () => {
+          callback.apply(
+            this,
+            args
+          );
+        },
+        delay
+      );
   };
 }
 
 
+// ============================================================
+// 08. THROTTLE
+// ============================================================
+
 export function throttle(
   callback,
-  delay = 180
+  delay = 150
 ) {
-  let locked = false;
+  let waiting = false;
+
+  let queuedArgs = null;
+
+
+  const run =
+    context => {
+      if (!queuedArgs) {
+        waiting = false;
+        return;
+      }
+
+
+      const args =
+        queuedArgs;
+
+      queuedArgs = null;
+
+
+      callback.apply(
+        context,
+        args
+      );
+
+
+      setTimeout(
+        () => run(context),
+        delay
+      );
+    };
+
 
   return function throttled(
     ...args
   ) {
-    if (locked) return;
+    if (!waiting) {
+      waiting = true;
 
-    locked = true;
+      callback.apply(
+        this,
+        args
+      );
 
-    callback.apply(
-      this,
-      args
-    );
 
-    setTimeout(
-      () => {
-        locked = false;
-      },
-      delay
-    );
+      setTimeout(
+        () => run(this),
+        delay
+      );
+
+      return;
+    }
+
+
+    queuedArgs = args;
   };
 }
 
 
 // ============================================================
-// 05. LOCAL STORAGE
+// 09. SAFE JSON
 // ============================================================
 
-export function storageGet(
-  key,
+export function safeJsonParse(
+  value,
   fallback = null
 ) {
   try {
-    const raw =
-      localStorage.getItem(key);
-
-    if (raw === null) {
-      return fallback;
-    }
-
-    return JSON.parse(raw);
+    return JSON.parse(
+      value
+    );
   } catch {
     return fallback;
   }
 }
 
 
-export function storageSet(
-  key,
+export function safeJsonStringify(
+  value,
+  fallback = ''
+) {
+  try {
+    return JSON.stringify(
+      value
+    );
+  } catch {
+    return fallback;
+  }
+}
+
+
+// ============================================================
+// 10. ARRAY / DATA HELPERS
+// ============================================================
+
+export function rows(
   value
 ) {
-  try {
-    localStorage.setItem(
-      key,
-      JSON.stringify(value)
-    );
-
-    return true;
-  } catch {
-    return false;
-  }
+  return Array.isArray(
+    value
+  )
+    ? value
+    : [];
 }
 
 
-export function storageRemove(key) {
-  try {
-    localStorage.removeItem(key);
-
-    return true;
-  } catch {
-    return false;
-  }
-}
+export function uniqueBy(
+  array,
+  keyGetter
+) {
+  const map =
+    new Map();
 
 
-// ============================================================
-// 06. THEME ENGINE
-// ============================================================
+  rows(array).forEach(
+    item => {
+      const key =
+        keyGetter(item);
 
-const THEME_VALUES = new Set([
-  'light',
-  'dark',
-  'system',
-]);
-
-
-export function getStoredTheme() {
-  const stored = storageGet(
-    STORAGE_KEYS.theme,
-    APP_CONFIG.defaultTheme
+      if (
+        key !==
+          null &&
+        key !==
+          undefined
+      ) {
+        map.set(
+          String(key),
+          item
+        );
+      }
+    }
   );
 
-  return THEME_VALUES.has(stored)
-    ? stored
-    : APP_CONFIG.defaultTheme;
+
+  return Array.from(
+    map.values()
+  );
 }
 
 
-export function getSystemTheme() {
-  return window.matchMedia(
-    '(prefers-color-scheme: dark)'
-  ).matches
-    ? 'dark'
-    : 'light';
-}
+// ============================================================
+// 11. ERROR HELPERS
+// ============================================================
 
-
-export function getResolvedTheme() {
-  const theme =
-    getStoredTheme();
-
-  return theme === 'system'
-    ? getSystemTheme()
-    : theme;
-}
-
-
-export function applyTheme(
-  requestedTheme =
-    getStoredTheme()
+export function getErrorMessage(
+  error,
+  fallback =
+    'Əməliyyat zamanı xəta baş verdi.'
 ) {
-  const theme =
-    THEME_VALUES.has(requestedTheme)
-      ? requestedTheme
-      : 'system';
+  if (!error) {
+    return fallback;
+  }
 
-  const resolved =
-    theme === 'system'
-      ? getSystemTheme()
-      : theme;
 
-  document.documentElement.dataset.theme =
-    resolved;
+  if (
+    typeof error ===
+      'string'
+  ) {
+    return (
+      normalizeString(
+        error
+      ) ||
+      fallback
+    );
+  }
 
-  document.documentElement.dataset.themePreference =
-    theme;
 
-  updateThemeColor(resolved);
+  const possible =
+    [
+      error.message,
+      error.error_description,
+      error.details,
+      error.hint,
+    ];
 
-  return {
-    preference: theme,
-    resolved,
+
+  for (
+    const value
+    of possible
+  ) {
+    const text =
+      normalizeString(
+        value
+      );
+
+    if (text) {
+      return text;
+    }
+  }
+
+
+  return fallback;
+}
+
+
+// ============================================================
+// 12. ASYNC HANDLER
+// ============================================================
+
+export function asyncHandler(
+  callback,
+  options = {}
+) {
+  return async function wrapped(
+    ...args
+  ) {
+    try {
+      return await callback.apply(
+        this,
+        args
+      );
+    } catch (error) {
+      console.error(
+        '[SKy Fit]',
+        error
+      );
+
+
+      if (
+        options.notifyOnError &&
+        typeof notify !==
+          'undefined'
+      ) {
+        notify.error(
+          getErrorMessage(
+            error
+          )
+        );
+      }
+
+
+      if (
+        options.rethrow
+      ) {
+        throw error;
+      }
+
+
+      return null;
+    }
   };
 }
 
 
-export function setTheme(theme) {
+// ============================================================
+// 13. BUTTON LOADING
+// ============================================================
+
+export function setButtonLoading(
+  button,
+  loading,
+  options = {}
+) {
+  if (!button) {
+    return;
+  }
+
+
+  const label =
+    $(
+      '.ui-button__label',
+      button
+    );
+
+
+  const spinner =
+    $(
+      '.ui-button__spinner',
+      button
+    );
+
+
   if (
-    !THEME_VALUES.has(theme)
+    loading
+  ) {
+    if (
+      !button.dataset
+        .originalDisabled
+    ) {
+      button.dataset
+        .originalDisabled =
+          button.disabled
+            ? '1'
+            : '0';
+    }
+
+
+    if (
+      label &&
+      !label.dataset
+        .originalText
+    ) {
+      label.dataset
+        .originalText =
+          label.textContent;
+    }
+
+
+    button.disabled =
+      true;
+
+    button.setAttribute(
+      'aria-busy',
+      'true'
+    );
+
+
+    if (
+      label &&
+      options.loadingText
+    ) {
+      label.textContent =
+        options.loadingText;
+    }
+
+
+    showElement(
+      spinner
+    );
+
+    return;
+  }
+
+
+  button.removeAttribute(
+    'aria-busy'
+  );
+
+
+  const originallyDisabled =
+    button.dataset
+      .originalDisabled ===
+      '1';
+
+
+  button.disabled =
+    originallyDisabled;
+
+
+  delete button.dataset
+    .originalDisabled;
+
+
+  if (
+    label?.dataset
+      .originalText
+  ) {
+    label.textContent =
+      label.dataset
+        .originalText;
+
+    delete label.dataset
+      .originalText;
+  }
+
+
+  hideElement(
+    spinner
+  );
+}
+
+
+// ============================================================
+// 14. URL HELPERS
+// ============================================================
+
+export function isAbsoluteUrl(
+  value
+) {
+  const url =
+    normalizeString(
+      value
+    );
+
+
+  return (
+    url.startsWith(
+      'https://'
+    ) ||
+    url.startsWith(
+      'http://'
+    ) ||
+    url.startsWith(
+      'data:'
+    ) ||
+    url.startsWith(
+      'blob:'
+    )
+  );
+}
+
+
+export function getPublicStorageUrl(
+  bucket,
+  path
+) {
+  const normalizedBucket =
+    normalizeString(
+      bucket
+    );
+
+  const normalizedPath =
+    normalizeString(
+      path
+    );
+
+
+  if (
+    !normalizedBucket ||
+    !normalizedPath
+  ) {
+    return '';
+  }
+
+
+  if (
+    isAbsoluteUrl(
+      normalizedPath
+    )
+  ) {
+    return normalizedPath;
+  }
+
+
+  const {
+    data,
+  } =
+    supabase.storage
+      .from(
+        normalizedBucket
+      )
+      .getPublicUrl(
+        normalizedPath
+      );
+
+
+  return normalizeString(
+    data?.publicUrl
+  );
+}
+
+
+// ============================================================
+// 15. IMAGE FALLBACK
+// ============================================================
+
+export function setImageFallback(
+  image,
+  fallback = ''
+) {
+  if (!image) {
+    return;
+  }
+
+
+  image.addEventListener(
+    'error',
+    () => {
+      if (
+        image.dataset
+          .fallbackApplied ===
+        '1'
+      ) {
+        return;
+      }
+
+
+      image.dataset
+        .fallbackApplied =
+          '1';
+
+
+      if (fallback) {
+        image.src =
+          fallback;
+      } else {
+        image.hidden =
+          true;
+      }
+    },
+    {
+      once: true,
+    }
+  );
+}
+
+
+// ============================================================
+// 16. PROFILE — REAL SUPABASE SCHEMA
+//
+// profiles:
+// id
+// auth_user_id
+// role
+// full_name
+// email
+// phone
+// birth_date
+// address
+// avatar_url
+// is_manual
+// is_active
+// created_at
+// updated_at
+// ============================================================
+
+export function getProfileName(
+  profile,
+  fallback =
+    'SKy Fit istifadəçisi'
+) {
+  if (!profile) {
+    return fallback;
+  }
+
+
+  const name =
+    normalizeString(
+      profile.full_name
+    );
+
+
+  if (name) {
+    return name;
+  }
+
+
+  const email =
+    normalizeString(
+      profile.email
+    );
+
+
+  if (email) {
+    return email;
+  }
+
+
+  return fallback;
+}
+
+
+export function getProfileInitials(
+  profile
+) {
+  return initials(
+    getProfileName(
+      profile
+    )
+  );
+}
+
+
+export function getProfileEmail(
+  profile
+) {
+  return normalizeString(
+    profile?.email
+  );
+}
+
+
+export function getProfilePhone(
+  profile
+) {
+  return normalizeString(
+    profile?.phone
+  );
+}
+
+
+export function getProfileAddress(
+  profile
+) {
+  return normalizeString(
+    profile?.address
+  );
+}
+
+
+export function getProfileAvatar(
+  profile
+) {
+  const value =
+    normalizeString(
+      profile?.avatar_url
+    );
+
+
+  if (!value) {
+    return '';
+  }
+
+
+  if (
+    isAbsoluteUrl(
+      value
+    )
+  ) {
+    return value;
+  }
+
+
+  return getPublicStorageUrl(
+    APP_CONFIG.storage
+      .avatars,
+    value
+  );
+}
+
+
+export function roleLabel(
+  role
+) {
+  switch (
+    normalizeString(
+      role
+    ).toLowerCase()
+  ) {
+    case 'admin':
+      return 'Admin';
+
+    case 'staff':
+      return 'Əməkdaş';
+
+    case 'member':
+      return 'Üzv';
+
+    default:
+      return 'İstifadəçi';
+  }
+}
+
+
+export function isAdminProfile(
+  profile
+) {
+  return (
+    profile?.role ===
+    USER_ROLES.admin
+  );
+}
+
+
+export function isStaffProfile(
+  profile
+) {
+  return (
+    profile?.role ===
+      USER_ROLES.admin ||
+    profile?.role ===
+      USER_ROLES.staff
+  );
+}
+
+
+export function isMemberProfile(
+  profile
+) {
+  return (
+    profile?.role ===
+    USER_ROLES.member
+  );
+}
+
+
+// ============================================================
+// 17. CURRENT AUTH / IDENTITY CACHE
+// ============================================================
+
+const identityState = {
+  user: null,
+  profile: null,
+  loaded: false,
+  promise: null,
+};
+
+
+// ============================================================
+// 18. FETCH CURRENT PROFILE
+// ============================================================
+
+export async function fetchCurrentProfile(
+  authUser = null
+) {
+  let user =
+    authUser;
+
+
+  if (!user) {
+    const {
+      data,
+      error,
+    } =
+      await supabase.auth
+        .getUser();
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    user =
+      data?.user ||
+      null;
+  }
+
+
+  if (!user) {
+    return null;
+  }
+
+
+  const {
+    data,
+    error,
+  } =
+    await supabase
+      .from(
+        TABLES.profiles
+      )
+      .select(`
+        id,
+        auth_user_id,
+        role,
+        full_name,
+        email,
+        phone,
+        birth_date,
+        address,
+        avatar_url,
+        is_manual,
+        is_active,
+        created_at,
+        updated_at
+      `)
+      .eq(
+        'auth_user_id',
+        user.id
+      )
+      .maybeSingle();
+
+
+  if (error) {
+    throw error;
+  }
+
+
+  return data || null;
+}
+
+
+// ============================================================
+// 19. GET CURRENT IDENTITY
+// ============================================================
+
+export async function getCurrentIdentity(
+  options = {}
+) {
+  const force =
+    Boolean(
+      options.force
+    );
+
+
+  if (
+    identityState.loaded &&
+    !force
+  ) {
+    return buildIdentity(
+      identityState.user,
+      identityState.profile
+    );
+  }
+
+
+  if (
+    identityState.promise &&
+    !force
+  ) {
+    return identityState
+      .promise;
+  }
+
+
+  identityState.promise =
+    loadCurrentIdentity();
+
+
+  try {
+    return await identityState
+      .promise;
+  } finally {
+    identityState.promise =
+      null;
+  }
+}
+
+
+async function loadCurrentIdentity() {
+  const {
+    data,
+    error,
+  } =
+    await supabase.auth
+      .getSession();
+
+
+  if (error) {
+    throw error;
+  }
+
+
+  const user =
+    data?.session
+      ?.user ||
+    null;
+
+
+  let profile =
+    null;
+
+
+  if (user) {
+    profile =
+      await fetchCurrentProfile(
+        user
+      );
+  }
+
+
+  identityState.user =
+    user;
+
+  identityState.profile =
+    profile;
+
+  identityState.loaded =
+    true;
+
+
+  return buildIdentity(
+    user,
+    profile
+  );
+}
+
+
+// ============================================================
+// 20. BUILD IDENTITY
+// ============================================================
+
+function buildIdentity(
+  user,
+  profile
+) {
+  const role =
+    normalizeString(
+      profile?.role,
+      USER_ROLES.member
+    );
+
+
+  return {
+    user:
+      user || null,
+
+    profile:
+      profile || null,
+
+    authenticated:
+      Boolean(user),
+
+    profileId:
+      profile?.id ||
+      null,
+
+    authUserId:
+      user?.id ||
+      null,
+
+    role,
+
+    isAdmin:
+      role ===
+      USER_ROLES.admin,
+
+    isStaff:
+      role ===
+        USER_ROLES.admin ||
+      role ===
+        USER_ROLES.staff,
+
+    isMember:
+      role ===
+      USER_ROLES.member,
+
+    name:
+      getProfileName(
+        profile,
+        normalizeString(
+          user?.email,
+          'SKy Fit istifadəçisi'
+        )
+      ),
+
+    email:
+      normalizeString(
+        profile?.email ||
+        user?.email
+      ),
+
+    avatar:
+      getProfileAvatar(
+        profile
+      ),
+  };
+}
+
+
+// ============================================================
+// 21. CLEAR IDENTITY CACHE
+// ============================================================
+
+export function clearIdentityCache() {
+  identityState.user =
+    null;
+
+  identityState.profile =
+    null;
+
+  identityState.loaded =
+    false;
+
+  identityState.promise =
+    null;
+}
+
+
+// ============================================================
+// 22. REQUIRE AUTH
+// ============================================================
+
+export async function requireAuth(
+  options = {}
+) {
+  const identity =
+    await getCurrentIdentity();
+
+
+  if (
+    identity.authenticated
+  ) {
+    return identity;
+  }
+
+
+  if (
+    options.redirect !==
+    false
+  ) {
+    window.location.replace(
+      options.redirectTo ||
+      APP_CONFIG.routes.login
+    );
+  }
+
+
+  return null;
+}
+
+
+// ============================================================
+// 23. REQUIRE STAFF
+// ============================================================
+
+export async function requireStaff(
+  options = {}
+) {
+  const identity =
+    await requireAuth(
+      options
+    );
+
+
+  if (!identity) {
+    return null;
+  }
+
+
+  if (
+    identity.isStaff
+  ) {
+    return identity;
+  }
+
+
+  if (
+    options.redirect !==
+    false
+  ) {
+    window.location.replace(
+      options.redirectTo ||
+      APP_CONFIG.routes.home
+    );
+  }
+
+
+  return null;
+}
+
+
+// ============================================================
+// 24. PRODUCT — REAL SUPABASE SCHEMA
+//
+// products:
+// id
+// name
+// description
+// sku
+// image_url
+// category
+// sale_mode
+// stock_unit
+// stock_quantity
+// portion_size
+// retail_price
+// portion_price
+// cost_price
+// low_stock_threshold
+// show_public
+// is_active
+// created_at
+// updated_at
+// created_by
+// updated_by
+// operator_shift_id
+// ============================================================
+
+export function productName(
+  product
+) {
+  return normalizeString(
+    product?.name,
+    'Məhsul'
+  );
+}
+
+
+export function productDescription(
+  product
+) {
+  return normalizeString(
+    product?.description
+  );
+}
+
+
+export function productSaleMode(
+  product
+) {
+  const mode =
+    normalizeString(
+      product?.sale_mode,
+      SALE_MODES.unit
+    );
+
+
+  return (
+    mode ===
+      SALE_MODES.portion
+      ? SALE_MODES.portion
+      : SALE_MODES.unit
+  );
+}
+
+
+export function productPrice(
+  product
+) {
+  if (!product) {
+    return 0;
+  }
+
+
+  if (
+    productSaleMode(
+      product
+    ) ===
+    SALE_MODES.portion
+  ) {
+    return number(
+      product.portion_price
+    );
+  }
+
+
+  return number(
+    product.retail_price
+  );
+}
+
+
+export function productRetailPrice(
+  product
+) {
+  return number(
+    product?.retail_price
+  );
+}
+
+
+export function productPortionPrice(
+  product
+) {
+  return number(
+    product?.portion_price
+  );
+}
+
+
+export function productCostPrice(
+  product
+) {
+  return number(
+    product?.cost_price
+  );
+}
+
+
+export function productStock(
+  product
+) {
+  return number(
+    product?.stock_quantity
+  );
+}
+
+
+export function productLowStockThreshold(
+  product
+) {
+  return number(
+    product
+      ?.low_stock_threshold
+  );
+}
+
+
+export function productPortionSize(
+  product
+) {
+  return number(
+    product?.portion_size,
+    1
+  );
+}
+
+
+export function productStockUnit(
+  product
+) {
+  return normalizeString(
+    product?.stock_unit,
+    'ədəd'
+  );
+}
+
+
+export function productCategory(
+  product
+) {
+  return normalizeString(
+    product?.category
+  );
+}
+
+
+export function productSku(
+  product
+) {
+  return normalizeString(
+    product?.sku
+  );
+}
+
+
+export function productImage(
+  product
+) {
+  const value =
+    normalizeString(
+      product?.image_url
+    );
+
+
+  if (!value) {
+    return '';
+  }
+
+
+  if (
+    isAbsoluteUrl(
+      value
+    )
+  ) {
+    return value;
+  }
+
+
+  return getPublicStorageUrl(
+    APP_CONFIG.storage
+      .productImages,
+    value
+  );
+}
+
+
+export function productStockState(
+  product
+) {
+  const stock =
+    productStock(
+      product
+    );
+
+  const threshold =
+    productLowStockThreshold(
+      product
+    );
+
+
+  if (stock <= 0) {
+    return {
+      key:
+        'out',
+
+      label:
+        'Stok yoxdur',
+
+      className:
+        'ui-badge ui-badge--danger',
+    };
+  }
+
+
+  if (
+    threshold > 0 &&
+    stock <= threshold
+  ) {
+    return {
+      key:
+        'low',
+
+      label:
+        'Az stok',
+
+      className:
+        'ui-badge ui-badge--warning',
+    };
+  }
+
+
+  return {
+    key:
+      'available',
+
+    label:
+      'Stokda',
+
+    className:
+      'ui-badge ui-badge--success',
+  };
+}
+
+
+export function productUnitLabel(
+  product
+) {
+  if (
+    productSaleMode(
+      product
+    ) ===
+    SALE_MODES.portion
+  ) {
+    const size =
+      productPortionSize(
+        product
+      );
+
+    const unit =
+      productStockUnit(
+        product
+      );
+
+
+    return `${size} ${unit}`;
+  }
+
+
+  return productStockUnit(
+    product
+  );
+}
+
+
+// ============================================================
+// 25. TRAINER — REAL SUPABASE SCHEMA
+//
+// trainers:
+// id
+// full_name
+// specialty
+// bio
+// image_url
+// phone
+// instagram_url
+// sort_order
+// is_active
+// created_at
+// created_by
+// updated_by
+// operator_shift_id
+// ============================================================
+
+export function trainerName(
+  trainer
+) {
+  return normalizeString(
+    trainer?.full_name,
+    'Məşqçi'
+  );
+}
+
+
+export function trainerSpecialty(
+  trainer
+) {
+  return normalizeString(
+    trainer?.specialty
+  );
+}
+
+
+export function trainerBio(
+  trainer
+) {
+  return normalizeString(
+    trainer?.bio
+  );
+}
+
+
+export function trainerPhone(
+  trainer
+) {
+  return normalizeString(
+    trainer?.phone
+  );
+}
+
+
+export function trainerInstagram(
+  trainer
+) {
+  return normalizeString(
+    trainer?.instagram_url
+  );
+}
+
+
+export function trainerImage(
+  trainer
+) {
+  const value =
+    normalizeString(
+      trainer?.image_url
+    );
+
+
+  if (!value) {
+    return '';
+  }
+
+
+  if (
+    isAbsoluteUrl(
+      value
+    )
+  ) {
+    return value;
+  }
+
+
+  return getPublicStorageUrl(
+    APP_CONFIG.storage
+      .trainerImages,
+    value
+  );
+}
+
+
+// ============================================================
+// 26. MEMBERSHIP HELPERS
+// ============================================================
+
+export function membershipStatus(
+  membership
+) {
+  return normalizeString(
+    membership?.status,
+    'unknown'
+  ).toLowerCase();
+}
+
+
+export function membershipPaymentStatus(
+  membership
+) {
+  return normalizeString(
+    membership
+      ?.payment_status,
+    PAYMENT_STATUSES.paid
+  ).toLowerCase();
+}
+
+
+export function membershipIsActive(
+  membership
+) {
+  if (!membership) {
+    return false;
+  }
+
+
+  if (
+    membershipStatus(
+      membership
+    ) !==
+    'active'
   ) {
     return false;
   }
 
-  storageSet(
-    STORAGE_KEYS.theme,
-    theme
+
+  const today =
+    todayIso();
+
+
+  const start =
+    normalizeString(
+      membership.start_date
+    );
+
+
+  const end =
+    normalizeString(
+      membership.end_date
+    );
+
+
+  if (
+    start &&
+    today < start
+  ) {
+    return false;
+  }
+
+
+  if (
+    end &&
+    today > end
+  ) {
+    return false;
+  }
+
+
+  return true;
+}
+
+
+export function membershipDaysRemaining(
+  membership
+) {
+  if (
+    !membership?.end_date
+  ) {
+    return 0;
+  }
+
+
+  return Math.max(
+    0,
+    daysBetween(
+      new Date(),
+      membership.end_date
+    )
+  );
+}
+
+
+export function membershipStatusLabel(
+  membership
+) {
+  const status =
+    membershipStatus(
+      membership
+    );
+
+
+  switch (status) {
+    case 'active':
+      return 'Aktiv';
+
+    case 'expired':
+      return 'Bitib';
+
+    case 'cancelled':
+      return 'Ləğv edilib';
+
+    default:
+      return normalizeString(
+        status,
+        'Naməlum'
+      );
+  }
+}
+
+
+// ============================================================
+// 27. ATTENDANCE HELPERS
+//
+// Real timestamp = checked_in_at
+// created_at DEYİL.
+// ============================================================
+
+export function attendanceDate(
+  attendance
+) {
+  return (
+    attendance
+      ?.checked_in_at ||
+    null
+  );
+}
+
+
+export function attendanceType(
+  attendance
+) {
+  return normalizeString(
+    attendance
+      ?.attendance_type,
+    'membership'
+  );
+}
+
+
+export function attendanceTypeLabel(
+  attendance
+) {
+  return (
+    attendanceType(
+      attendance
+    ) ===
+    'daily'
+      ? 'Günlük giriş'
+      : 'Üzvlük'
+  );
+}
+
+
+export function attendanceAmount(
+  attendance
+) {
+  return number(
+    attendance?.amount
+  );
+}
+
+
+// ============================================================
+// 28. FINANCE HELPERS
+// ============================================================
+
+export function ledgerType(
+  entry
+) {
+  const type =
+    normalizeString(
+      entry?.entry_type
+    ).toLowerCase();
+
+
+  return (
+    type ===
+      'expense'
+      ? 'expense'
+      : 'income'
+  );
+}
+
+
+export function ledgerAmount(
+  entry
+) {
+  return number(
+    entry?.amount
+  );
+}
+
+
+export function ledgerDate(
+  entry
+) {
+  return (
+    entry?.created_at ||
+    entry?.entry_date ||
+    null
+  );
+}
+
+
+export function ledgerTypeLabel(
+  entry
+) {
+  return (
+    ledgerType(
+      entry
+    ) ===
+    'expense'
+      ? 'Xərc'
+      : 'Gəlir'
+  );
+}
+
+
+// ============================================================
+// 29. SALES HELPERS
+// ============================================================
+
+export function saleAmount(
+  sale
+) {
+  return number(
+    sale?.total_amount ??
+    sale?.subtotal
+  );
+}
+
+
+export function salePaymentStatus(
+  sale
+) {
+  return normalizeString(
+    sale?.payment_status,
+    PAYMENT_STATUSES.paid
+  );
+}
+
+
+export function salePaymentMethod(
+  sale
+) {
+  return normalizeString(
+    sale?.payment_method,
+    PAYMENT_METHODS.cash
+  );
+}
+
+
+// ============================================================
+// 30. DEBT HELPERS
+// ============================================================
+
+export function debtBalance(
+  account
+) {
+  return number(
+    account?.balance
+  );
+}
+
+
+export function debtIsOpen(
+  account
+) {
+  return (
+    debtBalance(
+      account
+    ) > 0
+  );
+}
+
+
+export function debtTransactionAmount(
+  transaction
+) {
+  return number(
+    transaction?.amount
+  );
+}
+
+
+// ============================================================
+// 31. OPERATOR HELPERS
+//
+// Real backend operator columns:
+// created_by
+// updated_by
+// operator_shift_id
+//
+// Audit üçün sonradan get_operator_activity RPC istifadə ediləcək.
+// ============================================================
+
+export function operatorProfileId(
+  record
+) {
+  return (
+    record?.created_by ||
+    record?.actor_profile_id ||
+    null
+  );
+}
+
+
+export function updatedByProfileId(
+  record
+) {
+  return (
+    record?.updated_by ||
+    null
+  );
+}
+
+
+export function operatorShiftId(
+  record
+) {
+  return (
+    record?.operator_shift_id ||
+    null
+  );
+}
+
+
+// ============================================================
+// 32. FAVORITES STORAGE
+// ============================================================
+
+export function getFavoriteIds() {
+  const raw =
+    localStorage.getItem(
+      STORAGE_KEYS.favorites
+    );
+
+
+  const parsed =
+    safeJsonParse(
+      raw,
+      []
+    );
+
+
+  if (
+    !Array.isArray(
+      parsed
+    )
+  ) {
+    return [];
+  }
+
+
+  return Array.from(
+    new Set(
+      parsed
+        .filter(
+          value =>
+            value !==
+              null &&
+            value !==
+              undefined
+        )
+        .map(
+          value =>
+            String(value)
+        )
+    )
+  );
+}
+
+
+export function saveFavoriteIds(
+  ids
+) {
+  const normalized =
+    Array.from(
+      new Set(
+        rows(ids)
+          .filter(Boolean)
+          .map(
+            value =>
+              String(value)
+          )
+      )
+    );
+
+
+  localStorage.setItem(
+    STORAGE_KEYS.favorites,
+    JSON.stringify(
+      normalized
+    )
   );
 
-  applyTheme(theme);
 
   window.dispatchEvent(
     new CustomEvent(
-      'skyfit:themechange',
+      SKYFIT_EVENTS
+        .favoritesChange,
       {
         detail: {
-          preference: theme,
-          resolved:
-            getResolvedTheme(),
+          ids:
+            normalized,
         },
       }
     )
   );
 
+
+  return normalized;
+}
+
+
+export function isFavorite(
+  productId
+) {
+  if (
+    productId ===
+      null ||
+    productId ===
+      undefined
+  ) {
+    return false;
+  }
+
+
+  return getFavoriteIds()
+    .includes(
+      String(
+        productId
+      )
+    );
+}
+
+
+export function addFavorite(
+  productId
+) {
+  if (
+    productId ===
+      null ||
+    productId ===
+      undefined
+  ) {
+    return getFavoriteIds();
+  }
+
+
+  const ids =
+    getFavoriteIds();
+
+
+  const id =
+    String(
+      productId
+    );
+
+
+  if (
+    !ids.includes(id)
+  ) {
+    ids.push(id);
+  }
+
+
+  return saveFavoriteIds(
+    ids
+  );
+}
+
+
+export function removeFavorite(
+  productId
+) {
+  const id =
+    String(
+      productId
+    );
+
+
+  return saveFavoriteIds(
+    getFavoriteIds()
+      .filter(
+        value =>
+          value !== id
+      )
+  );
+}
+
+
+export function toggleFavorite(
+  productId
+) {
+  const active =
+    isFavorite(
+      productId
+    );
+
+
+  if (active) {
+    removeFavorite(
+      productId
+    );
+
+    return false;
+  }
+
+
+  addFavorite(
+    productId
+  );
+
   return true;
+}
+
+
+export function clearFavorites() {
+  return saveFavoriteIds(
+    []
+  );
+}
+
+
+// ============================================================
+// 33. SEARCH INPUT CLEAR
+// ============================================================
+
+export function bindSearchClear({
+  input,
+  clearButton,
+  onChange,
+}) {
+  if (
+    !input ||
+    !clearButton
+  ) {
+    return () => {};
+  }
+
+
+  const sync =
+    () => {
+      const value =
+        normalizeString(
+          input.value
+        );
+
+
+      clearButton.hidden =
+        !value;
+
+
+      if (
+        typeof onChange ===
+        'function'
+      ) {
+        onChange(value);
+      }
+    };
+
+
+  input.addEventListener(
+    'input',
+    sync
+  );
+
+
+  clearButton.addEventListener(
+    'click',
+    () => {
+      input.value = '';
+
+      input.focus();
+
+      sync();
+    }
+  );
+
+
+  sync();
+
+
+  return () => {
+    input.removeEventListener(
+      'input',
+      sync
+    );
+  };
+}
+
+
+// ============================================================
+// 34. THEME
+// ============================================================
+
+export function getStoredTheme() {
+  const stored =
+    normalizeString(
+      localStorage.getItem(
+        STORAGE_KEYS.theme
+      )
+    );
+
+
+  if (
+    stored ===
+      'light' ||
+    stored ===
+      'dark' ||
+    stored ===
+      'system'
+  ) {
+    return stored;
+  }
+
+
+  return 'system';
+}
+
+
+export function resolveTheme(
+  theme =
+    getStoredTheme()
+) {
+  if (
+    theme ===
+      'light' ||
+    theme ===
+      'dark'
+  ) {
+    return theme;
+  }
+
+
+  return window
+    .matchMedia?.(
+      '(prefers-color-scheme: dark)'
+    )
+    .matches
+      ? 'dark'
+      : 'light';
+}
+
+
+export function applyTheme(
+  theme =
+    getStoredTheme(),
+  options = {}
+) {
+  const selected =
+    (
+      theme ===
+        'light' ||
+      theme ===
+        'dark' ||
+      theme ===
+        'system'
+    )
+      ? theme
+      : 'system';
+
+
+  const resolved =
+    resolveTheme(
+      selected
+    );
+
+
+  document.documentElement
+    .dataset.theme =
+      resolved;
+
+
+  document.documentElement
+    .dataset.themeSource =
+      selected;
+
+
+  if (
+    options.persist !==
+    false
+  ) {
+    localStorage.setItem(
+      STORAGE_KEYS.theme,
+      selected
+    );
+  }
+
+
+  window.dispatchEvent(
+    new CustomEvent(
+      SKYFIT_EVENTS.themeChange,
+      {
+        detail: {
+          source:
+            selected,
+
+          theme:
+            resolved,
+        },
+      }
+    )
+  );
+
+
+  return resolved;
 }
 
 
@@ -595,98 +2914,153 @@ export function cycleTheme() {
   const current =
     getStoredTheme();
 
+
   const next =
-    current === 'system'
+    current ===
+      'system'
       ? 'dark'
-      : current === 'dark'
+      : current ===
+          'dark'
         ? 'light'
         : 'system';
 
-  setTheme(next);
+
+  applyTheme(
+    next
+  );
+
 
   return next;
 }
 
 
-function updateThemeColor(theme) {
-  const meta = document.querySelector(
-    'meta[name="theme-color"]'
-  );
+// ============================================================
+// 35. SYSTEM THEME LISTENER
+// ============================================================
 
-  if (!meta) return;
-
-  meta.setAttribute(
-    'content',
-    theme === 'light'
-      ? '#f3f5f8'
-      : '#090b10'
-  );
-}
-
-
-const systemThemeMedia =
-  window.matchMedia(
+const systemThemeQuery =
+  window.matchMedia?.(
     '(prefers-color-scheme: dark)'
   );
 
 
-systemThemeMedia.addEventListener(
-  'change',
-  () => {
-    if (
-      getStoredTheme() ===
-      'system'
-    ) {
-      applyTheme('system');
-    }
+if (
+  systemThemeQuery
+) {
+  const handleSystemTheme =
+    () => {
+      if (
+        getStoredTheme() ===
+        'system'
+      ) {
+        applyTheme(
+          'system',
+          {
+            persist: false,
+          }
+        );
+      }
+    };
+
+
+  if (
+    typeof systemThemeQuery
+      .addEventListener ===
+      'function'
+  ) {
+    systemThemeQuery
+      .addEventListener(
+        'change',
+        handleSystemTheme
+      );
+  } else if (
+    typeof systemThemeQuery
+      .addListener ===
+      'function'
+  ) {
+    systemThemeQuery
+      .addListener(
+        handleSystemTheme
+      );
   }
-);
-
-
-applyTheme();
+}
 
 
 // ============================================================
-// 07. TOAST ENGINE
+
+
+// ============================================================
+// 36. TOAST SYSTEM
 // ============================================================
 
-let toastSequence = 0;
+let toastCounter = 0;
 
 
-function ensureToastStack() {
-  const root =
+function ensureToastRoot() {
+  let root =
     byId('app-toast-root');
 
-  if (!root) return null;
+
+  if (!root) {
+    root =
+      createElement(
+        'div',
+        {
+          attrs: {
+            id:
+              'app-toast-root',
+
+            'aria-live':
+              'polite',
+
+            'aria-atomic':
+              'true',
+          },
+        }
+      );
+
+
+    document.body.append(
+      root
+    );
+  }
+
 
   let stack =
-    $('.toast-stack', root);
-
-  if (!stack) {
-    stack = createElement(
-      'div',
-      {
-        className:
-          'toast-stack',
-      }
+    $(
+      '.toast-stack',
+      root
     );
 
-    root.append(stack);
+
+  if (!stack) {
+    stack =
+      createElement(
+        'div',
+        {
+          className:
+            'toast-stack',
+        }
+      );
+
+
+    root.append(
+      stack
+    );
   }
+
 
   return stack;
 }
 
 
-function toastIcon(type) {
+function toastIcon(
+  type
+) {
   switch (type) {
     case 'success':
       return `
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          aria-hidden="true"
-        >
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <circle
             cx="12"
             cy="12"
@@ -694,6 +3068,7 @@ function toastIcon(type) {
             stroke="currentColor"
             stroke-width="1.7"
           />
+
           <path
             d="m8 12.3 2.6 2.6L16.5 9"
             stroke="currentColor"
@@ -704,25 +3079,24 @@ function toastIcon(type) {
         </svg>
       `;
 
+
     case 'warning':
       return `
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          aria-hidden="true"
-        >
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path
             d="M12 3 21 20H3L12 3Z"
             stroke="currentColor"
             stroke-width="1.7"
             stroke-linejoin="round"
           />
+
           <path
             d="M12 9v5"
             stroke="currentColor"
             stroke-width="1.8"
             stroke-linecap="round"
           />
+
           <circle
             cx="12"
             cy="17"
@@ -732,13 +3106,10 @@ function toastIcon(type) {
         </svg>
       `;
 
+
     case 'danger':
       return `
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          aria-hidden="true"
-        >
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <circle
             cx="12"
             cy="12"
@@ -746,6 +3117,7 @@ function toastIcon(type) {
             stroke="currentColor"
             stroke-width="1.7"
           />
+
           <path
             d="m9 9 6 6M15 9l-6 6"
             stroke="currentColor"
@@ -755,13 +3127,10 @@ function toastIcon(type) {
         </svg>
       `;
 
+
     default:
       return `
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          aria-hidden="true"
-        >
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <circle
             cx="12"
             cy="12"
@@ -769,12 +3138,14 @@ function toastIcon(type) {
             stroke="currentColor"
             stroke-width="1.7"
           />
+
           <path
             d="M12 10v6"
             stroke="currentColor"
             stroke-width="1.8"
             stroke-linecap="round"
           />
+
           <circle
             cx="12"
             cy="7"
@@ -789,20 +3160,43 @@ function toastIcon(type) {
 
 export function toast(
   message,
-  {
-    title = '',
-    type = 'info',
-    duration =
-      UI_CONFIG.toastDuration,
-  } = {}
+  options = {}
 ) {
   const stack =
-    ensureToastStack();
+    ensureToastRoot();
 
-  if (!stack) return null;
+
+  if (!stack) {
+    return null;
+  }
+
+
+  const type =
+    normalizeString(
+      options.type,
+      'info'
+    );
+
+
+  const title =
+    normalizeString(
+      options.title
+    );
+
+
+  const duration =
+    Math.max(
+      0,
+      number(
+        options.duration,
+        4200
+      )
+    );
+
 
   const id =
-    `skyfit-toast-${++toastSequence}`;
+    `skyfit-toast-${++toastCounter}`;
+
 
   const element =
     createElement(
@@ -810,22 +3204,27 @@ export function toast(
       {
         className:
           `ui-toast ui-toast--${type}`,
+
         attrs: {
           id,
+
           role:
-            type === 'danger'
+            type ===
+              'danger'
               ? 'alert'
               : 'status',
         },
       }
     );
 
+
   element.innerHTML = `
     <span class="ui-toast__icon">
       ${toastIcon(type)}
     </span>
 
-    <div class="ui-toast__content">
+    <span class="ui-toast__content">
+
       ${
         title
           ? `
@@ -839,7 +3238,8 @@ export function toast(
       <span class="ui-toast__message">
         ${escapeHtml(message)}
       </span>
-    </div>
+
+    </span>
 
     <button
       type="button"
@@ -849,67 +3249,98 @@ export function toast(
       ×
     </button>
 
-    <span class="ui-toast__progress">
-      <span
-        class="ui-toast__progress-value"
-      ></span>
-    </span>
+    ${
+      duration > 0
+        ? `
+          <span class="ui-toast__progress">
+            <span
+              class="ui-toast__progress-value"
+            ></span>
+          </span>
+        `
+        : ''
+    }
   `;
 
-  const closeButton =
-    $('.ui-toast__close', element);
 
-  const progress =
-    $('.ui-toast__progress-value', element);
+  stack.prepend(
+    element
+  );
 
-  stack.prepend(element);
 
-  const close = () => {
-    if (
-      element.classList.contains(
+  let closed =
+    false;
+
+
+  const close =
+    () => {
+      if (closed) {
+        return;
+      }
+
+
+      closed =
+        true;
+
+
+      element.classList.add(
         'is-leaving'
-      )
-    ) {
-      return;
-    }
+      );
 
-    element.classList.add(
-      'is-leaving'
-    );
 
-    setTimeout(
-      () => {
-        element.remove();
-      },
-      250
-    );
-  };
+      setTimeout(
+        () => {
+          element.remove();
+        },
+        220
+      );
+    };
 
-  closeButton?.addEventListener(
+
+  $(
+    '.ui-toast__close',
+    element
+  )?.addEventListener(
     'click',
     close
   );
 
-  if (duration > 0) {
-    progress.style.transition =
-      `transform ${duration}ms linear`;
 
-    requestAnimationFrame(
-      () => {
-        requestAnimationFrame(
-          () => {
-            progress.style.transform =
-              'scaleX(0)';
-          }
-        );
-      }
-    );
+  if (
+    duration > 0
+  ) {
+    const progress =
+      $(
+        '.ui-toast__progress-value',
+        element
+      );
+
+
+    if (progress) {
+      progress.style
+        .transitionDuration =
+          `${duration}ms`;
+
+
+      requestAnimationFrame(
+        () => {
+          requestAnimationFrame(
+            () => {
+              progress.style.transform =
+                'scaleX(0)';
+            }
+          );
+        }
+      );
+    }
+
 
     setTimeout(
       close,
       duration
     );
   }
+
 
   return {
     id,
@@ -919,77 +3350,118 @@ export function toast(
 }
 
 
-export const notify = Object.freeze({
-  success(
-    message,
-    title = 'Uğurlu'
-  ) {
-    return toast(
-      message,
-      {
-        type: 'success',
-        title,
-      }
-    );
-  },
+export const notify =
+  Object.freeze({
 
-  warning(
-    message,
-    title = 'Diqqət'
-  ) {
-    return toast(
+    success(
       message,
-      {
-        type: 'warning',
-        title,
-      }
-    );
-  },
+      title =
+        'Uğurlu'
+    ) {
+      return toast(
+        message,
+        {
+          type:
+            'success',
 
-  error(
-    message,
-    title = 'Xəta'
-  ) {
-    return toast(
-      message,
-      {
-        type: 'danger',
-        title,
-      }
-    );
-  },
+          title,
+        }
+      );
+    },
 
-  info(
-    message,
-    title = ''
-  ) {
-    return toast(
+
+    warning(
       message,
-      {
-        type: 'info',
-        title,
-      }
-    );
-  },
-});
+      title =
+        'Diqqət'
+    ) {
+      return toast(
+        message,
+        {
+          type:
+            'warning',
+
+          title,
+        }
+      );
+    },
+
+
+    error(
+      message,
+      title =
+        'Xəta'
+    ) {
+      return toast(
+        message,
+        {
+          type:
+            'danger',
+
+          title,
+        }
+      );
+    },
+
+
+    info(
+      message,
+      title = ''
+    ) {
+      return toast(
+        message,
+        {
+          type:
+            'info',
+
+          title,
+        }
+      );
+    },
+  });
 
 
 // ============================================================
-// 08. LOADER ENGINE
+// 37. GLOBAL LOADER
 // ============================================================
 
 let loaderDepth = 0;
+
 let loaderStartedAt = 0;
 
 
-function ensureLoader() {
-  const root =
-    byId('app-loader-root');
+function ensureLoaderRoot() {
+  let root =
+    byId(
+      'app-loader-root'
+    );
 
-  if (!root) return null;
+
+  if (!root) {
+    root =
+      createElement(
+        'div',
+        {
+          attrs: {
+            id:
+              'app-loader-root',
+          },
+        }
+      );
+
+
+    document.body.append(
+      root
+    );
+  }
+
 
   let loader =
-    $('.app-loader', root);
+    $(
+      '.app-loader',
+      root
+    );
+
 
   if (!loader) {
     loader =
@@ -998,67 +3470,117 @@ function ensureLoader() {
         {
           className:
             'app-loader',
+
           attrs: {
-            role: 'status',
+            role:
+              'status',
+
             'aria-live':
               'polite',
-            'aria-label':
-              'Yüklənir',
+
+            'aria-hidden':
+              'true',
           },
         }
       );
 
+
     loader.innerHTML = `
       <div class="app-loader__panel">
+
         <span
           class="app-loader__spinner"
           aria-hidden="true"
         ></span>
 
         <span class="app-loader__label">
-          Yüklənir
+          Yüklənir...
         </span>
+
       </div>
     `;
 
-    root.append(loader);
+
+    root.append(
+      loader
+    );
   }
+
 
   return loader;
 }
 
 
 export function showLoader(
-  label = 'Yüklənir'
+  label =
+    'Yüklənir...'
 ) {
   loaderDepth += 1;
 
+
   const loader =
-    ensureLoader();
+    ensureLoaderRoot();
 
-  if (!loader) return;
 
-  const labelElement =
-    $('.app-loader__label', loader);
-
-  if (labelElement) {
-    labelElement.textContent =
-      label;
+  if (!loader) {
+    return;
   }
+
 
   loaderStartedAt =
     performance.now();
 
+
+  const labelElement =
+    $(
+      '.app-loader__label',
+      loader
+    );
+
+
+  if (
+    labelElement
+  ) {
+    labelElement.textContent =
+      label;
+  }
+
+
   loader.classList.add(
     'is-visible'
+  );
+
+
+  loader.setAttribute(
+    'aria-hidden',
+    'false'
+  );
+
+
+  window.dispatchEvent(
+    new CustomEvent(
+      SKYFIT_EVENTS
+        .loaderChange,
+      {
+        detail: {
+          visible:
+            true,
+
+          depth:
+            loaderDepth,
+        },
+      }
+    )
   );
 }
 
 
-export async function hideLoader({
-  force = false,
-} = {}) {
-  if (force) {
+export async function hideLoader(
+  options = {}
+) {
+  if (
+    options.force
+  ) {
     loaderDepth = 0;
   } else {
     loaderDepth =
@@ -1068,71 +3590,145 @@ export async function hideLoader({
       );
   }
 
-  if (loaderDepth > 0) {
+
+  if (
+    loaderDepth > 0
+  ) {
     return;
   }
 
-  const loader =
-    ensureLoader();
 
-  if (!loader) return;
+  const loader =
+    ensureLoaderRoot();
+
+
+  if (!loader) {
+    return;
+  }
+
 
   const elapsed =
     performance.now() -
     loaderStartedAt;
 
+
   const minimum =
-    UI_CONFIG.loaderMinimumDuration;
+    number(
+      options.minimumDuration,
+      180
+    );
+
 
   if (
-    !force &&
+    !options.force &&
     elapsed < minimum
   ) {
-    await sleep(
-      minimum - elapsed
+    await new Promise(
+      resolve => {
+        setTimeout(
+          resolve,
+          minimum - elapsed
+        );
+      }
     );
   }
 
+
   loader.classList.remove(
     'is-visible'
+  );
+
+
+  loader.setAttribute(
+    'aria-hidden',
+    'true'
+  );
+
+
+  window.dispatchEvent(
+    new CustomEvent(
+      SKYFIT_EVENTS
+        .loaderChange,
+      {
+        detail: {
+          visible:
+            false,
+
+          depth:
+            0,
+        },
+      }
+    )
   );
 }
 
 
 export async function withLoader(
   callback,
-  {
-    label = 'Yüklənir',
-  } = {}
+  options = {}
 ) {
-  showLoader(label);
+  showLoader(
+    options.label ||
+    'Yüklənir...'
+  );
+
 
   try {
     return await callback();
   } finally {
-    await hideLoader();
+    await hideLoader(
+      options
+    );
   }
 }
 
 
 // ============================================================
-// 09. MODAL ENGINE
+// 38. MODAL SYSTEM
 // ============================================================
 
 let activeModal = null;
-let lastModalTrigger = null;
+
+let previousFocus =
+  null;
 
 
 function ensureModalRoot() {
-  return byId(
-    'app-modal-root'
-  );
+  let root =
+    byId(
+      'app-modal-root'
+    );
+
+
+  if (!root) {
+    root =
+      createElement(
+        'div',
+        {
+          attrs: {
+            id:
+              'app-modal-root',
+          },
+        }
+      );
+
+
+    document.body.append(
+      root
+    );
+  }
+
+
+  return root;
 }
 
 
-function closeOnEscape(event) {
+function handleModalEscape(
+  event
+) {
   if (
-    event.key === 'Escape' &&
+    event.key ===
+      'Escape' &&
     activeModal
   ) {
     closeModal();
@@ -1140,31 +3736,31 @@ function closeOnEscape(event) {
 }
 
 
-export function openModal({
-  title = '',
-  eyebrow = '',
-  content = '',
-  footer = '',
-  className = '',
-  trigger = null,
-  closeOnBackdrop = true,
-  onOpen = null,
-  onClose = null,
-} = {}) {
+export function openModal(
+  options = {}
+) {
   const root =
     ensureModalRoot();
 
-  if (!root) return null;
 
-  if (activeModal) {
+  if (!root) {
+    return null;
+  }
+
+
+  if (
+    activeModal
+  ) {
     closeModal({
       immediate: true,
     });
   }
 
-  lastModalTrigger =
-    trigger ||
+
+  previousFocus =
+    options.trigger ||
     document.activeElement;
+
 
   const backdrop =
     createElement(
@@ -1175,22 +3771,34 @@ export function openModal({
       }
     );
 
+
   const modal =
     createElement(
       'section',
       {
         className:
-          `app-modal ${className}`.trim(),
+          `app-modal ${
+            normalizeString(
+              options.className
+            )
+          }`.trim(),
+
         attrs: {
-          role: 'dialog',
+          role:
+            'dialog',
+
           'aria-modal':
             'true',
+
           'aria-label':
-            title ||
-            'Pəncərə',
+            normalizeString(
+              options.title,
+              'Pəncərə'
+            ),
         },
       }
     );
+
 
   modal.innerHTML = `
     <div
@@ -1199,20 +3807,28 @@ export function openModal({
     ></div>
 
     <header class="app-modal__header">
+
       <div class="app-modal__heading">
+
         ${
-          eyebrow
+          options.eyebrow
             ? `
               <span class="app-modal__eyebrow">
-                ${escapeHtml(eyebrow)}
+                ${escapeHtml(
+                  options.eyebrow
+                )}
               </span>
             `
             : ''
         }
 
         <h2 class="app-modal__title">
-          ${escapeHtml(title)}
+          ${escapeHtml(
+            options.title ||
+            ''
+          )}
         </h2>
+
       </div>
 
       <button
@@ -1222,12 +3838,13 @@ export function openModal({
       >
         ×
       </button>
+
     </header>
 
     <div class="app-modal__body"></div>
 
     ${
-      footer
+      options.footer
         ? `
           <footer class="app-modal__footer"></footer>
         `
@@ -1235,100 +3852,166 @@ export function openModal({
     }
   `;
 
-  const body =
-    $('.app-modal__body', modal);
 
-  const footerElement =
-    $('.app-modal__footer', modal);
+  const body =
+    $(
+      '.app-modal__body',
+      modal
+    );
+
+
+  const footer =
+    $(
+      '.app-modal__footer',
+      modal
+    );
+
 
   if (
-    content instanceof Node
+    options.content
+      instanceof Node
   ) {
-    body.append(content);
-  } else {
+    body?.append(
+      options.content
+    );
+  } else if (
+    body
+  ) {
     body.innerHTML =
-      content;
+      String(
+        options.content ||
+        ''
+      );
   }
 
-  if (footerElement) {
+
+  if (
+    footer
+  ) {
     if (
-      footer instanceof Node
+      options.footer
+        instanceof Node
     ) {
-      footerElement.append(
-        footer
+      footer.append(
+        options.footer
       );
     } else {
-      footerElement.innerHTML =
-        footer;
+      footer.innerHTML =
+        String(
+          options.footer ||
+          ''
+        );
     }
   }
 
-  backdrop.append(modal);
-  root.append(backdrop);
 
-  const closeButton =
-    $('.app-modal__close', modal);
+  backdrop.append(
+    modal
+  );
 
-  const cleanup = () => {
-    document.removeEventListener(
-      'keydown',
-      closeOnEscape
-    );
 
-    document.body.classList.remove(
-      'is-scroll-locked'
-    );
+  root.append(
+    backdrop
+  );
 
-    if (
-      typeof onClose ===
-      'function'
-    ) {
-      onClose();
-    }
 
-    if (
-      lastModalTrigger &&
-      typeof lastModalTrigger.focus ===
-        'function'
-    ) {
-      lastModalTrigger.focus();
-    }
+  const cleanup =
+    () => {
+      document.removeEventListener(
+        'keydown',
+        handleModalEscape
+      );
 
-    activeModal = null;
-    lastModalTrigger = null;
-  };
+
+      document.body
+        .classList
+        .remove(
+          'is-scroll-locked'
+        );
+
+
+      if (
+        typeof options.onClose ===
+          'function'
+      ) {
+        options.onClose();
+      }
+
+
+      if (
+        previousFocus &&
+        typeof previousFocus
+          .focus ===
+          'function'
+      ) {
+        previousFocus.focus();
+      }
+
+
+      previousFocus =
+        null;
+
+      activeModal =
+        null;
+
+
+      window.dispatchEvent(
+        new CustomEvent(
+          SKYFIT_EVENTS
+            .modalClose
+        )
+      );
+    };
+
 
   activeModal = {
     backdrop,
     modal,
+    body,
+    footer,
     cleanup,
+    closeOnBackdrop:
+      options.closeOnBackdrop !==
+      false,
   };
 
-  closeButton?.addEventListener(
+
+  $(
+    '.app-modal__close',
+    modal
+  )?.addEventListener(
     'click',
     () => closeModal()
   );
+
 
   backdrop.addEventListener(
     'click',
     event => {
       if (
-        closeOnBackdrop &&
-        event.target === backdrop
+        event.target ===
+          backdrop &&
+        activeModal
+          ?.closeOnBackdrop
       ) {
         closeModal();
       }
     }
   );
 
+
   document.addEventListener(
     'keydown',
-    closeOnEscape
+    handleModalEscape
   );
 
-  document.body.classList.add(
-    'is-scroll-locked'
-  );
+
+  document.body
+    .classList
+    .add(
+      'is-scroll-locked'
+    );
+
 
   requestAnimationFrame(
     () => {
@@ -1336,29 +4019,41 @@ export function openModal({
         'is-open'
       );
 
-      closeButton?.focus();
+
+      $(
+        '.app-modal__close',
+        modal
+      )?.focus();
     }
   );
 
+
   if (
-    typeof onOpen ===
-    'function'
+    typeof options.onOpen ===
+      'function'
   ) {
-    onOpen({
+    options.onOpen({
       modal,
       backdrop,
       body,
-      footer:
-        footerElement,
+      footer,
     });
   }
+
+
+  window.dispatchEvent(
+    new CustomEvent(
+      SKYFIT_EVENTS
+        .modalOpen
+    )
+  );
+
 
   return {
     modal,
     backdrop,
     body,
-    footer:
-      footerElement,
+    footer,
 
     close:
       () => closeModal(),
@@ -1366,32 +4061,45 @@ export function openModal({
 }
 
 
-export function closeModal({
-  immediate = false,
-} = {}) {
-  if (!activeModal) return;
-
-  const {
-    backdrop,
-    cleanup,
-  } = activeModal;
-
-  if (immediate) {
-    backdrop.remove();
-    cleanup();
+export function closeModal(
+  options = {}
+) {
+  if (!activeModal) {
     return;
   }
 
-  backdrop.classList.remove(
-    'is-open'
-  );
+
+  const current =
+    activeModal;
+
+
+  if (
+    options.immediate
+  ) {
+    current.backdrop
+      .remove();
+
+    current.cleanup();
+
+    return;
+  }
+
+
+  current.backdrop
+    .classList
+    .remove(
+      'is-open'
+    );
+
 
   setTimeout(
     () => {
-      backdrop.remove();
-      cleanup();
+      current.backdrop
+        .remove();
+
+      current.cleanup();
     },
-    UI_CONFIG.modalTransitionDuration
+    220
   );
 }
 
@@ -1402,42 +4110,37 @@ export function getActiveModal() {
 
 
 // ============================================================
-// 10. CONFIRM DIALOG
-// Browser confirm() əvəzinə vahid modal.
+// 39. CONFIRM DIALOG
 // ============================================================
 
-export function confirmDialog({
-  title = 'Təsdiq',
-  message = '',
-  eyebrow = '',
-  confirmText = 'Təsdiq et',
-  cancelText = 'Ləğv et',
-  danger = false,
-} = {}) {
+export function confirmDialog(
+  options = {}
+) {
   return new Promise(
     resolve => {
+      let settled =
+        false;
+
+
       const content =
         createElement(
           'div',
           {
             className:
-              'modal-form',
+              'modal-confirm',
           }
         );
 
-      const paragraph =
-        createElement(
-          'p',
-          {
-            text: message,
-            attrs: {
-              style:
-                'color:var(--text-muted);font-size:11px;line-height:1.6;',
-            },
-          }
-        );
 
-      content.append(paragraph);
+      content.innerHTML = `
+        <p class="modal-confirm__message">
+          ${escapeHtml(
+            options.message ||
+            ''
+          )}
+        </p>
+      `;
+
 
       const footer =
         createElement(
@@ -1448,78 +4151,112 @@ export function confirmDialog({
           }
         );
 
-      const cancelButton =
+
+      const cancel =
         createElement(
           'button',
           {
             className:
               'ui-button ui-button--glass',
-            text: cancelText,
+
+            text:
+              options.cancelText ||
+              'Ləğv et',
+
             attrs: {
-              type: 'button',
+              type:
+                'button',
             },
           }
         );
 
-      const confirmButton =
+
+      const confirm =
         createElement(
           'button',
           {
             className:
-              danger
+              options.danger
                 ? 'ui-button ui-button--danger'
                 : 'ui-button ui-button--primary',
-            text: confirmText,
+
+            text:
+              options.confirmText ||
+              'Təsdiq et',
+
             attrs: {
-              type: 'button',
+              type:
+                'button',
             },
           }
         );
 
+
       footer.append(
-        cancelButton,
-        confirmButton
+        cancel,
+        confirm
       );
 
-      let settled = false;
 
-      const settle = value => {
-        if (settled) return;
+      const settle =
+        value => {
+          if (settled) {
+            return;
+          }
 
-        settled = true;
-        resolve(value);
-        closeModal();
-      };
+
+          settled =
+            true;
+
+          resolve(value);
+
+          closeModal();
+        };
+
 
       openModal({
-        title,
-        eyebrow,
+        eyebrow:
+          options.eyebrow,
+
+        title:
+          options.title ||
+          'Təsdiq',
+
         content,
+
         footer,
-        closeOnBackdrop: true,
 
-        onOpen: () => {
-          cancelButton.addEventListener(
-            'click',
-            () => {
-              settle(false);
+        closeOnBackdrop:
+          options.closeOnBackdrop !==
+          false,
+
+        onOpen:
+          () => {
+            cancel.addEventListener(
+              'click',
+              () => {
+                settle(false);
+              }
+            );
+
+
+            confirm.addEventListener(
+              'click',
+              () => {
+                settle(true);
+              }
+            );
+          },
+
+        onClose:
+          () => {
+            if (!settled) {
+              settled =
+                true;
+
+              resolve(false);
             }
-          );
-
-          confirmButton.addEventListener(
-            'click',
-            () => {
-              settle(true);
-            }
-          );
-        },
-
-        onClose: () => {
-          if (!settled) {
-            settled = true;
-            resolve(false);
-          }
-        },
+          },
       });
     }
   );
@@ -1527,680 +4264,7 @@ export function confirmDialog({
 
 
 // ============================================================
-// 11. AUTH / SESSION HELPERS
-// ============================================================
-
-export async function getSession() {
-  const {
-    data,
-    error,
-  } =
-    await supabase.auth.getSession();
-
-  if (error) {
-    console.error(
-      'SKy Fit session error:',
-      error
-    );
-
-    return null;
-  }
-
-  return data.session;
-}
-
-
-export async function getUser() {
-  const {
-    data,
-    error,
-  } =
-    await supabase.auth.getUser();
-
-  if (error) {
-    return null;
-  }
-
-  return data.user;
-}
-
-
-export async function getCurrentProfile() {
-  const user =
-    await getUser();
-
-  if (!user) {
-    return null;
-  }
-
-  const {
-    data,
-    error,
-  } =
-    await supabase
-      .from(TABLES.profiles)
-      .select('*')
-      .eq('id', user.id)
-      .maybeSingle();
-
-  if (error) {
-    console.error(
-      'SKy Fit profile error:',
-      error
-    );
-
-    return null;
-  }
-
-  return data;
-}
-
-
-export async function getCurrentIdentity() {
-  const user =
-    await getUser();
-
-  if (!user) {
-    return {
-      user: null,
-      profile: null,
-      role: null,
-      isAuthenticated: false,
-      isAdmin: false,
-      isStaff: false,
-    };
-  }
-
-  const profile =
-    await getCurrentProfile();
-
-  const role =
-    profile?.role || null;
-
-  return {
-    user,
-    profile,
-    role,
-
-    isAuthenticated: true,
-
-    isAdmin:
-      role ===
-      USER_ROLES.ADMIN,
-
-    isStaff:
-      role ===
-        USER_ROLES.ADMIN ||
-      role ===
-        USER_ROLES.STAFF,
-  };
-}
-
-
-export async function requireAuth({
-  redirectTo =
-    APP_CONFIG.routes.login,
-} = {}) {
-  const session =
-    await getSession();
-
-  if (!session) {
-    window.location.replace(
-      redirectTo
-    );
-
-    return null;
-  }
-
-  return session;
-}
-
-
-export async function requireStaff({
-  redirectTo =
-    APP_CONFIG.routes.home,
-} = {}) {
-  const identity =
-    await getCurrentIdentity();
-
-  if (
-    !identity.isAuthenticated
-  ) {
-    window.location.replace(
-      APP_CONFIG.routes.login
-    );
-
-    return null;
-  }
-
-  if (!identity.isStaff) {
-    notify.error(
-      'Bu bölməyə giriş icazən yoxdur.'
-    );
-
-    setTimeout(
-      () => {
-        window.location.replace(
-          redirectTo
-        );
-      },
-      450
-    );
-
-    return null;
-  }
-
-  return identity;
-}
-
-
-export async function signOut() {
-  const {
-    error,
-  } =
-    await supabase.auth.signOut();
-
-  if (error) {
-    notify.error(
-      'Hesabdan çıxış zamanı xəta baş verdi.'
-    );
-
-    return false;
-  }
-
-  window.location.replace(
-    APP_CONFIG.routes.login
-  );
-
-  return true;
-}
-
-
-// ============================================================
-// 12. ROLE LABELS
-// ============================================================
-
-export function roleLabel(role) {
-  switch (role) {
-    case USER_ROLES.ADMIN:
-      return 'Admin';
-
-    case USER_ROLES.STAFF:
-      return 'Əməkdaş';
-
-    default:
-      return 'Üzv';
-  }
-}
-
-
-export function roleBadgeClass(role) {
-  switch (role) {
-    case USER_ROLES.ADMIN:
-      return 'ui-badge ui-badge--brand';
-
-    case USER_ROLES.STAFF:
-      return 'ui-badge ui-badge--warning';
-
-    default:
-      return 'ui-badge ui-badge--neutral';
-  }
-}
-
-
-// ============================================================
-// 13. PUBLIC STORAGE URL HELPERS
-// ============================================================
-
-export function getPublicStorageUrl(
-  bucket,
-  path
-) {
-  const normalizedPath =
-    normalizeString(path);
-
-  if (!normalizedPath) {
-    return '';
-  }
-
-  if (
-    normalizedPath.startsWith(
-      'http://'
-    ) ||
-    normalizedPath.startsWith(
-      'https://'
-    )
-  ) {
-    return normalizedPath;
-  }
-
-  const {
-    data,
-  } =
-    supabase.storage
-      .from(bucket)
-      .getPublicUrl(
-        normalizedPath
-      );
-
-  return (
-    data?.publicUrl ||
-    ''
-  );
-}
-
-
-// ============================================================
-// 14. IMAGE FALLBACK
-// ============================================================
-
-export function bindImageFallback(
-  image,
-  fallback = ''
-) {
-  if (!image) return;
-
-  image.addEventListener(
-    'error',
-    () => {
-      if (
-        fallback &&
-        image.src !== fallback
-      ) {
-        image.src = fallback;
-        return;
-      }
-
-      image.classList.add(
-        'is-hidden'
-      );
-    },
-    {
-      once: true,
-    }
-  );
-}
-
-
-// ============================================================
-// 15. GLOBAL ERROR NORMALIZATION
-// ============================================================
-
-export function getErrorMessage(
-  error,
-  fallback =
-    'Əməliyyat zamanı xəta baş verdi.'
-) {
-  if (!error) {
-    return fallback;
-  }
-
-  const message =
-    normalizeString(
-      error.message ||
-      error.error_description ||
-      error.details ||
-      error.hint
-    );
-
-  if (!message) {
-    return fallback;
-  }
-
-  const normalized =
-    message.toLowerCase();
-
-  if (
-    normalized.includes(
-      'invalid login credentials'
-    )
-  ) {
-    return 'E-poçt və ya şifrə düzgün deyil.';
-  }
-
-  if (
-    normalized.includes(
-      'email not confirmed'
-    )
-  ) {
-    return 'E-poçt ünvanı hələ təsdiqlənməyib.';
-  }
-
-  if (
-    normalized.includes(
-      'user already registered'
-    )
-  ) {
-    return 'Bu e-poçt ilə artıq hesab mövcuddur.';
-  }
-
-  if (
-    normalized.includes(
-      'password should be at least'
-    )
-  ) {
-    return 'Şifrə minimum 6 simvoldan ibarət olmalıdır.';
-  }
-
-  if (
-    normalized.includes(
-      'row-level security'
-    )
-  ) {
-    return 'Bu əməliyyat üçün icazə yoxdur.';
-  }
-
-  if (
-    normalized.includes(
-      'jwt expired'
-    )
-  ) {
-    return 'Sessiyanın müddəti bitib. Yenidən daxil ol.';
-  }
-
-  return message;
-}
-
-
-// ============================================================
-// CORE.JS — HISSƏ 1/2 SONU
-// ============================================================
-
-// ============================================================
-// 16. FAVORITES — LOCAL SYSTEM
-// ============================================================
-
-export function getFavoriteIds() {
-  const stored =
-    storageGet(
-      STORAGE_KEYS.favorites,
-      []
-    );
-
-  if (!Array.isArray(stored)) {
-    return [];
-  }
-
-  return stored
-    .map(value => String(value))
-    .filter(Boolean);
-}
-
-
-export function isFavorite(
-  productId
-) {
-  const id =
-    String(productId);
-
-  return getFavoriteIds()
-    .includes(id);
-}
-
-
-export function addFavorite(
-  productId
-) {
-  const id =
-    String(productId);
-
-  if (!id) {
-    return false;
-  }
-
-  const favorites =
-    new Set(
-      getFavoriteIds()
-    );
-
-  favorites.add(id);
-
-  storageSet(
-    STORAGE_KEYS.favorites,
-    [...favorites]
-  );
-
-  dispatchFavoritesChange(
-    [...favorites]
-  );
-
-  return true;
-}
-
-
-export function removeFavorite(
-  productId
-) {
-  const id =
-    String(productId);
-
-  const favorites =
-    new Set(
-      getFavoriteIds()
-    );
-
-  favorites.delete(id);
-
-  storageSet(
-    STORAGE_KEYS.favorites,
-    [...favorites]
-  );
-
-  dispatchFavoritesChange(
-    [...favorites]
-  );
-
-  return true;
-}
-
-
-export function toggleFavorite(
-  productId
-) {
-  const id =
-    String(productId);
-
-  if (isFavorite(id)) {
-    removeFavorite(id);
-
-    return false;
-  }
-
-  addFavorite(id);
-
-  return true;
-}
-
-
-export function clearFavorites() {
-  storageSet(
-    STORAGE_KEYS.favorites,
-    []
-  );
-
-  dispatchFavoritesChange([]);
-
-  return true;
-}
-
-
-function dispatchFavoritesChange(
-  favorites
-) {
-  window.dispatchEvent(
-    new CustomEvent(
-      'skyfit:favoriteschange',
-      {
-        detail: {
-          favorites,
-        },
-      }
-    )
-  );
-}
-
-
-// ============================================================
-// 17. STATUS HELPERS
-// ============================================================
-
-export function membershipStatus({
-  status,
-  endDate,
-} = {}) {
-  const normalizedStatus =
-    normalizeString(
-      status
-    ).toLowerCase();
-
-  if (
-    normalizedStatus ===
-    'expired'
-  ) {
-    return {
-      value: 'expired',
-      label: 'Bitib',
-      className:
-        'ui-badge ui-badge--danger',
-    };
-  }
-
-  if (
-    normalizedStatus ===
-    'cancelled'
-  ) {
-    return {
-      value: 'cancelled',
-      label: 'Ləğv edilib',
-      className:
-        'ui-badge ui-badge--danger',
-    };
-  }
-
-  if (
-    endDate &&
-    daysLeft(endDate) < 0
-  ) {
-    return {
-      value: 'expired',
-      label: 'Bitib',
-      className:
-        'ui-badge ui-badge--danger',
-    };
-  }
-
-  if (
-    normalizedStatus ===
-    'active'
-  ) {
-    return {
-      value: 'active',
-      label: 'Aktiv',
-      className:
-        'ui-badge ui-badge--success',
-    };
-  }
-
-  return {
-    value:
-      normalizedStatus ||
-      'unknown',
-    label: 'Naməlum',
-    className:
-      'ui-badge ui-badge--neutral',
-  };
-}
-
-
-export function paymentStatusMeta(
-  status
-) {
-  switch (
-    normalizeString(
-      status
-    ).toLowerCase()
-  ) {
-    case 'paid':
-      return {
-        label: 'Ödənilib',
-        className:
-          'ui-badge ui-badge--success',
-      };
-
-    case 'debt':
-      return {
-        label: 'Borc',
-        className:
-          'ui-badge ui-badge--warning',
-      };
-
-    case 'cancelled':
-      return {
-        label: 'Ləğv edilib',
-        className:
-          'ui-badge ui-badge--danger',
-      };
-
-    case 'refunded':
-      return {
-        label: 'Geri qaytarılıb',
-        className:
-          'ui-badge ui-badge--neutral',
-      };
-
-    default:
-      return {
-        label: 'Naməlum',
-        className:
-          'ui-badge ui-badge--neutral',
-      };
-  }
-}
-
-
-export function stockStatusMeta(
-  quantity,
-  {
-    lowThreshold = 5,
-  } = {}
-) {
-  const stock =
-    normalizeNumber(
-      quantity
-    );
-
-  if (stock <= 0) {
-    return {
-      value: 'empty',
-      label: 'Bitib',
-      className:
-        'ui-badge ui-badge--danger',
-    };
-  }
-
-  if (
-    stock <=
-    lowThreshold
-  ) {
-    return {
-      value: 'low',
-      label: 'Az stok',
-      className:
-        'ui-badge ui-badge--warning',
-    };
-  }
-
-  return {
-    value: 'available',
-    label: 'Stokda',
-    className:
-      'ui-badge ui-badge--success',
-  };
-}
-
-
-// ============================================================
-// 18. FORM HELPERS
+// 40. FORM HELPERS
 // ============================================================
 
 export function getFormValues(
@@ -2210,11 +4274,10 @@ export function getFormValues(
     return {};
   }
 
-  const formData =
-    new FormData(form);
 
   return Object.fromEntries(
-    formData.entries()
+    new FormData(form)
+      .entries()
   );
 }
 
@@ -2224,24 +4287,35 @@ export function setFieldError(
   errorElement,
   message = ''
 ) {
-  if (!input) return;
+  if (!input) {
+    return;
+  }
 
-  const wrapper =
+
+  const field =
+    input.closest(
+      '.ui-field'
+    ) ||
     input.closest(
       '.ui-input'
     );
 
+
   if (message) {
-    wrapper?.classList.add(
+    field?.classList.add(
       'has-error'
     );
+
 
     input.setAttribute(
       'aria-invalid',
       'true'
     );
 
-    if (errorElement) {
+
+    if (
+      errorElement
+    ) {
       errorElement.textContent =
         message;
 
@@ -2253,15 +4327,20 @@ export function setFieldError(
     return;
   }
 
-  wrapper?.classList.remove(
+
+  field?.classList.remove(
     'has-error'
   );
+
 
   input.removeAttribute(
     'aria-invalid'
   );
 
-  if (errorElement) {
+
+  if (
+    errorElement
+  ) {
     errorElement.textContent =
       '';
 
@@ -2275,27 +4354,34 @@ export function setFieldError(
 export function clearFormErrors(
   form
 ) {
-  if (!form) return;
+  if (!form) {
+    return;
+  }
+
 
   $$(
-    '.ui-input.has-error',
+    '.has-error',
     form
   ).forEach(
-    element =>
+    element => {
       element.classList.remove(
         'has-error'
-      )
+      );
+    }
   );
+
 
   $$(
     '[aria-invalid="true"]',
     form
   ).forEach(
-    element =>
+    element => {
       element.removeAttribute(
         'aria-invalid'
-      )
+      );
+    }
   );
+
 
   $$(
     '.ui-field__error',
@@ -2321,9 +4407,11 @@ export function validateEmail(
       email
     );
 
+
   if (!value) {
     return false;
   }
+
 
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     .test(value);
@@ -2333,28 +4421,40 @@ export function validateEmail(
 export function validatePhone(
   phone
 ) {
-  const normalized =
+  const value =
     normalizeString(
       phone
     )
-      .replace(/\s+/g, '')
-      .replace(/[()-]/g, '');
+      .replace(
+        /[\s()-]/g,
+        ''
+      );
 
-  if (!normalized) {
+
+  if (!value) {
     return true;
   }
 
+
   return /^\+?[0-9]{9,15}$/
-    .test(normalized);
+    .test(value);
 }
 
 
 export function validatePassword(
   password,
-  {
-    minLength = 6,
-  } = {}
+  options = {}
 ) {
+  const minLength =
+    Math.max(
+      6,
+      number(
+        options.minLength,
+        6
+      )
+    );
+
+
   return (
     typeof password ===
       'string' &&
@@ -2375,50 +4475,52 @@ export function bindPasswordToggle(
     return;
   }
 
+
   button.addEventListener(
     'click',
     () => {
-      const showing =
+      const visible =
         input.type ===
         'text';
 
+
       input.type =
-        showing
+        visible
           ? 'password'
           : 'text';
 
+
       button.setAttribute(
         'aria-pressed',
-        String(!showing)
+        String(
+          !visible
+        )
       );
+
 
       button.setAttribute(
         'aria-label',
-        showing
+        visible
           ? 'Şifrəni göstər'
           : 'Şifrəni gizlət'
       );
 
-      const showIcon =
-        $(
-          '.password-icon--show',
-          button
-        );
 
-      const hideIcon =
-        $(
-          '.password-icon--hide',
-          button
-        );
-
-      showIcon?.classList.toggle(
+      $(
+        '.password-icon--show',
+        button
+      )?.classList.toggle(
         'is-hidden',
-        !showing
+        !visible
       );
 
-      hideIcon?.classList.toggle(
+
+      $(
+        '.password-icon--hide',
+        button
+      )?.classList.toggle(
         'is-hidden',
-        showing
+        visible
       );
     }
   );
@@ -2426,209 +4528,48 @@ export function bindPasswordToggle(
 
 
 // ============================================================
-// 19. BUTTON LOADING STATE
-// ============================================================
-
-export function setButtonLoading(
-  button,
-  loading,
-  {
-    loadingText = '',
-  } = {}
-) {
-  if (!button) return;
-
-  const label =
-    $(
-      '.ui-button__label',
-      button
-    );
-
-  const spinner =
-    $(
-      '.ui-button__spinner',
-      button
-    );
-
-  if (
-    !button.dataset.originalLabel &&
-    label
-  ) {
-    button.dataset.originalLabel =
-      label.textContent;
-  }
-
-  button.disabled =
-    Boolean(loading);
-
-  spinner?.classList.toggle(
-    'is-hidden',
-    !loading
-  );
-
-  if (label) {
-    if (
-      loading &&
-      loadingText
-    ) {
-      label.textContent =
-        loadingText;
-    } else if (
-      !loading &&
-      button.dataset.originalLabel
-    ) {
-      label.textContent =
-        button.dataset.originalLabel;
-    }
-  }
-}
-
-
-// ============================================================
-// 20. SEARCH CLEAR BINDING
-// ============================================================
-
-export function bindSearchClear({
-  input,
-  clearButton,
-  onChange = null,
-} = {}) {
-  if (
-    !input ||
-    !clearButton
-  ) {
-    return;
-  }
-
-  const sync = () => {
-    clearButton.classList.toggle(
-      'is-hidden',
-      !normalizeString(
-        input.value
-      )
-    );
-
-    if (
-      typeof onChange ===
-      'function'
-    ) {
-      onChange(
-        input.value
-      );
-    }
-  };
-
-  input.addEventListener(
-    'input',
-    sync
-  );
-
-  clearButton.addEventListener(
-    'click',
-    () => {
-      input.value = '';
-      sync();
-      input.focus();
-    }
-  );
-
-  sync();
-}
-
-
-// ============================================================
-// 21. PRODUCT IMAGE URL
-// ============================================================
-
-export function getProductImageUrl(
-  product
-) {
-  const direct =
-    normalizeString(
-      product?.image_url ||
-      product?.imageUrl
-    );
-
-  if (!direct) {
-    return '';
-  }
-
-  return getPublicStorageUrl(
-    APP_CONFIG.storage.productImages,
-    direct
-  );
-}
-
-
-// ============================================================
-// 22. TRAINER IMAGE URL
-// ============================================================
-
-export function getTrainerImageUrl(
-  trainer
-) {
-  const direct =
-    normalizeString(
-      trainer?.image_url ||
-      trainer?.imageUrl
-    );
-
-  if (!direct) {
-    return '';
-  }
-
-  return getPublicStorageUrl(
-    APP_CONFIG.storage.trainerImages,
-    direct
-  );
-}
-
-
-// ============================================================
-// 23. PRODUCT CARD — SHARED COMPONENT
+// 41. PRODUCT CARD — FINAL SHARED COMPONENT
 // ============================================================
 
 export function createProductCard(
   product,
-  {
-    showFavorite = true,
-    onOpen = null,
-    onFavoriteChange = null,
-  } = {}
+  options = {}
 ) {
-  const id =
-    normalizeString(
+  const name =
+    productName(
+      product
+    );
+
+
+  const price =
+    productPrice(
+      product
+    );
+
+
+  const stock =
+    productStock(
+      product
+    );
+
+
+  const image =
+    productImage(
+      product
+    );
+
+
+  const favoriteActive =
+    isFavorite(
       product?.id
     );
 
-  const name =
-    normalizeString(
-      product?.name,
-      'Məhsul'
-    );
 
-  const price =
-    normalizeNumber(
-      product?.price
-    );
-
-  const unit =
-    normalizeString(
-      product?.unit,
-      ''
-    );
-
-  const stock =
-    normalizeNumber(
-      product?.stock_quantity ??
-      product?.stock ??
-      0
-    );
-
-  const imageUrl =
-    getProductImageUrl(
+  const stockState =
+    productStockState(
       product
     );
+
 
   const card =
     createElement(
@@ -2636,41 +4577,40 @@ export function createProductCard(
       {
         className:
           'product-card',
+
         dataset: {
-          productId: id,
+          productId:
+            product?.id ||
+            '',
         },
       }
     );
 
-  const favoriteActive =
-    isFavorite(id);
 
   card.innerHTML = `
     <div class="product-card__media">
 
       ${
-        imageUrl
+        image
           ? `
             <img
               class="product-card__image"
-              src="${escapeHtml(imageUrl)}"
+              src="${escapeHtml(image)}"
               alt="${escapeHtml(name)}"
               loading="lazy"
               decoding="async"
             >
           `
           : `
-            <div
-              class="product-card__image-fallback"
-              aria-hidden="true"
-            >
+            <div class="product-card__image-fallback">
               SK
             </div>
           `
       }
 
       ${
-        showFavorite
+        options.showFavorite !==
+          false
           ? `
             <button
               type="button"
@@ -2679,15 +4619,15 @@ export function createProductCard(
                   ? 'is-active'
                   : ''
               }"
-              aria-label="${
-                favoriteActive
-                  ? 'Sevimlilərdən çıxar'
-                  : 'Sevimlilərə əlavə et'
-              }"
               aria-pressed="${
                 favoriteActive
                   ? 'true'
                   : 'false'
+              }"
+              aria-label="${
+                favoriteActive
+                  ? 'Sevimlilərdən çıxar'
+                  : 'Sevimlilərə əlavə et'
               }"
             >
               <svg
@@ -2711,27 +4651,16 @@ export function createProductCard(
           : ''
       }
 
-      ${
-        Number.isFinite(stock)
-          ? `
-            <span
-              class="product-card__stock-badge ${
-                stockStatusMeta(
-                  stock
-                ).className
-              }"
-            >
-              ${
-                stockStatusMeta(
-                  stock
-                ).label
-              }
-            </span>
-          `
-          : ''
-      }
+      <span
+        class="product-card__stock-badge ${stockState.className}"
+      >
+        ${escapeHtml(
+          stockState.label
+        )}
+      </span>
 
     </div>
+
 
     <div class="product-card__body">
 
@@ -2747,30 +4676,40 @@ export function createProductCard(
           )}
         </span>
 
-        ${
-          unit
-            ? `
-              <span class="product-card__unit">
-                ${escapeHtml(unit)}
-              </span>
-            `
-            : ''
-        }
+        <span class="product-card__unit">
+          ${escapeHtml(
+            productUnitLabel(
+              product
+            )
+          )}
+        </span>
 
+      </div>
+
+      <div class="product-card__stock-line">
+        <span>
+          Stok:
+          ${escapeHtml(
+            String(stock)
+          )}
+        </span>
       </div>
 
     </div>
   `;
 
-  const image =
+
+  const imageElement =
     $(
       '.product-card__image',
       card
     );
 
-  bindImageFallback(
-    image
+
+  setImageFallback(
+    imageElement
   );
+
 
   const favoriteButton =
     $(
@@ -2778,237 +4717,126 @@ export function createProductCard(
       card
     );
 
-  favoriteButton?.addEventListener(
-    'click',
-    event => {
-      event.preventDefault();
-      event.stopPropagation();
 
-      const active =
-        toggleFavorite(id);
+  favoriteButton
+    ?.addEventListener(
+      'click',
+      event => {
+        event.preventDefault();
 
-      favoriteButton.classList.toggle(
-        'is-active',
-        active
-      );
+        event.stopPropagation();
 
-      favoriteButton.setAttribute(
-        'aria-pressed',
-        String(active)
-      );
 
-      favoriteButton.setAttribute(
-        'aria-label',
-        active
-          ? 'Sevimlilərdən çıxar'
-          : 'Sevimlilərə əlavə et'
-      );
+        const active =
+          toggleFavorite(
+            product?.id
+          );
 
-      const icon =
-        $('svg', favoriteButton);
 
-      if (icon) {
-        icon.setAttribute(
+        favoriteButton
+          .classList
+          .toggle(
+            'is-active',
+            active
+          );
+
+
+        favoriteButton.setAttribute(
+          'aria-pressed',
+          String(active)
+        );
+
+
+        favoriteButton.setAttribute(
+          'aria-label',
+          active
+            ? 'Sevimlilərdən çıxar'
+            : 'Sevimlilərə əlavə et'
+        );
+
+
+        $(
+          'svg',
+          favoriteButton
+        )?.setAttribute(
           'fill',
           active
             ? 'currentColor'
             : 'none'
         );
-      }
 
-      if (
-        typeof onFavoriteChange ===
-        'function'
-      ) {
-        onFavoriteChange(
-          product,
-          active
-        );
+
+        if (
+          typeof options
+            .onFavoriteChange ===
+            'function'
+        ) {
+          options
+            .onFavoriteChange(
+              product,
+              active
+            );
+        }
       }
-    }
-  );
+    );
+
 
   card.addEventListener(
     'click',
     () => {
       if (
-        typeof onOpen ===
-        'function'
+        typeof options.onOpen ===
+          'function'
       ) {
-        onOpen(
+        options.onOpen(
           product,
           card
         );
-      } else {
-        openProductModal(
-          product,
-          {
-            trigger: card,
-          }
-        );
+
+        return;
       }
+
+
+      openProductModal(
+        product,
+        {
+          trigger:
+            card,
+        }
+      );
     }
   );
+
 
   return card;
 }
 
 
 // ============================================================
-// 24. PRODUCT MODAL
-// ============================================================
-
-export function openProductModal(
-  product,
-  {
-    trigger = null,
-  } = {}
-) {
-  const name =
-    normalizeString(
-      product?.name,
-      'Məhsul'
-    );
-
-  const description =
-    normalizeString(
-      product?.description
-    );
-
-  const price =
-    normalizeNumber(
-      product?.price
-    );
-
-  const unit =
-    normalizeString(
-      product?.unit
-    );
-
-  const imageUrl =
-    getProductImageUrl(
-      product
-    );
-
-  const content =
-    createElement(
-      'div',
-      {
-        className:
-          'product-modal',
-      }
-    );
-
-  content.innerHTML = `
-    <div class="product-modal__media">
-
-      ${
-        imageUrl
-          ? `
-            <img
-              src="${escapeHtml(imageUrl)}"
-              alt="${escapeHtml(name)}"
-            >
-          `
-          : `
-            <span
-              style="
-                color:var(--brand);
-                font-weight:800;
-              "
-            >
-              SK
-            </span>
-          `
-      }
-
-    </div>
-
-    <div class="product-modal__content">
-
-      <h3 class="product-modal__name">
-        ${escapeHtml(name)}
-      </h3>
-
-      ${
-        description
-          ? `
-            <p class="product-modal__description">
-              ${escapeHtml(description)}
-            </p>
-          `
-          : ''
-      }
-
-      <div class="product-modal__meta">
-
-        <strong class="product-modal__price">
-          ${escapeHtml(
-            money(price)
-          )}
-        </strong>
-
-        ${
-          unit
-            ? `
-              <span class="product-modal__unit">
-                ${escapeHtml(unit)}
-              </span>
-            `
-            : ''
-        }
-
-      </div>
-
-    </div>
-  `;
-
-  return openModal({
-    eyebrow:
-      'SKy Fit Shop',
-
-    title: name,
-
-    content,
-
-    trigger,
-  });
-}
-
-
-// ============================================================
-// 25. TRAINER CARD — SHARED COMPONENT
+// 42. TRAINER CARD — FINAL SHARED COMPONENT
 // ============================================================
 
 export function createTrainerCard(
   trainer,
-  {
-    onOpen = null,
-  } = {}
+  options = {}
 ) {
-  const id =
-    normalizeString(
-      trainer?.id
-    );
-
   const name =
-    normalizeString(
-      trainer?.name ||
-      trainer?.full_name,
-      'Məşqçi'
-    );
-
-  const specialty =
-    normalizeString(
-      trainer?.specialty ||
-      trainer?.speciality ||
-      trainer?.title
-    );
-
-  const imageUrl =
-    getTrainerImageUrl(
+    trainerName(
       trainer
     );
+
+
+  const specialty =
+    trainerSpecialty(
+      trainer
+    );
+
+
+  const image =
+    trainerImage(
+      trainer
+    );
+
 
   const card =
     createElement(
@@ -3016,27 +4844,37 @@ export function createTrainerCard(
       {
         className:
           'trainer-card',
+
         dataset: {
-          trainerId: id,
+          trainerId:
+            trainer?.id ||
+            '',
         },
       }
     );
+
 
   card.innerHTML = `
     <div class="trainer-card__media">
 
       ${
-        imageUrl
+        image
           ? `
             <img
               class="trainer-card__image"
-              src="${escapeHtml(imageUrl)}"
+              src="${escapeHtml(image)}"
               alt="${escapeHtml(name)}"
               loading="lazy"
               decoding="async"
             >
           `
-          : ''
+          : `
+            <div class="trainer-card__image-fallback">
+              ${escapeHtml(
+                initials(name)
+              )}
+            </div>
+          `
       }
 
       <div class="trainer-card__content">
@@ -3066,76 +4904,261 @@ export function createTrainerCard(
     </div>
   `;
 
-  const image =
+
+  setImageFallback(
     $(
       '.trainer-card__image',
       card
-    );
-
-  bindImageFallback(
-    image
+    )
   );
+
 
   card.addEventListener(
     'click',
     () => {
       if (
-        typeof onOpen ===
-        'function'
+        typeof options.onOpen ===
+          'function'
       ) {
-        onOpen(
+        options.onOpen(
           trainer,
           card
         );
-      } else {
-        openTrainerModal(
-          trainer,
-          {
-            trigger: card,
-          }
-        );
+
+        return;
       }
+
+
+      openTrainerModal(
+        trainer,
+        {
+          trigger:
+            card,
+        }
+      );
     }
   );
+
 
   return card;
 }
 
 
 // ============================================================
-// 26. TRAINER MODAL
+// 43. PRODUCT DETAIL MODAL
+// ============================================================
+
+export function openProductModal(
+  product,
+  options = {}
+) {
+  const name =
+    productName(
+      product
+    );
+
+
+  const image =
+    productImage(
+      product
+    );
+
+
+  const description =
+    productDescription(
+      product
+    );
+
+
+  const content =
+    createElement(
+      'div',
+      {
+        className:
+          'product-modal',
+      }
+    );
+
+
+  content.innerHTML = `
+    <div class="product-modal__media">
+
+      ${
+        image
+          ? `
+            <img
+              src="${escapeHtml(image)}"
+              alt="${escapeHtml(name)}"
+            >
+          `
+          : `
+            <span class="product-modal__fallback">
+              SK
+            </span>
+          `
+      }
+
+    </div>
+
+
+    <div class="product-modal__content">
+
+      <h3 class="product-modal__name">
+        ${escapeHtml(name)}
+      </h3>
+
+      ${
+        description
+          ? `
+            <p class="product-modal__description">
+              ${escapeHtml(
+                description
+              )}
+            </p>
+          `
+          : ''
+      }
+
+      <div class="product-modal__meta">
+
+        <strong class="product-modal__price">
+          ${escapeHtml(
+            money(
+              productPrice(
+                product
+              )
+            )
+          )}
+        </strong>
+
+        <span class="product-modal__unit">
+          ${escapeHtml(
+            productUnitLabel(
+              product
+            )
+          )}
+        </span>
+
+      </div>
+
+
+      <div class="product-modal__facts">
+
+        <div>
+          <span>Stok</span>
+          <strong>
+            ${escapeHtml(
+              String(
+                productStock(
+                  product
+                )
+              )
+            )}
+          </strong>
+        </div>
+
+        ${
+          productCategory(
+            product
+          )
+            ? `
+              <div>
+                <span>Kateqoriya</span>
+                <strong>
+                  ${escapeHtml(
+                    productCategory(
+                      product
+                    )
+                  )}
+                </strong>
+              </div>
+            `
+            : ''
+        }
+
+        ${
+          productSku(
+            product
+          )
+            ? `
+              <div>
+                <span>SKU</span>
+                <strong>
+                  ${escapeHtml(
+                    productSku(
+                      product
+                    )
+                  )}
+                </strong>
+              </div>
+            `
+            : ''
+        }
+
+      </div>
+
+    </div>
+  `;
+
+
+  return openModal({
+    eyebrow:
+      'SKy Fit Shop',
+
+    title:
+      name,
+
+    content,
+
+    trigger:
+      options.trigger,
+  });
+}
+
+
+// ============================================================
+// 44. TRAINER DETAIL MODAL
 // ============================================================
 
 export function openTrainerModal(
   trainer,
-  {
-    trigger = null,
-  } = {}
+  options = {}
 ) {
   const name =
-    normalizeString(
-      trainer?.name ||
-      trainer?.full_name,
-      'Məşqçi'
-    );
-
-  const specialty =
-    normalizeString(
-      trainer?.specialty ||
-      trainer?.speciality ||
-      trainer?.title
-    );
-
-  const description =
-    normalizeString(
-      trainer?.description ||
-      trainer?.bio
-    );
-
-  const imageUrl =
-    getTrainerImageUrl(
+    trainerName(
       trainer
     );
+
+
+  const specialty =
+    trainerSpecialty(
+      trainer
+    );
+
+
+  const bio =
+    trainerBio(
+      trainer
+    );
+
+
+  const image =
+    trainerImage(
+      trainer
+    );
+
+
+  const phone =
+    trainerPhone(
+      trainer
+    );
+
+
+  const instagram =
+    trainerInstagram(
+      trainer
+    );
+
 
   const content =
     createElement(
@@ -3146,21 +5169,25 @@ export function openTrainerModal(
       }
     );
 
+
   content.innerHTML = `
     ${
-      imageUrl
+      image
         ? `
           <div class="trainer-modal__media">
+
             <img
-              src="${escapeHtml(imageUrl)}"
+              src="${escapeHtml(image)}"
               alt="${escapeHtml(name)}"
             >
+
           </div>
         `
         : ''
     }
 
-    <div>
+
+    <div class="trainer-modal__content">
 
       <h3 class="trainer-modal__name">
         ${escapeHtml(name)}
@@ -3179,13 +5206,56 @@ export function openTrainerModal(
       }
 
       ${
-        description
+        bio
           ? `
             <p class="trainer-modal__description">
               ${escapeHtml(
-                description
+                bio
               )}
             </p>
+          `
+          : ''
+      }
+
+      ${
+        phone ||
+        instagram
+          ? `
+            <div class="trainer-modal__links">
+
+              ${
+                phone
+                  ? `
+                    <a
+                      href="tel:${escapeHtml(phone)}"
+                      class="ui-button ui-button--glass"
+                    >
+                      <span class="ui-button__label">
+                        Zəng et
+                      </span>
+                    </a>
+                  `
+                  : ''
+              }
+
+              ${
+                instagram
+                  ? `
+                    <a
+                      href="${escapeHtml(instagram)}"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="ui-button ui-button--glass"
+                    >
+                      <span class="ui-button__label">
+                        Instagram
+                      </span>
+                    </a>
+                  `
+                  : ''
+              }
+
+            </div>
           `
           : ''
       }
@@ -3193,187 +5263,24 @@ export function openTrainerModal(
     </div>
   `;
 
+
   return openModal({
     eyebrow:
       'SKy Fit Komandası',
 
-    title: name,
+    title:
+      name,
 
     content,
 
-    trigger,
+    trigger:
+      options.trigger,
   });
 }
 
 
 // ============================================================
-// 27. AVATAR HELPERS
-// ============================================================
-
-export function getInitials(
-  firstName,
-  lastName = ''
-) {
-  const first =
-    normalizeString(
-      firstName
-    );
-
-  const last =
-    normalizeString(
-      lastName
-    );
-
-  const result =
-    [
-      first.charAt(0),
-      last.charAt(0),
-    ]
-      .filter(Boolean)
-      .join('')
-      .toUpperCase();
-
-  return (
-    result ||
-    'SK'
-  );
-}
-
-
-export function getProfileName(
-  profile,
-  user = null
-) {
-  const firstName =
-    normalizeString(
-      profile?.first_name ||
-      profile?.firstName ||
-      profile?.name
-    );
-
-  const lastName =
-    normalizeString(
-      profile?.last_name ||
-      profile?.lastName
-    );
-
-  const full =
-    `${firstName} ${lastName}`
-      .trim();
-
-  if (full) {
-    return full;
-  }
-
-  return (
-    normalizeString(
-      user?.email
-    ) ||
-    'SKy Fit istifadəçisi'
-  );
-}
-
-
-// ============================================================
-// 28. URL / PAGE HELPERS
-// ============================================================
-
-export function currentPage() {
-  return (
-    document.body?.dataset
-      ?.page ||
-    ''
-  );
-}
-
-
-export function navigate(
-  url,
-  {
-    replace = false,
-  } = {}
-) {
-  if (!url) return;
-
-  if (replace) {
-    window.location.replace(
-      url
-    );
-
-    return;
-  }
-
-  window.location.href =
-    url;
-}
-
-
-// ============================================================
-// 29. DOM READY
-// ============================================================
-
-export function onReady(
-  callback
-) {
-  if (
-    document.readyState ===
-    'loading'
-  ) {
-    document.addEventListener(
-      'DOMContentLoaded',
-      callback,
-      {
-        once: true,
-      }
-    );
-
-    return;
-  }
-
-  callback();
-}
-
-
-// ============================================================
-// 30. SAFE ASYNC EVENT
-// ============================================================
-
-export function asyncHandler(
-  callback,
-  {
-    notifyOnError = true,
-  } = {}
-) {
-  return async function handler(
-    ...args
-  ) {
-    try {
-      return await callback.apply(
-        this,
-        args
-      );
-    } catch (error) {
-      console.error(
-        'SKy Fit error:',
-        error
-      );
-
-      if (notifyOnError) {
-        notify.error(
-          getErrorMessage(
-            error
-          )
-        );
-      }
-
-      return null;
-    }
-  };
-}
-
-
-// ============================================================
-// 31. GLOBAL AUTH CHANGE EVENT
+// 45. AUTH CHANGE LISTENER
 // ============================================================
 
 let authListenerStarted =
@@ -3387,37 +5294,278 @@ export function startAuthListener() {
     return;
   }
 
+
   authListenerStarted =
     true;
 
-  supabase.auth.onAuthStateChange(
-    (
-      event,
-      session
-    ) => {
-      window.dispatchEvent(
-        new CustomEvent(
-          'skyfit:authchange',
-          {
-            detail: {
-              event,
-              session,
-            },
+
+  supabase.auth
+    .onAuthStateChange(
+      async (
+        event,
+        session
+      ) => {
+        clearIdentityCache();
+
+
+        let identity =
+          null;
+
+
+        try {
+          if (
+            session?.user
+          ) {
+            identity =
+              await getCurrentIdentity({
+                force:
+                  true,
+              });
           }
-        )
-      );
-    }
-  );
+        } catch (error) {
+          console.error(
+            '[SKy Fit auth]',
+            error
+          );
+        }
+
+
+        window.dispatchEvent(
+          new CustomEvent(
+            SKYFIT_EVENTS
+              .authChange,
+            {
+              detail: {
+                event,
+                session,
+                identity,
+              },
+            }
+          )
+        );
+      }
+    );
 }
 
 
 // ============================================================
-// 32. CORE INITIALIZATION
+// 46. SIGN OUT
 // ============================================================
 
-startAuthListener();
+export async function signOut(
+  options = {}
+) {
+  const {
+    error,
+  } =
+    await supabase.auth
+      .signOut();
+
+
+  if (error) {
+    if (
+      options.notify !==
+      false
+    ) {
+      notify.error(
+        getErrorMessage(
+          error,
+          'Çıxış zamanı xəta baş verdi.'
+        )
+      );
+    }
+
+
+    return false;
+  }
+
+
+  clearIdentityCache();
+
+
+  if (
+    options.redirect !==
+    false
+  ) {
+    window.location.replace(
+      options.redirectTo ||
+      APP_CONFIG.routes.login
+    );
+  }
+
+
+  return true;
+}
 
 
 // ============================================================
-// CORE.JS COMPLETE
+// 47. EXTERNAL URL
+// ============================================================
+
+export async function openExternal(
+  url
+) {
+  const target =
+    normalizeString(
+      url
+    );
+
+
+  if (
+    !target ||
+    !/^https?:\/\//i
+      .test(target)
+  ) {
+    return false;
+  }
+
+
+  if (
+    window.skyFitDesktop
+      ?.isDesktop &&
+    typeof window
+      .skyFitDesktop
+      .openExternal ===
+      'function'
+  ) {
+    return Boolean(
+      await window
+        .skyFitDesktop
+        .openExternal(
+          target
+        )
+    );
+  }
+
+
+  window.open(
+    target,
+    '_blank',
+    'noopener,noreferrer'
+  );
+
+
+  return true;
+}
+
+
+// ============================================================
+// 48. SERVICE WORKER
+// ============================================================
+
+export async function registerServiceWorker() {
+  if (
+    !(
+      'serviceWorker'
+      in navigator
+    )
+  ) {
+    return null;
+  }
+
+
+  if (
+    window.location.protocol ===
+      'file:'
+  ) {
+    return null;
+  }
+
+
+  try {
+    return await navigator
+      .serviceWorker
+      .register(
+        './service-worker.js',
+        {
+          scope:
+            './',
+        }
+      );
+  } catch (error) {
+    console.error(
+      '[SKy Fit SW]',
+      error
+    );
+
+
+    return null;
+  }
+}
+
+
+// ============================================================
+// 49. CORE BOOTSTRAP
+// ============================================================
+
+export function bootstrapCore() {
+  applyTheme(
+    getStoredTheme(),
+    {
+      persist:
+        false,
+    }
+  );
+
+
+  startAuthListener();
+
+
+  if (
+    document.readyState ===
+      'complete'
+  ) {
+    registerServiceWorker();
+  } else {
+    window.addEventListener(
+      'load',
+      () => {
+        registerServiceWorker();
+      },
+      {
+        once:
+          true,
+      }
+    );
+  }
+}
+
+
+// ============================================================
+// 50. READY HELPER
+// ============================================================
+
+export function onReady(
+  callback
+) {
+  if (
+    document.readyState ===
+      'loading'
+  ) {
+    document.addEventListener(
+      'DOMContentLoaded',
+      callback,
+      {
+        once:
+          true,
+      }
+    );
+
+    return;
+  }
+
+
+  callback();
+}
+
+
+// ============================================================
+// 51. RUN BOOTSTRAP ONCE
+// ============================================================
+
+bootstrapCore();
+
+
+// ============================================================
+// SKY FIT PRO CORE.JS COMPLETE
 // ============================================================
