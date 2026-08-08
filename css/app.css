@@ -15031,3 +15031,427 @@ html[data-theme="light"]
 /* ============================================================
    SKY FIT PRO COMPATIBILITY REPAIR END
    ============================================================ */
+
+
+/* ============================================================
+   SKY FIT PRO
+   APP-LIKE FIXED SHELL — FINAL OVERRIDE
+
+   Senior Full Stack Developer: Qərib Səfərli
+   ============================================================ */
+
+html {
+  width: 100%;
+  min-height: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  width: 100%;
+  min-height: 100dvh;
+  margin: 0;
+  overflow-x: hidden;
+}
+
+
+/* ============================================================
+   HEADER — ALWAYS FIXED
+   ============================================================ */
+
+#app-header-root {
+  position: relative;
+  z-index: 5000;
+  width: 100%;
+  min-height:
+    calc(
+      var(--header-height, 64px) +
+      var(--safe-top, 0px)
+    );
+}
+
+
+.app-header {
+  position: fixed !important;
+
+  z-index: 5000 !important;
+
+  top: 0 !important;
+  right: 0 !important;
+  left: 0 !important;
+
+  width: 100% !important;
+
+  height:
+    calc(
+      var(--header-height, 64px) +
+      var(--safe-top, 0px)
+    ) !important;
+
+  margin: 0 !important;
+
+  transform: none !important;
+
+  contain: layout paint;
+
+  will-change: auto;
+}
+
+
+.app-header__inner {
+  width:
+    min(
+      100%,
+      var(--page-max, 1480px)
+    ) !important;
+
+  height:
+    var(--header-height, 64px) !important;
+
+  margin-inline:
+    auto !important;
+}
+
+
+/* ============================================================
+   MAIN CONTENT
+   Header-in altından başlamalıdır
+   ============================================================ */
+
+.app-main {
+  position: relative !important;
+
+  z-index: 1;
+
+  width:
+    min(
+      100%,
+      var(--page-max, 1480px)
+    ) !important;
+
+  min-height:
+    100dvh;
+
+  margin-inline:
+    auto !important;
+
+  padding-top:
+    calc(
+      var(--header-height, 64px) +
+      var(--safe-top, 0px) +
+      18px
+    ) !important;
+
+  padding-right:
+    var(--content-x, 16px) !important;
+
+  padding-left:
+    var(--content-x, 16px) !important;
+
+  padding-bottom:
+    calc(
+      var(--bottom-nav-height, 72px) +
+      var(--safe-bottom, 0px) +
+      35px
+    ) !important;
+}
+
+
+/* admin və digər əsas səhifələr */
+
+.admin-page,
+.profile-page,
+.favorites-page {
+  min-height:
+    100dvh;
+
+  padding-bottom:
+    calc(
+      var(--bottom-nav-height, 72px) +
+      var(--safe-bottom, 0px) +
+      28px
+    );
+}
+
+
+/* ============================================================
+   BOTTOM NAVIGATION ROOT
+   ============================================================ */
+
+#app-bottom-nav-root {
+  position: relative;
+
+  z-index: 4900;
+
+  width: 100%;
+
+  height: 0;
+
+  pointer-events: none;
+}
+
+
+.app-bottom-nav {
+  position: fixed !important;
+
+  z-index: 4900 !important;
+
+  right: 0 !important;
+
+  bottom: 0 !important;
+
+  left: 0 !important;
+
+  top: auto !important;
+
+  width: 100% !important;
+
+  height: auto !important;
+
+  margin: 0 !important;
+
+  padding: 0 !important;
+
+  border: 0 !important;
+
+  background: transparent !important;
+
+  transform: none !important;
+
+  pointer-events: none !important;
+
+  contain: layout paint;
+
+  will-change: auto;
+}
+
+
+.app-bottom-nav__inner {
+  position: relative !important;
+
+  width:
+    min(
+      calc(
+        100% -
+        20px
+      ),
+      540px
+    ) !important;
+
+  min-height:
+    var(--bottom-nav-height, 72px) !important;
+
+  display: grid !important;
+
+  grid-template-columns:
+    repeat(
+      5,
+      minmax(0, 1fr)
+    ) !important;
+
+  align-items:
+    center !important;
+
+  margin:
+    0
+    auto
+    calc(
+      var(--safe-bottom, 0px) +
+      9px
+    ) !important;
+
+  pointer-events:
+    auto !important;
+
+  transform:
+    translate3d(0, 0, 0);
+
+  backface-visibility:
+    hidden;
+
+  -webkit-backface-visibility:
+    hidden;
+}
+
+
+.app-bottom-nav__item {
+  min-width: 0 !important;
+
+  min-height:
+    56px !important;
+
+  display:
+    grid !important;
+
+  place-items:
+    center !important;
+
+  align-content:
+    center !important;
+}
+
+
+/* ============================================================
+   DRAWER — VIEWPORT-A BAĞLI
+   ============================================================ */
+
+.app-drawer-backdrop {
+  position:
+    fixed !important;
+
+  z-index:
+    5990 !important;
+
+  inset:
+    0 !important;
+}
+
+
+.app-drawer {
+  position:
+    fixed !important;
+
+  z-index:
+    6000 !important;
+
+  top:
+    0 !important;
+
+  bottom:
+    0 !important;
+
+  left:
+    0 !important;
+
+  height:
+    100dvh !important;
+}
+
+
+/* ============================================================
+   MODAL / TOAST / LOADER
+   ============================================================ */
+
+#app-toast-root,
+#app-loader-root,
+#app-modal-root {
+  position: relative;
+
+  z-index: 7000;
+}
+
+
+.app-loader {
+  position:
+    fixed !important;
+
+  inset:
+    0 !important;
+}
+
+
+.app-modal-backdrop {
+  position:
+    fixed !important;
+
+  inset:
+    0 !important;
+}
+
+
+/* ============================================================
+   PREVENT HORIZONTAL JUMP
+   ============================================================ */
+
+.app-header,
+.app-header *,
+.app-bottom-nav,
+.app-bottom-nav *,
+.app-drawer,
+.app-drawer * {
+  box-sizing:
+    border-box;
+}
+
+
+/* ============================================================
+   MOBILE / PWA
+   ============================================================ */
+
+@media (max-width: 760px) {
+
+  .app-main {
+    padding-top:
+      calc(
+        var(--header-height, 64px) +
+        var(--safe-top, 0px) +
+        10px
+      ) !important;
+
+    padding-right:
+      10px !important;
+
+    padding-left:
+      10px !important;
+
+    padding-bottom:
+      calc(
+        var(--bottom-nav-height, 72px) +
+        var(--safe-bottom, 0px) +
+        28px
+      ) !important;
+  }
+
+
+  .app-bottom-nav__inner {
+    width:
+      calc(
+        100% -
+        14px
+      ) !important;
+
+    margin-bottom:
+      calc(
+        var(--safe-bottom, 0px) +
+        7px
+      ) !important;
+  }
+
+}
+
+
+/* ============================================================
+   INSTALLED PWA
+   ============================================================ */
+
+@media (display-mode: standalone) {
+
+  html,
+  body {
+    overscroll-behavior:
+      none;
+  }
+
+
+  body {
+    min-height:
+      100dvh;
+  }
+
+
+  .app-header {
+    position:
+      fixed !important;
+  }
+
+
+  .app-bottom-nav {
+    position:
+      fixed !important;
+  }
+
+}
+
+
+/* ============================================================
+   END
+   ============================================================ */
