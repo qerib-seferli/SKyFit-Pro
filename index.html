@@ -1,84 +1,622 @@
-<!DOCTYPE html>
-
+<!doctype html>
 <html lang="az">
-
 <head>
+  <meta charset="UTF-8">
 
-<meta charset="UTF-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
+  >
 
-<meta
-name="viewport"
-content="width=device-width,initial-scale=1">
+  <meta
+    name="description"
+    content="SKy Fit Pro — fitness klubu, üzvlük, məşqçi və məhsul idarəetmə platforması."
+  >
 
-<title>SKy Fit</title>
+  <meta name="theme-color" content="#090b10">
 
-<link
-rel="stylesheet"
-href="css/app.css">
+  <meta
+    name="apple-mobile-web-app-capable"
+    content="yes"
+  >
 
+  <meta
+    name="apple-mobile-web-app-status-bar-style"
+    content="black-translucent"
+  >
+
+  <meta
+    name="apple-mobile-web-app-title"
+    content="SKy Fit"
+  >
+
+  <title>SKy Fit Pro</title>
+
+  <link
+    rel="manifest"
+    href="./manifest.json"
+  >
+
+  <link
+    rel="icon"
+    href="./assets/icons/favicon.png"
+    type="image/png"
+  >
+
+  <link
+    rel="apple-touch-icon"
+    href="./assets/icons/apple-touch-icon.png"
+  >
+
+  <link
+    rel="stylesheet"
+    href="./css/app.css"
+  >
 </head>
 
-<body>
+<body
+  class="app-body"
+  data-page="home"
+>
 
-<header>
+  <!-- =====================================================
+       APP SHELL
+       Ortaq layout komponentləri layout.js tərəfindən
+       bu sahələrə yerləşdiriləcək.
+  ====================================================== -->
 
-<button
-id="menuBtn"
-class="icon-btn">
-☰
-</button>
+  <div
+    id="app-loader-root"
+    aria-live="polite"
+  ></div>
 
-<div class="logo">
-SKy Fit
-</div>
+  <div
+    id="app-toast-root"
+    aria-live="polite"
+    aria-atomic="true"
+  ></div>
 
-<button
-id="themeBtn"
-class="icon-btn">
-🌙
-</button>
+  <div
+    id="app-modal-root"
+    aria-live="polite"
+  ></div>
 
-</header>
+  <div
+    id="app-drawer-root"
+  ></div>
 
-<nav id="mobileMenu" class="card">
+  <div
+    id="app-header-root"
+  ></div>
 
-Dashboard
 
-<br><br>
+  <!-- =====================================================
+       MAIN APPLICATION
+  ====================================================== -->
 
-Üzvlər
+  <main
+    id="app-main"
+    class="app-main"
+  >
 
-<br><br>
+    <!-- ===================================================
+         HERO
+    ==================================================== -->
 
-Satış
+    <section
+      class="home-hero"
+      aria-labelledby="home-hero-title"
+    >
 
-<br><br>
+      <div class="home-hero__visual">
 
-Məhsullar
+        <div
+          class="home-hero__media"
+          id="home-hero-media"
+          aria-hidden="true"
+        ></div>
 
-</nav>
+        <div
+          class="home-hero__overlay"
+          aria-hidden="true"
+        ></div>
 
-<main>
+        <div class="home-hero__content">
 
-<div class="card">
+          <div class="home-hero__eyebrow">
+            <span class="home-hero__eyebrow-dot"></span>
 
-<h2>Xoş gəlmisiniz</h2>
+            <span>
+              SKy Fit
+            </span>
+          </div>
 
-<p>
-Yeni sistem hazırdır.
-</p>
+          <h1
+            id="home-hero-title"
+            class="home-hero__title"
+          >
+            Daha güclü.
+            <br>
+            Daha yaxşı sən.
+          </h1>
 
-</div>
+          <p class="home-hero__description">
+            Məşq et, inkişafını izləməyə davam et və
+            SKy Fit təcrübəsini hər cihazda yaşa.
+          </p>
 
-</main>
+          <div class="home-hero__actions">
 
-<div id="toast"></div>
+            <a
+              href="#trainers"
+              class="ui-button ui-button--primary"
+            >
+              <span class="ui-button__label">
+                Məşqçilər
+              </span>
+            </a>
 
-<script
-type="module"
-src="js/app.js">
-</script>
+            <a
+              href="#products"
+              class="ui-button ui-button--glass"
+            >
+              <span class="ui-button__label">
+                Məhsullar
+              </span>
+            </a>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- ===================================================
+         USER QUICK STATUS
+         Login olmuş istifadəçi üçün JS ilə doldurulacaq.
+         Guest olduqda gizlədilə bilər.
+    ==================================================== -->
+
+    <section
+      id="member-overview-section"
+      class="content-section is-hidden"
+      aria-labelledby="member-overview-title"
+    >
+
+      <div class="section-heading">
+
+        <div class="section-heading__content">
+
+          <span class="section-heading__eyebrow">
+            Hesabım
+          </span>
+
+          <h2
+            id="member-overview-title"
+            class="section-heading__title"
+          >
+            Aktivlik
+          </h2>
+
+        </div>
+
+        <a
+          href="./profile.html"
+          class="section-heading__action"
+        >
+          Profil
+        </a>
+
+      </div>
+
+
+      <div
+        id="member-overview-grid"
+        class="member-overview-grid"
+      >
+
+        <article class="status-card">
+
+          <div class="status-card__header">
+
+            <span class="status-card__label">
+              Üzvlük
+            </span>
+
+            <span
+              id="membership-status-badge"
+              class="ui-badge ui-badge--neutral"
+            >
+              —
+            </span>
+
+          </div>
+
+          <strong
+            id="membership-plan-name"
+            class="status-card__value"
+          >
+            —
+          </strong>
+
+          <span
+            id="membership-expiry"
+            class="status-card__meta"
+          >
+            Məlumat yüklənir
+          </span>
+
+        </article>
+
+
+        <article class="status-card">
+
+          <div class="status-card__header">
+
+            <span class="status-card__label">
+              Son giriş
+            </span>
+
+          </div>
+
+          <strong
+            id="latest-attendance-date"
+            class="status-card__value"
+          >
+            —
+          </strong>
+
+          <span
+            id="latest-attendance-time"
+            class="status-card__meta"
+          >
+            —
+          </span>
+
+        </article>
+
+
+        <article class="status-card">
+
+          <div class="status-card__header">
+
+            <span class="status-card__label">
+              Ümumi giriş
+            </span>
+
+          </div>
+
+          <strong
+            id="attendance-count"
+            class="status-card__value"
+          >
+            —
+          </strong>
+
+          <span class="status-card__meta">
+            qeydiyyat
+          </span>
+
+        </article>
+
+      </div>
+
+    </section>
+
+
+    <!-- ===================================================
+         TRAINERS
+    ==================================================== -->
+
+    <section
+      id="trainers"
+      class="content-section"
+      aria-labelledby="trainers-title"
+    >
+
+      <div class="section-heading">
+
+        <div class="section-heading__content">
+
+          <span class="section-heading__eyebrow">
+            Komanda
+          </span>
+
+          <h2
+            id="trainers-title"
+            class="section-heading__title"
+          >
+            Məşqçilər
+          </h2>
+
+        </div>
+
+        <button
+          type="button"
+          id="trainers-show-all-button"
+          class="section-heading__action"
+        >
+          Hamısı
+        </button>
+
+      </div>
+
+
+      <div
+        id="trainers-grid"
+        class="trainer-grid"
+        aria-live="polite"
+      >
+        <!-- app.js -->
+      </div>
+
+
+      <div
+        id="trainers-empty-state"
+        class="empty-state is-hidden"
+      >
+
+        <div class="empty-state__icon">
+          <span>SK</span>
+        </div>
+
+        <strong class="empty-state__title">
+          Məşqçi tapılmadı
+        </strong>
+
+        <p class="empty-state__description">
+          Aktiv məşqçilər burada görünəcək.
+        </p>
+
+      </div>
+
+    </section>
+
+
+    <!-- ===================================================
+         PRODUCTS
+    ==================================================== -->
+
+    <section
+      id="products"
+      class="content-section"
+      aria-labelledby="products-title"
+    >
+
+      <div class="section-heading">
+
+        <div class="section-heading__content">
+
+          <span class="section-heading__eyebrow">
+            SKy Fit Shop
+          </span>
+
+          <h2
+            id="products-title"
+            class="section-heading__title"
+          >
+            Məhsullar
+          </h2>
+
+        </div>
+
+        <button
+          type="button"
+          id="products-show-all-button"
+          class="section-heading__action"
+        >
+          Hamısı
+        </button>
+
+      </div>
+
+
+      <div
+        class="product-toolbar"
+      >
+
+        <label
+          class="ui-search"
+          for="product-search-input"
+        >
+
+          <span
+            class="ui-search__icon"
+            aria-hidden="true"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14Z"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+
+              <path
+                d="m20 20-4.2-4.2"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              />
+            </svg>
+          </span>
+
+          <input
+            id="product-search-input"
+            class="ui-search__input"
+            type="search"
+            inputmode="search"
+            autocomplete="off"
+            placeholder="Məhsul axtar"
+            aria-label="Məhsul axtar"
+          >
+
+          <button
+            type="button"
+            id="product-search-clear"
+            class="ui-search__clear is-hidden"
+            aria-label="Axtarışı təmizlə"
+          >
+            ×
+          </button>
+
+        </label>
+
+      </div>
+
+
+      <div
+        id="products-grid"
+        class="product-grid"
+        aria-live="polite"
+      >
+        <!-- app.js -->
+      </div>
+
+
+      <div
+        id="products-empty-state"
+        class="empty-state is-hidden"
+      >
+
+        <div class="empty-state__icon">
+          <span>SK</span>
+        </div>
+
+        <strong class="empty-state__title">
+          Məhsul tapılmadı
+        </strong>
+
+        <p class="empty-state__description">
+          Axtarış nəticəsinə uyğun aktiv məhsul yoxdur.
+        </p>
+
+      </div>
+
+    </section>
+
+
+    <!-- ===================================================
+         APP / PLATFORM INFO
+    ==================================================== -->
+
+    <section
+      class="content-section"
+      aria-labelledby="platform-title"
+    >
+
+      <article class="platform-card">
+
+        <div class="platform-card__content">
+
+          <span class="section-heading__eyebrow">
+            Bir hesab. Bütün cihazlar.
+          </span>
+
+          <h2
+            id="platform-title"
+            class="platform-card__title"
+          >
+            SKy Fit hər yerdə səninlədir.
+          </h2>
+
+          <p class="platform-card__description">
+            Telefon, kompüter və tətbiq üzərindən
+            eyni hesab və eyni təcrübə.
+          </p>
+
+        </div>
+
+
+        <div
+          class="platform-card__devices"
+          aria-hidden="true"
+        >
+
+          <div class="device-shape device-shape--desktop">
+            <span></span>
+          </div>
+
+          <div class="device-shape device-shape--phone">
+            <span></span>
+          </div>
+
+        </div>
+
+      </article>
+
+    </section>
+
+
+    <!-- ===================================================
+         BOTTOM SAFE SPACE
+         Bottom navigation məzmunun üstünə gəlməsin.
+    ==================================================== -->
+
+    <div
+      class="app-bottom-spacer"
+      aria-hidden="true"
+    ></div>
+
+  </main>
+
+
+  <!-- =====================================================
+       FOOTER
+  ====================================================== -->
+
+  <div
+    id="app-footer-root"
+  ></div>
+
+
+  <!-- =====================================================
+       FIXED BOTTOM NAVIGATION
+  ====================================================== -->
+
+  <div
+    id="app-bottom-nav-root"
+  ></div>
+
+
+  <!-- =====================================================
+       FALLBACK
+  ====================================================== -->
+
+  <noscript>
+
+    <div class="noscript-message">
+
+      <strong>
+        JavaScript tələb olunur
+      </strong>
+
+      <p>
+        SKy Fit Pro sistemindən istifadə etmək üçün
+        brauzerdə JavaScript aktiv olmalıdır.
+      </p>
+
+    </div>
+
+  </noscript>
+
+
+  <!-- =====================================================
+       APPLICATION ENTRY
+  ====================================================== -->
+
+  <script
+    type="module"
+    src="./js/app.js"
+  ></script>
 
 </body>
-
 </html>
