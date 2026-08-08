@@ -2,225 +2,167 @@
 // SKY FIT PRO
 // Electron Main Process
 // File: electron/main.js
+//
+// Senior Full Stack Developer: Qərib Səfərli
 // ============================================================
-
-'use strict';
 
 const {
   app,
   BrowserWindow,
   shell,
-  ipcMain,
   nativeTheme,
 } = require('electron');
 
-const path = require('path');
+
+const path =
+  require('path');
+
+
+let mainWindow =
+  null;
 
 
 // ============================================================
-// 01. APP CONSTANTS
+// 01. APP PATHS
 // ============================================================
 
-const APP_NAME =
-  'SKy Fit Pro';
-
-const WINDOW_MIN_WIDTH =
-  980;
-
-const WINDOW_MIN_HEIGHT =
-  680;
-
-const WINDOW_DEFAULT_WIDTH =
-  1440;
-
-const WINDOW_DEFAULT_HEIGHT =
-  920;
-
-
-// ============================================================
-// 02. SINGLE INSTANCE
-// Eyni anda ikinci SKy Fit instance açılmır.
-// ============================================================
-
-const hasSingleInstanceLock =
-  app.requestSingleInstanceLock();
-
-
-if (!hasSingleInstanceLock) {
-  app.quit();
-}
-
-
-// ============================================================
-// 03. MAIN WINDOW
-// ============================================================
-
-let mainWindow = null;
-
-
-// ============================================================
-// 04. APP ROOT
-// Development:
-//   electron/../
-//
-// Production build:
-//   resources/app/
-// ============================================================
-
-function getFrontendRoot() {
-  if (app.isPackaged) {
-    return path.join(
-      process.resourcesPath,
-      'app'
-    );
-  }
-
-  return path.resolve(
+const ROOT_DIR =
+  path.resolve(
     __dirname,
     '..'
   );
-}
 
 
-// ============================================================
-// 05. FRONTEND FILE
-// ============================================================
-
-function getEntryFile() {
-  return path.join(
-    getFrontendRoot(),
+const INDEX_FILE =
+  path.join(
+    ROOT_DIR,
     'index.html'
   );
-}
 
 
-// ============================================================
-// 06. PRELOAD
-// ============================================================
-
-function getPreloadFile() {
-  return path.join(
+const PRELOAD_FILE =
+  path.join(
     __dirname,
     'preload.js'
   );
-}
 
 
 // ============================================================
-// 07. CREATE WINDOW
+// 02. CREATE WINDOW
 // ============================================================
 
 function createMainWindow() {
   mainWindow =
     new BrowserWindow({
+
       width:
-        WINDOW_DEFAULT_WIDTH,
+        1360,
 
       height:
-        WINDOW_DEFAULT_HEIGHT,
+        860,
 
       minWidth:
-        WINDOW_MIN_WIDTH,
+        980,
 
       minHeight:
-        WINDOW_MIN_HEIGHT,
+        680,
+
+      backgroundColor:
+        '#090b10',
 
       show:
         false,
 
-      backgroundColor:
-        '#080a0f',
-
       title:
-        APP_NAME,
+        'SKy Fit Pro',
 
       autoHideMenuBar:
         true,
 
       webPreferences: {
-        preload:
-          getPreloadFile(),
 
-        nodeIntegration:
-          false,
+        preload:
+          PRELOAD_FILE,
 
         contextIsolation:
           true,
+
+        nodeIntegration:
+          false,
 
         sandbox:
           true,
 
         webSecurity:
           true,
-
-        allowRunningInsecureContent:
-          false,
-
-        spellcheck:
-          false,
       },
     });
 
 
   // ----------------------------------------------------------
-  // READY
+  // Load application
+  // ----------------------------------------------------------
+
+  mainWindow.loadFile(
+    INDEX_FILE
+  );
+
+
+  // ----------------------------------------------------------
+  // Show after ready
   // ----------------------------------------------------------
 
   mainWindow.once(
     'ready-to-show',
     () => {
-      if (!mainWindow) {
-        return;
-      }
-
-      mainWindow.show();
-
-      mainWindow.focus();
+      mainWindow?.show();
     }
   );
 
 
   // ----------------------------------------------------------
-  // LOAD APP
-  // ----------------------------------------------------------
-
-  mainWindow.loadFile(
-    getEntryFile()
-  );
-
-
-  // ----------------------------------------------------------
-  // EXTERNAL LINKS
+  // External URLs
   //
-  // Electron daxilində təsadüfi xarici səhifə açmırıq.
-  // https/http linklər sistem brauzerində açılır.
+  // instagram, email və s. desktop browser-də açılsın.
+  // Lokal SKy Fit səhifələri Electron daxilində qalır.
   // ----------------------------------------------------------
 
   mainWindow.webContents
     .setWindowOpenHandler(
-      ({ url }) => {
+      ({
+        url,
+      }) => {
+
         if (
-          isAllowedExternalUrl(
-            url
+          url.startsWith(
+            'http://'
+          ) ||
+          url.startsWith(
+            'https://'
           )
         ) {
           shell.openExternal(
             url
           );
+
+
+          return {
+            action:
+              'deny',
+          };
         }
 
+
         return {
-          action: 'deny',
+          action:
+            'allow',
         };
       }
     );
 
 
   // ----------------------------------------------------------
-  // NAVIGATION PROTECTION
-  //
-  // Supabase auth redirect kimi normal external navigation
-  // ayrıca yoxlanılır.
+  // Navigation security
   // ----------------------------------------------------------
 
   mainWindow.webContents
@@ -230,140 +172,67 @@ function createMainWindow() {
         event,
         url
       ) => {
-        if (
-          isInternalUrl(
-            url
-          )
-        ) {
-          return;
-        }
+
+        try {
+          const target =
+            new URL(url);
 
 
-        event.preventDefault();
+          // file:// app navigation allowed
+          if (
+            target.protocol ===
+            'file:'
+          ) {
+            return;
+          }
 
 
-        if (
-          isAllowedExternalUrl(
-            url
-          )
-        ) {
-          shell.openExternal(
-            url
-          );
+          if (
+            target.protocol ===
+              'http:' ||
+            target.protocol ===
+              'https:'
+          ) {
+            event.preventDefault();
+
+
+            shell.openExternal(
+              url
+            );
+          }
+        } catch {
+          // malformed URL
+          event.preventDefault();
         }
       }
     );
 
 
   // ----------------------------------------------------------
-  // CLOSED
+  // Window closed
   // ----------------------------------------------------------
 
   mainWindow.on(
     'closed',
     () => {
-      mainWindow = null;
+      mainWindow =
+        null;
     }
   );
-
-
-  return mainWindow;
 }
 
 
 // ============================================================
-// 08. INTERNAL URL
-// ============================================================
-
-function isInternalUrl(url) {
-  if (!url) {
-    return false;
-  }
-
-
-  try {
-    const parsed =
-      new URL(url);
-
-
-    return (
-      parsed.protocol ===
-      'file:'
-    );
-  } catch {
-    return false;
-  }
-}
-
-
-// ============================================================
-// 09. EXTERNAL URL POLICY
-// ============================================================
-
-function isAllowedExternalUrl(
-  url
-) {
-  if (!url) {
-    return false;
-  }
-
-
-  try {
-    const parsed =
-      new URL(url);
-
-
-    return (
-      parsed.protocol ===
-        'https:' ||
-      parsed.protocol ===
-        'http:'
-    );
-  } catch {
-    return false;
-  }
-}
-
-
-// ============================================================
-// 10. SECOND INSTANCE
-// ============================================================
-
-app.on(
-  'second-instance',
-  () => {
-    if (!mainWindow) {
-      return;
-    }
-
-
-    if (
-      mainWindow.isMinimized()
-    ) {
-      mainWindow.restore();
-    }
-
-
-    mainWindow.show();
-
-    mainWindow.focus();
-  }
-);
-
-
-// ============================================================
-// 11. APP READY
+// 03. APP READY
 // ============================================================
 
 app.whenReady()
   .then(
     () => {
-      // Electron-un native theme-i sistem theme ilə sinxron saxlayırıq.
+
+      // OS theme follows system.
       nativeTheme.themeSource =
         'system';
-
-
-      registerIpcHandlers();
 
 
       createMainWindow();
@@ -372,116 +241,44 @@ app.whenReady()
       app.on(
         'activate',
         () => {
+
           if (
             BrowserWindow
               .getAllWindows()
-              .length === 0
+              .length ===
+            0
           ) {
             createMainWindow();
           }
+
         }
       );
-    }
-  )
-  .catch(
-    error => {
-      console.error(
-        '[SKy Fit Electron] Startup error:',
-        error
-      );
 
-      app.quit();
     }
   );
 
 
 // ============================================================
-// 12. WINDOW ALL CLOSED
+// 04. WINDOWS / LINUX CLOSE
 // ============================================================
 
 app.on(
   'window-all-closed',
   () => {
+
     if (
       process.platform !==
       'darwin'
     ) {
       app.quit();
     }
+
   }
 );
 
 
 // ============================================================
-// 13. IPC
-// Preload yalnız konkret, təhlükəsiz funksiyaları expose edir.
-// ============================================================
-
-function registerIpcHandlers() {
-  ipcMain.handle(
-    'skyfit:get-platform-info',
-    () => {
-      return {
-        platform:
-          process.platform,
-
-        arch:
-          process.arch,
-
-        version:
-          app.getVersion(),
-
-        packaged:
-          app.isPackaged,
-      };
-    }
-  );
-
-
-  ipcMain.handle(
-    'skyfit:open-external',
-    async (
-      _event,
-      url
-    ) => {
-      if (
-        !isAllowedExternalUrl(
-          url
-        )
-      ) {
-        return false;
-      }
-
-
-      await shell.openExternal(
-        url
-      );
-
-
-      return true;
-    }
-  );
-
-
-  ipcMain.handle(
-    'skyfit:get-native-theme',
-    () => {
-      return {
-        shouldUseDarkColors:
-          nativeTheme
-            .shouldUseDarkColors,
-
-        source:
-          nativeTheme
-            .themeSource,
-      };
-    }
-  );
-}
-
-
-// ============================================================
-// 14. SECURITY: WEB CONTENT CREATED
+// 05. SECURITY
 // ============================================================
 
 app.on(
@@ -490,49 +287,14 @@ app.on(
     _event,
     contents
   ) => {
-    // Yeni window yaratma cəhdlərini bloklayırıq.
-    contents.setWindowOpenHandler(
-      ({ url }) => {
-        if (
-          isAllowedExternalUrl(
-            url
-          )
-        ) {
-          shell.openExternal(
-            url
-          );
-        }
 
-
-        return {
-          action: 'deny',
-        };
+    contents.on(
+      'will-attach-webview',
+      event => {
+        event.preventDefault();
       }
     );
-  }
-);
 
-
-// ============================================================
-// 15. CERTIFICATE ERRORS
-//
-// Sertifikat yoxlamasını bypass etmirik.
-// Production təhlükəsizliyi üçün default davranış qorunur.
-// ============================================================
-
-app.on(
-  'certificate-error',
-  (
-    event,
-    _webContents,
-    _url,
-    _error,
-    _certificate,
-    callback
-  ) => {
-    event.preventDefault();
-
-    callback(false);
   }
 );
 
