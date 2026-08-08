@@ -1,7 +1,17 @@
 // ============================================================
 // SKY FIT PRO
-// Progressive Web App Service Worker
+// Production Service Worker
 // File: service-worker.js
+//
+// Senior Full Stack Developer: Qərib Səfərli
+//
+// Goals:
+// - Web / PWA / Android / iPhone friendly
+// - GitHub Pages sub-path compatible
+// - Network-first for HTML / JS / CSS
+// - Cache-first for local static assets
+// - NEVER cache Supabase/Auth/API traffic
+// - Prevent stale application versions
 // ============================================================
 
 'use strict';
@@ -10,35 +20,51 @@
 // ============================================================
 // 01. VERSION
 //
-// Yeni frontend versiyası yayımlananda yalnız VERSION dəyərini
-// artırmaq kifayətdir.
+// Frontenddə böyük dəyişiklik etdikdə yalnız APP_VERSION-u
+// artırmaq kifayətdir:
+//
+// skyfit-pro-v1 -> skyfit-pro-v2
+//
+// Köhnə cache avtomatik silinəcək.
 // ============================================================
 
-const VERSION = '1.0.0';
+const APP_VERSION =
+  'skyfit-pro-v1';
 
-const CACHE_PREFIX =
-  'skyfit-pro';
 
 const STATIC_CACHE =
-  `${CACHE_PREFIX}-static-${VERSION}`;
+  `${APP_VERSION}-static`;
+
 
 const RUNTIME_CACHE =
-  `${CACHE_PREFIX}-runtime-${VERSION}`;
-
-const IMAGE_CACHE =
-  `${CACHE_PREFIX}-images-${VERSION}`;
+  `${APP_VERSION}-runtime`;
 
 
 // ============================================================
-// 02. APP SHELL
+// 02. APPLICATION SHELL
 //
-// Yalnız layihənin öz statik faylları burada saxlanılır.
-// Supabase API cavablarını offline cache etmirik.
+// self.registration.scope istifadə etdiyimiz üçün həm:
+//
+// https://domain.com/
+//
+// həm də:
+//
+// https://username.github.io/SKyFit-Pro/
+//
+// düzgün işləyir.
 // ============================================================
+
+function appUrl(path = './') {
+  return new URL(
+    path,
+    self.registration.scope
+  ).href;
+}
+
 
 const APP_SHELL = [
-  './',
 
+  // Pages
   './index.html',
   './login.html',
   './register.html',
@@ -48,8 +74,10 @@ const APP_SHELL = [
   './reset-password.html',
   './update-password.html',
 
+  // CSS
   './css/app.css',
 
+  // JS
   './js/config.js',
   './js/core.js',
   './js/layout.js',
@@ -59,272 +87,435 @@ const APP_SHELL = [
   './js/admin.js',
   './js/favorites.js',
 
+  // PWA
   './manifest.json',
 
-  './assets/icons/favicon.png',
-  './assets/icons/apple-touch-icon.png',
-  './assets/icons/icon-192.png',
-  './assets/icons/icon-192-maskable.png',
-  './assets/icons/icon-512.png',
-  './assets/icons/icon-512-maskable.png',
-];
+].map(appUrl);
 
 
 // ============================================================
-// 03. NETWORK RULES
+// 03. CACHEABLE LOCAL ASSET EXTENSIONS
 // ============================================================
 
-const SUPABASE_HOST_SUFFIX =
-  '.supabase.co';
-
-const JSDELIVR_HOST =
-  'cdn.jsdelivr.net';
+const STATIC_ASSET_PATTERN =
+  /\.(?:png|jpg|jpeg|webp|gif|svg|ico|avif|woff2?|ttf|otf)$/i;
 
 
 // ============================================================
-// 04. INSTALL
+// 04. REQUEST HELPERS
 // ============================================================
 
-self.addEventListener(
-  'install',
-  event => {
-    event.waitUntil(
-      installServiceWorker()
-    );
-  }
-);
-
-
-async function installServiceWorker() {
+function isHttpRequest(request) {
   try {
-    const cache =
-      await caches.open(
-        STATIC_CACHE
-      );
-
-    await cache.addAll(
-      APP_SHELL
-    );
-  } catch (error) {
-    console.error(
-      '[SKy Fit SW] Install cache error:',
-      error
-    );
-  }
-
-  await self.skipWaiting();
-}
-
-
-// ============================================================
-// 05. ACTIVATE
-// ============================================================
-
-self.addEventListener(
-  'activate',
-  event => {
-    event.waitUntil(
-      activateServiceWorker()
-    );
-  }
-);
-
-
-async function activateServiceWorker() {
-  const keys =
-    await caches.keys();
-
-  const validCaches =
-    new Set([
-      STATIC_CACHE,
-      RUNTIME_CACHE,
-      IMAGE_CACHE,
-    ]);
-
-
-  await Promise.all(
-    keys.map(
-      key => {
-        if (
-          key.startsWith(
-            CACHE_PREFIX
-          ) &&
-          !validCaches.has(key)
-        ) {
-          return caches.delete(
-            key
-          );
-        }
-
-        return Promise.resolve();
-      }
-    )
-  );
-
-
-  await self.clients.claim();
-}
-
-
-// ============================================================
-// 06. FETCH
-// ============================================================
-
-self.addEventListener(
-  'fetch',
-  event => {
-    const request =
-      event.request;
-
-
-    if (
-      request.method !==
-      'GET'
-    ) {
-      return;
-    }
-
-
     const url =
       new URL(
         request.url
       );
 
 
-    // --------------------------------------------------------
-    // Supabase sorğularına toxunmuruq.
-    //
-    // Auth, RPC, database və Storage təhlükəsiz şəkildə
-    // həmişə network üzərindən işləməlidir.
-    // --------------------------------------------------------
-
-    if (
-      isSupabaseRequest(url)
-    ) {
-      return;
-    }
-
-
-    // --------------------------------------------------------
-    // Navigation
-    // --------------------------------------------------------
-
-    if (
-      request.mode ===
-      'navigate'
-    ) {
-      event.respondWith(
-        networkFirstNavigation(
-          request
-        )
-      );
-
-      return;
-    }
-
-
-    // --------------------------------------------------------
-    // Images
-    // --------------------------------------------------------
-
-    if (
-      request.destination ===
-      'image'
-    ) {
-      event.respondWith(
-        cacheFirstImage(
-          request
-        )
-      );
-
-      return;
-    }
-
-
-    // --------------------------------------------------------
-    // CSS / JS / Fonts
-    // --------------------------------------------------------
-
-    if (
-      request.destination ===
-        'style' ||
-      request.destination ===
-        'script' ||
-      request.destination ===
-        'font'
-    ) {
-      event.respondWith(
-        staleWhileRevalidate(
-          request
-        )
-      );
-
-      return;
-    }
-
-
-    // --------------------------------------------------------
-    // Same-origin static assets
-    // --------------------------------------------------------
-
-    if (
-      url.origin ===
-      self.location.origin
-    ) {
-      event.respondWith(
-        cacheFirstStatic(
-          request
-        )
-      );
-    }
+    return (
+      url.protocol ===
+        'http:' ||
+      url.protocol ===
+        'https:'
+    );
+  } catch {
+    return false;
   }
-);
+}
+
+
+function isSameOrigin(request) {
+  try {
+    return (
+      new URL(
+        request.url
+      ).origin ===
+      self.location.origin
+    );
+  } catch {
+    return false;
+  }
+}
 
 
 // ============================================================
-// 07. SUPABASE DETECTION
+// 05. NEVER CACHE
+//
+// Bunlar browser cache sistemimizə daxil olmayacaq:
+//
+// - Supabase REST
+// - Supabase Auth
+// - Supabase Realtime
+// - Supabase Storage remote requests
+// - RPC
+// - digər third-party API-lər
+//
+// Bununla istifadəçi məlumatının köhnə cache-dən gəlməsi
+// problemini aradan qaldırırıq.
 // ============================================================
 
-function isSupabaseRequest(
-  url
+function shouldBypassCache(request) {
+  if (
+    !isHttpRequest(request)
+  ) {
+    return true;
+  }
+
+
+  const url =
+    new URL(
+      request.url
+    );
+
+
+  // ----------------------------------------------------------
+  // Non-GET
+  // ----------------------------------------------------------
+
+  if (
+    request.method !==
+    'GET'
+  ) {
+    return true;
+  }
+
+
+  // ----------------------------------------------------------
+  // Supabase
+  // ----------------------------------------------------------
+
+  if (
+    url.hostname.endsWith(
+      '.supabase.co'
+    ) ||
+    url.hostname.endsWith(
+      '.supabase.in'
+    )
+  ) {
+    return true;
+  }
+
+
+  // ----------------------------------------------------------
+  // Explicit API paths
+  // ----------------------------------------------------------
+
+  if (
+    url.pathname.includes(
+      '/rest/v1/'
+    ) ||
+    url.pathname.includes(
+      '/auth/v1/'
+    ) ||
+    url.pathname.includes(
+      '/realtime/v1/'
+    ) ||
+    url.pathname.includes(
+      '/storage/v1/'
+    )
+  ) {
+    return true;
+  }
+
+
+  return false;
+}
+
+
+// ============================================================
+// 06. HTML / NAVIGATION REQUEST
+// ============================================================
+
+function isNavigationRequest(
+  request
 ) {
   return (
-    url.hostname.endsWith(
-      SUPABASE_HOST_SUFFIX
+    request.mode ===
+      'navigate' ||
+    request.destination ===
+      'document'
+  );
+}
+
+
+// ============================================================
+// 07. APP CODE REQUEST
+//
+// HTML + JS + CSS həmişə əvvəl network-dən yoxlanır.
+// Buna görə deploy etdiyimiz yeni kod köhnə cache-in arxasında
+// ilişib qalmır.
+// ============================================================
+
+function isApplicationCodeRequest(
+  request
+) {
+  const url =
+    new URL(
+      request.url
+    );
+
+
+  return (
+    request.destination ===
+      'script' ||
+    request.destination ===
+      'style' ||
+    url.pathname.endsWith(
+      '.js'
+    ) ||
+    url.pathname.endsWith(
+      '.css'
     )
   );
 }
 
 
 // ============================================================
-// 08. NETWORK-FIRST NAVIGATION
-//
-// Səhifə üçün əvvəl internet yoxlanır.
-// Offline olduqda cache-dəki HTML istifadə edilir.
+// 08. LOCAL STATIC ASSET
 // ============================================================
 
-async function networkFirstNavigation(
+function isStaticAssetRequest(
   request
 ) {
+  if (
+    !isSameOrigin(
+      request
+    )
+  ) {
+    return false;
+  }
+
+
+  const url =
+    new URL(
+      request.url
+    );
+
+
+  return (
+    request.destination ===
+      'image' ||
+    request.destination ===
+      'font' ||
+    STATIC_ASSET_PATTERN.test(
+      url.pathname
+    )
+  );
+}
+
+
+// ============================================================
+// 09. SAFE CACHE PUT
+// ============================================================
+
+async function safeCachePut(
+  cache,
+  request,
+  response
+) {
+  if (
+    !response ||
+    !response.ok
+  ) {
+    return;
+  }
+
+
+  // opaque third-party response cache etmirik.
+  if (
+    response.type ===
+    'opaque'
+  ) {
+    return;
+  }
+
+
+  try {
+    await cache.put(
+      request,
+      response.clone()
+    );
+  } catch (error) {
+    console.warn(
+      '[SKy Fit SW] Cache put failed:',
+      request.url,
+      error
+    );
+  }
+}
+
+
+// ============================================================
+// 10. INSTALL
+//
+// cache.addAll() istifadə etmirik.
+//
+// Səbəb:
+// bir dənə fayl tapılmasa bütün Service Worker install
+// mərhələsinin çökməsini istəmirik.
+// ============================================================
+
+self.addEventListener(
+  'install',
+  event => {
+
+    event.waitUntil(
+      (
+        async () => {
+
+          const cache =
+            await caches.open(
+              STATIC_CACHE
+            );
+
+
+          await Promise.allSettled(
+            APP_SHELL.map(
+              async url => {
+
+                try {
+                  const response =
+                    await fetch(
+                      url,
+                      {
+                        cache:
+                          'reload',
+                      }
+                    );
+
+
+                  if (
+                    response.ok
+                  ) {
+                    await cache.put(
+                      url,
+                      response
+                    );
+                  }
+                } catch (error) {
+                  console.warn(
+                    '[SKy Fit SW] Precache skipped:',
+                    url,
+                    error
+                  );
+                }
+
+              }
+            )
+          );
+
+
+          await self.skipWaiting();
+
+        }
+      )()
+    );
+
+  }
+);
+
+
+// ============================================================
+// 11. ACTIVATE
+//
+// Köhnə SKy Fit cache versiyalarını silirik.
+// ============================================================
+
+self.addEventListener(
+  'activate',
+  event => {
+
+    event.waitUntil(
+      (
+        async () => {
+
+          const keys =
+            await caches.keys();
+
+
+          await Promise.all(
+            keys.map(
+              key => {
+
+                const isSkyFitCache =
+                  key.startsWith(
+                    'skyfit-pro-'
+                  );
+
+
+                const isCurrent =
+                  key ===
+                    STATIC_CACHE ||
+                  key ===
+                    RUNTIME_CACHE;
+
+
+                if (
+                  isSkyFitCache &&
+                  !isCurrent
+                ) {
+                  return caches.delete(
+                    key
+                  );
+                }
+
+
+                return Promise.resolve(
+                  false
+                );
+
+              }
+            )
+          );
+
+
+          await self.clients.claim();
+
+        }
+      )()
+    );
+
+  }
+);
+
+
+// ============================================================
+// 12. NETWORK FIRST
+//
+// HTML / JS / CSS:
+//
+// 1. Network
+// 2. Cache fallback
+//
+// Tətbiqin köhnə versiyada qalmasının qarşısını alır.
+// ============================================================
+
+async function networkFirst(
+  request
+) {
+  const cache =
+    await caches.open(
+      RUNTIME_CACHE
+    );
+
+
   try {
     const response =
-      await fetch(request);
-
-
-    if (
-      response &&
-      response.ok
-    ) {
-      const cache =
-        await caches.open(
-          RUNTIME_CACHE
-        );
-
-      await cache.put(
+      await fetch(
         request,
-        response.clone()
+        {
+          cache:
+            'no-cache',
+        }
       );
-    }
+
+
+    await safeCachePut(
+      cache,
+      request,
+      response
+    );
 
 
     return response;
@@ -340,499 +531,380 @@ async function networkFirstNavigation(
     }
 
 
-    const fallback =
+    throw new Error(
+      'NETWORK_AND_CACHE_FAILED'
+    );
+  }
+}
+
+
+// ============================================================
+// 13. CACHE FIRST
+//
+// Şəkil/font kimi dəyişməsi az olan lokal assetlər:
+//
+// 1. Cache
+// 2. Network
+// 3. Cache-ə əlavə et
+// ============================================================
+
+async function cacheFirst(
+  request
+) {
+  const cached =
+    await caches.match(
+      request
+    );
+
+
+  if (cached) {
+    return cached;
+  }
+
+
+  const response =
+    await fetch(
+      request
+    );
+
+
+  const cache =
+    await caches.open(
+      RUNTIME_CACHE
+    );
+
+
+  await safeCachePut(
+    cache,
+    request,
+    response
+  );
+
+
+  return response;
+}
+
+
+// ============================================================
+// 14. NAVIGATION FALLBACK
+// ============================================================
+
+async function handleNavigation(
+  request
+) {
+  try {
+    return await networkFirst(
+      request
+    );
+  } catch {
+
+    // --------------------------------------------------------
+    // Əvvəl eyni səhifənin cache versiyası
+    // --------------------------------------------------------
+
+    const exact =
       await caches.match(
-        './index.html'
+        request
       );
 
 
-    if (fallback) {
-      return fallback;
+    if (exact) {
+      return exact;
     }
 
+
+    // --------------------------------------------------------
+    // Son fallback: index
+    // --------------------------------------------------------
+
+    const home =
+      await caches.match(
+        appUrl(
+          './index.html'
+        )
+      );
+
+
+    if (home) {
+      return home;
+    }
+
+
+    // --------------------------------------------------------
+    // Heç nə yoxdursa lightweight offline response.
+    // Ayrı offline.html yaratmırıq.
+    // --------------------------------------------------------
 
     return new Response(
       `
         <!doctype html>
         <html lang="az">
           <head>
-            <meta charset="UTF-8">
+            <meta charset="utf-8">
             <meta
               name="viewport"
-              content="width=device-width, initial-scale=1"
+              content="width=device-width,initial-scale=1"
+            >
+            <meta
+              name="theme-color"
+              content="#090b10"
             >
             <title>SKy Fit Pro</title>
 
             <style>
-              html,
-              body {
-                margin: 0;
-                min-height: 100%;
-                background: #080a0f;
-                color: #f7f8fa;
-                font-family:
-                  system-ui,
-                  -apple-system,
-                  sans-serif;
+              html {
+                color-scheme: dark;
+                background: #090b10;
               }
 
               body {
+                margin: 0;
                 min-height: 100vh;
                 display: grid;
                 place-items: center;
                 padding: 24px;
                 box-sizing: border-box;
+                background:
+                  radial-gradient(
+                    circle at 50% 15%,
+                    rgba(255, 222, 0, .09),
+                    transparent 34%
+                  ),
+                  #090b10;
+                color: #f8fafc;
+                font-family:
+                  Inter,
+                  system-ui,
+                  -apple-system,
+                  BlinkMacSystemFont,
+                  "Segoe UI",
+                  sans-serif;
               }
 
-              main {
+              .offline {
                 width: min(100%, 420px);
+                padding: 28px;
+                box-sizing: border-box;
+                border: 1px solid rgba(255,255,255,.09);
+                border-radius: 24px;
+                background: rgba(255,255,255,.045);
+                box-shadow: 0 24px 80px rgba(0,0,0,.35);
                 text-align: center;
               }
 
-              strong {
-                display: block;
+              .mark {
+                width: 58px;
+                height: 58px;
+                margin: 0 auto 18px;
+                display: grid;
+                place-items: center;
+                border-radius: 18px;
+                background: #ffde00;
+                color: #090b10;
+                font-weight: 900;
+                font-size: 18px;
+              }
+
+              h1 {
+                margin: 0 0 10px;
                 font-size: 22px;
               }
 
               p {
-                color: #969daa;
+                margin: 0;
+                color: #aeb6c5;
                 line-height: 1.6;
-                font-size: 13px;
+                font-size: 15px;
+              }
+
+              button {
+                width: 100%;
+                margin-top: 22px;
+                min-height: 48px;
+                border: 0;
+                border-radius: 15px;
+                background: #ffde00;
+                color: #090b10;
+                font: inherit;
+                font-weight: 800;
+                cursor: pointer;
               }
             </style>
           </head>
 
           <body>
-            <main>
-              <strong>SKy Fit Pro</strong>
+            <main class="offline">
+
+              <div class="mark">
+                SK
+              </div>
+
+              <h1>
+                İnternet bağlantısı yoxdur
+              </h1>
 
               <p>
-                Hazırda internet bağlantısı yoxdur.
-                Bağlantını yoxlayıb yenidən cəhd et.
+                SKy Fit Pro serverə qoşula bilmir.
+                İnternet bağlantısını yoxlayıb yenidən cəhd et.
               </p>
+
+              <button
+                type="button"
+                onclick="location.reload()"
+              >
+                Yenidən yoxla
+              </button>
+
             </main>
           </body>
         </html>
       `,
       {
-        status: 503,
+        status:
+          503,
 
         headers: {
           'Content-Type':
             'text/html; charset=utf-8',
+
+          'Cache-Control':
+            'no-store',
         },
       }
     );
+
   }
 }
 
 
 // ============================================================
-// 09. CACHE-FIRST STATIC
+// 15. FETCH
 // ============================================================
 
-async function cacheFirstStatic(
-  request
-) {
-  const cached =
-    await caches.match(
-      request
-    );
+self.addEventListener(
+  'fetch',
+  event => {
 
-
-  if (cached) {
-    return cached;
-  }
-
-
-  try {
-    const response =
-      await fetch(request);
+    const request =
+      event.request;
 
 
     if (
-      isCacheableResponse(
-        response
+      shouldBypassCache(
+        request
       )
     ) {
-      const cache =
-        await caches.open(
-          RUNTIME_CACHE
-        );
-
-      await cache.put(
-        request,
-        response.clone()
-      );
+      return;
     }
 
 
-    return response;
-  } catch {
-    return new Response(
-      '',
-      {
-        status: 504,
-        statusText:
-          'Offline',
-      }
-    );
+    // --------------------------------------------------------
+    // Navigation
+    // --------------------------------------------------------
+
+    if (
+      isNavigationRequest(
+        request
+      )
+    ) {
+      event.respondWith(
+        handleNavigation(
+          request
+        )
+      );
+
+
+      return;
+    }
+
+
+    // --------------------------------------------------------
+    // Local JS / CSS
+    // --------------------------------------------------------
+
+    if (
+      isSameOrigin(
+        request
+      ) &&
+      isApplicationCodeRequest(
+        request
+      )
+    ) {
+      event.respondWith(
+        networkFirst(
+          request
+        )
+      );
+
+
+      return;
+    }
+
+
+    // --------------------------------------------------------
+    // Local images / fonts / icons
+    // --------------------------------------------------------
+
+    if (
+      isStaticAssetRequest(
+        request
+      )
+    ) {
+      event.respondWith(
+        cacheFirst(
+          request
+        )
+      );
+    }
+
   }
-}
+);
 
 
 // ============================================================
-// 10. STALE-WHILE-REVALIDATE
+// 16. MESSAGE API
 //
-// CSS və JS tez açılır, arxa planda yeni versiya alınır.
-// ============================================================
-
-async function staleWhileRevalidate(
-  request
-) {
-  const cached =
-    await caches.match(
-      request
-    );
-
-
-  const networkPromise =
-    fetch(request)
-      .then(
-        async response => {
-          if (
-            isCacheableResponse(
-              response
-            )
-          ) {
-            const cache =
-              await caches.open(
-                RUNTIME_CACHE
-              );
-
-            await cache.put(
-              request,
-              response.clone()
-            );
-          }
-
-
-          return response;
-        }
-      )
-      .catch(
-        () => null
-      );
-
-
-  if (cached) {
-    networkPromise.catch(
-      () => {}
-    );
-
-    return cached;
-  }
-
-
-  const network =
-    await networkPromise;
-
-
-  if (network) {
-    return network;
-  }
-
-
-  return new Response(
-    '',
-    {
-      status: 504,
-      statusText:
-        'Offline',
-    }
-  );
-}
-
-
-// ============================================================
-// 11. IMAGE CACHE
-// ============================================================
-
-async function cacheFirstImage(
-  request
-) {
-  const url =
-    new URL(
-      request.url
-    );
-
-
-  // Supabase Storage şəkilləri SW tərəfindən cache edilmir.
-  // Browser öz HTTP cache mexanizmindən istifadə edə bilər.
-  if (
-    isSupabaseRequest(url)
-  ) {
-    return fetch(request);
-  }
-
-
-  const cached =
-    await caches.match(
-      request
-    );
-
-
-  if (cached) {
-    return cached;
-  }
-
-
-  try {
-    const response =
-      await fetch(request);
-
-
-    if (
-      isCacheableResponse(
-        response
-      )
-    ) {
-      const cache =
-        await caches.open(
-          IMAGE_CACHE
-        );
-
-      await cache.put(
-        request,
-        response.clone()
-      );
-
-      await trimCache(
-        IMAGE_CACHE,
-        100
-      );
-    }
-
-
-    return response;
-  } catch {
-    return new Response(
-      '',
-      {
-        status: 504,
-        statusText:
-          'Offline',
-      }
-    );
-  }
-}
-
-
-// ============================================================
-// 12. CACHE RESPONSE VALIDATION
-// ============================================================
-
-function isCacheableResponse(
-  response
-) {
-  if (!response) {
-    return false;
-  }
-
-
-  if (
-    response.status !== 200
-  ) {
-    return false;
-  }
-
-
-  return (
-    response.type ===
-      'basic' ||
-    response.type ===
-      'cors'
-  );
-}
-
-
-// ============================================================
-// 13. CACHE LIMIT
-// ============================================================
-
-async function trimCache(
-  cacheName,
-  maxItems
-) {
-  const cache =
-    await caches.open(
-      cacheName
-    );
-
-
-  const keys =
-    await cache.keys();
-
-
-  if (
-    keys.length <=
-    maxItems
-  ) {
-    return;
-  }
-
-
-  const removeCount =
-    keys.length -
-    maxItems;
-
-
-  await Promise.all(
-    keys
-      .slice(
-        0,
-        removeCount
-      )
-      .map(
-        request =>
-          cache.delete(
-            request
-          )
-      )
-  );
-}
-
-
-// ============================================================
-// 14. MESSAGE API
+// Gələcəkdə frontend:
+// navigator.serviceWorker.controller.postMessage({
+//   type: 'SKIP_WAITING'
+// });
+//
+// göndərə bilər.
 // ============================================================
 
 self.addEventListener(
   'message',
   event => {
-    const data =
-      event.data;
 
-
-    if (!data) {
-      return;
-    }
+    const type =
+      event.data?.type;
 
 
     if (
-      data.type ===
+      type ===
       'SKIP_WAITING'
     ) {
       self.skipWaiting();
-
-      return;
     }
 
-
-    if (
-      data.type ===
-      'CLEAR_RUNTIME_CACHE'
-    ) {
-      event.waitUntil(
-        clearRuntimeCaches()
-      );
-    }
   }
 );
 
 
 // ============================================================
-// 15. CLEAR RUNTIME CACHE
-// ============================================================
-
-async function clearRuntimeCaches() {
-  await Promise.all([
-    caches.delete(
-      RUNTIME_CACHE
-    ),
-
-    caches.delete(
-      IMAGE_CACHE
-    ),
-  ]);
-}
-
-
-// ============================================================
-// 16. OPTIONAL NOTIFICATION CLICK SUPPORT
+// 17. PUSH READY
 //
-// Gələcəkdə push notification əlavə ediləndə SW dəyişmədən
-// notification click işləyə bilər.
+// Hazırda push backend qurmadığımız üçün notification
+// məntiqi uydurmuruq.
+//
+// Gələcəkdə push əlavə olunanda eyni service-worker.js daxilində
+// vahid handler yerləşdirəcəyik.
 // ============================================================
-
-self.addEventListener(
-  'notificationclick',
-  event => {
-    event.notification.close();
-
-
-    const targetUrl =
-      event.notification
-        ?.data
-        ?.url ||
-      './index.html';
-
-
-    event.waitUntil(
-      focusOrOpenWindow(
-        targetUrl
-      )
-    );
-  }
-);
-
-
-// ============================================================
-// 17. FOCUS / OPEN APP
-// ============================================================
-
-async function focusOrOpenWindow(
-  targetUrl
-) {
-  const clients =
-    await self.clients.matchAll({
-      type: 'window',
-      includeUncontrolled: true,
-    });
-
-
-  for (
-    const client of clients
-  ) {
-    if (
-      'focus' in client
-    ) {
-      if (
-        'navigate' in client
-      ) {
-        await client.navigate(
-          targetUrl
-        );
-      }
-
-      return client.focus();
-    }
-  }
-
-
-  if (
-    self.clients.openWindow
-  ) {
-    return self.clients.openWindow(
-      targetUrl
-    );
-  }
-
-
-  return null;
-}
 
 
 // ============================================================
 // SKY FIT PRO SERVICE WORKER COMPLETE
+//
+// Senior Full Stack Developer:
+// Qərib Səfərli
 // ============================================================
