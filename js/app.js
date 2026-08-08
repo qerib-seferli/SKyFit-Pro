@@ -2,31 +2,48 @@
 // SKY FIT PRO
 // Home Page Controller
 // File: js/app.js
+//
+// REAL SUPABASE SCHEMA VERSION
 // ============================================================
 
 import {
   supabase,
   TABLES,
-  UI_CONFIG,
 } from './config.js';
 
 import {
+  SKYFIT_EVENTS,
+
   byId,
   clearElement,
-  createProductCard,
-  createTrainerCard,
-  debounce,
-  getCurrentIdentity,
-  membershipStatus,
-  formatDate,
-  formatTime,
-  setText,
   showElement,
   hideElement,
-  bindSearchClear,
-  notify,
-  asyncHandler,
+  setText,
+
   normalizeString,
+  normalizeSearch,
+
+  formatDate,
+  formatTime,
+
+  debounce,
+  rows,
+
+  getCurrentIdentity,
+
+  createProductCard,
+  createTrainerCard,
+
+  membershipIsActive,
+  membershipDaysRemaining,
+  membershipStatusLabel,
+
+  attendanceDate,
+  attendanceTypeLabel,
+
+  notify,
+  getErrorMessage,
+  asyncHandler,
 } from './core.js';
 
 import {
@@ -39,168 +56,305 @@ import {
 // ============================================================
 
 const state = {
-  identity: null,
 
-  products: [],
-  visibleProducts: [],
+  identity:
+    null,
 
-  trainers: [],
-  trainersExpanded: false,
+  products:
+    [],
 
-  productsExpanded: false,
+  trainers:
+    [],
 
-  search:
-    '',
-};
+  membership:
+    null,
 
-
-// ============================================================
-// 02. DOM
-// ============================================================
-
-const elements = {
-  memberSection:
-    byId(
-      'member-overview-section'
-    ),
-
-  membershipStatus:
-    byId(
-      'membership-status-badge'
-    ),
-
-  membershipPlan:
-    byId(
-      'membership-plan-name'
-    ),
-
-  membershipExpiry:
-    byId(
-      'membership-expiry'
-    ),
-
-  latestAttendanceDate:
-    byId(
-      'latest-attendance-date'
-    ),
-
-  latestAttendanceTime:
-    byId(
-      'latest-attendance-time'
-    ),
-
-  attendanceCount:
-    byId(
-      'attendance-count'
-    ),
-
-  trainersGrid:
-    byId(
-      'trainers-grid'
-    ),
-
-  trainersEmpty:
-    byId(
-      'trainers-empty-state'
-    ),
-
-  trainersShowAll:
-    byId(
-      'trainers-show-all-button'
-    ),
-
-  productsGrid:
-    byId(
-      'products-grid'
-    ),
-
-  productsEmpty:
-    byId(
-      'products-empty-state'
-    ),
-
-  productsShowAll:
-    byId(
-      'products-show-all-button'
-    ),
+  attendance:
+    [],
 
   productSearch:
-    byId(
-      'product-search-input'
-    ),
+    '',
 
-  productSearchClear:
-    byId(
-      'product-search-clear'
-    ),
+  productsExpanded:
+    false,
+
+  trainersExpanded:
+    false,
+
+  loading: {
+    products:
+      false,
+
+    trainers:
+      false,
+
+    member:
+      false,
+  },
 };
 
 
 // ============================================================
-// 03. PRODUCTS
+// 02. CONFIG
 // ============================================================
 
-async function loadProducts() {
-  const {
-    data,
-    error,
-  } =
-    await supabase
-      .from(
-        TABLES.products
-      )
-      .select('*')
-      .eq(
-        'is_active',
-        true
-      )
-      .order(
-        'created_at',
-        {
-          ascending: false,
-        }
-      )
-      .limit(
-        UI_CONFIG.products.searchLimit
-      );
+const HOME_LIMITS =
+  Object.freeze({
 
-  if (error) {
-    console.error(
-      'Products load error:',
-      error
-    );
+    products:
+      10,
 
-    notify.error(
-      'Məhsullar yüklənmədi.'
-    );
+    trainers:
+      6,
 
-    state.products = [];
+    attendance:
+      5,
+  });
 
-    renderProducts();
 
-    return;
-  }
+// ============================================================
+// 03. DOM
+// ============================================================
 
-  state.products =
-    Array.isArray(data)
-      ? data
-      : [];
+function getElements() {
+  return {
 
-  renderProducts();
+    // --------------------------------------------------------
+    // Member overview
+    // --------------------------------------------------------
+
+    memberSection:
+      byId(
+        'member-overview-section'
+      ),
+
+    memberGreeting:
+      byId(
+        'member-greeting'
+      ),
+
+    membershipStatus:
+      byId(
+        'membership-status-badge'
+      ),
+
+    membershipPlan:
+      byId(
+        'membership-plan-name'
+      ),
+
+    membershipExpiry:
+      byId(
+        'membership-expiry'
+      ),
+
+    membershipDays:
+      byId(
+        'membership-days-left'
+      ),
+
+    attendanceCount:
+      byId(
+        'attendance-count'
+      ),
+
+    latestAttendanceDate:
+      byId(
+        'latest-attendance-date'
+      ),
+
+    latestAttendanceTime:
+      byId(
+        'latest-attendance-time'
+      ),
+
+    latestAttendanceType:
+      byId(
+        'latest-attendance-type'
+      ),
+
+
+    // --------------------------------------------------------
+    // Trainers
+    // --------------------------------------------------------
+
+    trainersGrid:
+      byId(
+        'trainers-grid'
+      ),
+
+    trainersEmpty:
+      byId(
+        'trainers-empty-state'
+      ),
+
+    trainersShowAll:
+      byId(
+        'trainers-show-all-button'
+      ),
+
+
+    // --------------------------------------------------------
+    // Products
+    // --------------------------------------------------------
+
+    productsGrid:
+      byId(
+        'products-grid'
+      ),
+
+    productsEmpty:
+      byId(
+        'products-empty-state'
+      ),
+
+    productsSearchEmpty:
+      byId(
+        'products-search-empty-state'
+      ),
+
+    productsShowAll:
+      byId(
+        'products-show-all-button'
+      ),
+
+    productSearch:
+      byId(
+        'product-search-input'
+      ),
+
+    productSearchClear:
+      byId(
+        'product-search-clear'
+      ),
+  };
 }
 
 
 // ============================================================
-// 04. PRODUCT FILTER
+// 04. PRODUCTS QUERY
+//
+// Real products columns:
+// name
+// description
+// image_url
+// category
+// sale_mode
+// stock_unit
+// stock_quantity
+// portion_size
+// retail_price
+// portion_price
+// low_stock_threshold
+// show_public
+// is_active
+// ============================================================
+
+async function loadProducts() {
+  if (
+    state.loading.products
+  ) {
+    return;
+  }
+
+
+  state.loading.products =
+    true;
+
+
+  try {
+    const {
+      data,
+      error,
+    } =
+      await supabase
+        .from(
+          TABLES.products
+        )
+        .select(`
+          id,
+          name,
+          description,
+          sku,
+          image_url,
+          category,
+          sale_mode,
+          stock_unit,
+          stock_quantity,
+          portion_size,
+          retail_price,
+          portion_price,
+          cost_price,
+          low_stock_threshold,
+          show_public,
+          is_active,
+          created_at,
+          updated_at
+        `)
+        .eq(
+          'is_active',
+          true
+        )
+        .eq(
+          'show_public',
+          true
+        )
+        .order(
+          'created_at',
+          {
+            ascending:
+              false,
+          }
+        );
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    state.products =
+      rows(data);
+
+
+    renderProducts();
+  } catch (error) {
+    console.error(
+      '[SKy Fit Home] Products:',
+      error
+    );
+
+
+    state.products =
+      [];
+
+
+    renderProducts();
+
+
+    notify.error(
+      getErrorMessage(
+        error,
+        'Məhsullar yüklənmədi.'
+      )
+    );
+  } finally {
+    state.loading.products =
+      false;
+  }
+}
+
+
+// ============================================================
+// 05. PRODUCT FILTER
 // ============================================================
 
 function filteredProducts() {
   const search =
-    normalizeString(
-      state.search
-    ).toLocaleLowerCase(
-      'az-AZ'
+    normalizeSearch(
+      state.productSearch
     );
+
 
   if (!search) {
     return [
@@ -208,29 +362,25 @@ function filteredProducts() {
     ];
   }
 
+
   return state.products.filter(
     product => {
-      const name =
-        normalizeString(
-          product?.name
-        )
+      const searchable =
+        [
+          product.name,
+          product.description,
+          product.category,
+          product.sku,
+        ]
+          .filter(Boolean)
+          .join(' ')
           .toLocaleLowerCase(
             'az-AZ'
           );
 
-      const description =
-        normalizeString(
-          product?.description
-        )
-          .toLocaleLowerCase(
-            'az-AZ'
-          );
 
-      return (
-        name.includes(search) ||
-        description.includes(
-          search
-        )
+      return searchable.includes(
+        search
       );
     }
   );
@@ -238,111 +388,236 @@ function filteredProducts() {
 
 
 // ============================================================
-// 05. RENDER PRODUCTS
+// 06. PRODUCTS RENDER
 // ============================================================
 
 function renderProducts() {
-  const grid =
-    elements.productsGrid;
+  const elements =
+    getElements();
 
-  if (!grid) return;
 
-  clearElement(grid);
+  if (
+    !elements.productsGrid
+  ) {
+    return;
+  }
+
+
+  clearElement(
+    elements.productsGrid
+  );
+
 
   const filtered =
     filteredProducts();
 
-  state.visibleProducts =
-    filtered;
 
-  const limit =
-    state.productsExpanded ||
-    state.search
-      ? filtered.length
-      : UI_CONFIG.products.homeLimit;
+  const hasSearch =
+    Boolean(
+      normalizeString(
+        state.productSearch
+      )
+    );
+
 
   const visible =
-    filtered.slice(
-      0,
-      limit
-    );
+    (
+      state.productsExpanded ||
+      hasSearch
+    )
+      ? filtered
+      : filtered.slice(
+          0,
+          HOME_LIMITS.products
+        );
+
 
   visible.forEach(
     product => {
-      const card =
-        createProductCard(
-          product
+      elements.productsGrid
+        .append(
+          createProductCard(
+            product
+          )
         );
-
-      grid.append(card);
     }
   );
 
-  const noResults =
-    filtered.length === 0;
 
-  elements.productsEmpty
-    ?.classList.toggle(
-      'is-hidden',
-      !noResults
-    );
+  const noProducts =
+    state.products.length ===
+    0;
+
+
+  const noSearchResults =
+    !noProducts &&
+    hasSearch &&
+    filtered.length ===
+      0;
+
+
+  if (
+    elements.productsEmpty
+  ) {
+    noProducts
+      ? showElement(
+          elements.productsEmpty
+        )
+      : hideElement(
+          elements.productsEmpty
+        );
+  }
+
+
+  if (
+    elements
+      .productsSearchEmpty
+  ) {
+    noSearchResults
+      ? showElement(
+          elements
+            .productsSearchEmpty
+        )
+      : hideElement(
+          elements
+            .productsSearchEmpty
+        );
+  }
+
 
   if (
     elements.productsShowAll
   ) {
-    const shouldShowButton =
-      !state.search &&
-      filtered.length >
-        UI_CONFIG.products.homeLimit;
+    const shouldShow =
+      !hasSearch &&
+      state.products.length >
+        HOME_LIMITS.products;
 
-    elements.productsShowAll
-      .classList.toggle(
-        'is-hidden',
-        !shouldShowButton
-      );
 
-    elements.productsShowAll.textContent =
-      state.productsExpanded
-        ? 'Daha az'
-        : 'Hamısı';
+    shouldShow
+      ? showElement(
+          elements
+            .productsShowAll
+        )
+      : hideElement(
+          elements
+            .productsShowAll
+        );
+
+
+    elements
+      .productsShowAll
+      .textContent =
+        state.productsExpanded
+          ? 'Daha az göstər'
+          : 'Hamısını göstər';
   }
 }
 
 
 // ============================================================
-// 06. PRODUCT EVENTS
+// 07. PRODUCT EVENTS
 // ============================================================
 
 function bindProductEvents() {
-  const searchHandler =
+  const elements =
+    getElements();
+
+
+  const renderSearch =
     debounce(
-      value => {
-        state.search =
-          value;
+      () => {
+        state.productSearch =
+          normalizeString(
+            elements
+              .productSearch
+              ?.value
+          );
+
 
         renderProducts();
+      },
+      180
+    );
+
+
+  elements.productSearch
+    ?.addEventListener(
+      'input',
+      () => {
+        const hasValue =
+          Boolean(
+            normalizeString(
+              elements
+                .productSearch
+                ?.value
+            )
+          );
+
+
+        if (
+          elements
+            .productSearchClear
+        ) {
+          elements
+            .productSearchClear
+            .hidden =
+              !hasValue;
+        }
+
+
+        renderSearch();
       }
     );
 
-  bindSearchClear({
-    input:
-      elements.productSearch,
 
-    clearButton:
-      elements.productSearchClear,
+  elements
+    .productSearchClear
+    ?.addEventListener(
+      'click',
+      () => {
+        if (
+          !elements.productSearch
+        ) {
+          return;
+        }
 
-    onChange:
-      searchHandler,
-  });
+
+        elements
+          .productSearch
+          .value =
+            '';
 
 
-  elements.productsShowAll
+        state.productSearch =
+          '';
+
+
+        elements
+          .productSearchClear
+          .hidden =
+            true;
+
+
+        renderProducts();
+
+
+        elements
+          .productSearch
+          .focus();
+      }
+    );
+
+
+  elements
+    .productsShowAll
     ?.addEventListener(
       'click',
       () => {
         state.productsExpanded =
           !state.productsExpanded;
 
+
         renderProducts();
       }
     );
@@ -350,127 +625,213 @@ function bindProductEvents() {
 
 
 // ============================================================
-// 07. TRAINERS
+// 08. TRAINERS QUERY
+//
+// Real trainers columns:
+// full_name
+// specialty
+// bio
+// image_url
+// phone
+// instagram_url
+// sort_order
+// is_active
 // ============================================================
 
 async function loadTrainers() {
-  const {
-    data,
-    error,
-  } =
-    await supabase
-      .from(
-        TABLES.trainers
-      )
-      .select('*')
-      .eq(
-        'is_active',
-        true
-      )
-      .order(
-        'created_at',
-        {
-          ascending: false,
-        }
-      )
-      .limit(
-        UI_CONFIG.trainers.adminLimit
-      );
-
-  if (error) {
-    console.error(
-      'Trainers load error:',
-      error
-    );
-
-    state.trainers = [];
-
-    renderTrainers();
-
+  if (
+    state.loading.trainers
+  ) {
     return;
   }
 
-  state.trainers =
-    Array.isArray(data)
-      ? data
-      : [];
 
-  renderTrainers();
+  state.loading.trainers =
+    true;
+
+
+  try {
+    const {
+      data,
+      error,
+    } =
+      await supabase
+        .from(
+          TABLES.trainers
+        )
+        .select(`
+          id,
+          full_name,
+          specialty,
+          bio,
+          image_url,
+          phone,
+          instagram_url,
+          sort_order,
+          is_active,
+          created_at
+        `)
+        .eq(
+          'is_active',
+          true
+        )
+        .order(
+          'sort_order',
+          {
+            ascending:
+              true,
+          }
+        )
+        .order(
+          'created_at',
+          {
+            ascending:
+              false,
+          }
+        );
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    state.trainers =
+      rows(data);
+
+
+    renderTrainers();
+  } catch (error) {
+    console.error(
+      '[SKy Fit Home] Trainers:',
+      error
+    );
+
+
+    state.trainers =
+      [];
+
+
+    renderTrainers();
+
+
+    notify.error(
+      getErrorMessage(
+        error,
+        'Məşqçilər yüklənmədi.'
+      )
+    );
+  } finally {
+    state.loading.trainers =
+      false;
+  }
 }
 
 
 // ============================================================
-// 08. RENDER TRAINERS
+// 09. TRAINERS RENDER
 // ============================================================
 
 function renderTrainers() {
-  const grid =
-    elements.trainersGrid;
+  const elements =
+    getElements();
 
-  if (!grid) return;
 
-  clearElement(grid);
+  if (
+    !elements.trainersGrid
+  ) {
+    return;
+  }
 
-  const limit =
-    state.trainersExpanded
-      ? state.trainers.length
-      : UI_CONFIG.trainers.homeLimit;
+
+  clearElement(
+    elements.trainersGrid
+  );
+
 
   const visible =
-    state.trainers.slice(
-      0,
-      limit
-    );
+    state.trainersExpanded
+      ? state.trainers
+      : state.trainers.slice(
+          0,
+          HOME_LIMITS.trainers
+        );
+
 
   visible.forEach(
     trainer => {
-      grid.append(
-        createTrainerCard(
-          trainer
-        )
-      );
+      elements.trainersGrid
+        .append(
+          createTrainerCard(
+            trainer
+          )
+        );
     }
   );
 
-  elements.trainersEmpty
-    ?.classList.toggle(
-      'is-hidden',
-      state.trainers.length >
-        0
-    );
+
+  if (
+    elements.trainersEmpty
+  ) {
+    state.trainers.length ===
+      0
+      ? showElement(
+          elements
+            .trainersEmpty
+        )
+      : hideElement(
+          elements
+            .trainersEmpty
+        );
+  }
+
 
   if (
     elements.trainersShowAll
   ) {
-    const shouldShowButton =
+    const shouldShow =
       state.trainers.length >
-      UI_CONFIG.trainers.homeLimit;
+      HOME_LIMITS.trainers;
 
-    elements.trainersShowAll
-      .classList.toggle(
-        'is-hidden',
-        !shouldShowButton
-      );
 
-    elements.trainersShowAll.textContent =
-      state.trainersExpanded
-        ? 'Daha az'
-        : 'Hamısı';
+    shouldShow
+      ? showElement(
+          elements
+            .trainersShowAll
+        )
+      : hideElement(
+          elements
+            .trainersShowAll
+        );
+
+
+    elements
+      .trainersShowAll
+      .textContent =
+        state.trainersExpanded
+          ? 'Daha az göstər'
+          : 'Hamısını göstər';
   }
 }
 
 
 // ============================================================
-// 09. TRAINER EVENTS
+// 10. TRAINER EVENTS
 // ============================================================
 
 function bindTrainerEvents() {
-  elements.trainersShowAll
+  const elements =
+    getElements();
+
+
+  elements
+    .trainersShowAll
     ?.addEventListener(
       'click',
       () => {
         state.trainersExpanded =
           !state.trainersExpanded;
+
 
         renderTrainers();
       }
@@ -479,49 +840,96 @@ function bindTrainerEvents() {
 
 
 // ============================================================
-// 10. MEMBER OVERVIEW
+// 11. MEMBER OVERVIEW
+//
+// profiles.id = memberships.member_id
+// profiles.id = attendance.member_id
+//
+// auth.users.id ilə qarışdırmırıq.
 // ============================================================
 
 async function loadMemberOverview() {
-  const identity =
-    state.identity;
-
   if (
-    !identity?.isAuthenticated ||
-    !identity?.profile
+    state.loading.member
   ) {
-    hideElement(
-      elements.memberSection
-    );
-
     return;
   }
 
-  showElement(
-    elements.memberSection
-  );
 
-  await Promise.all([
-    loadCurrentMembership(),
-    loadAttendanceSummary(),
-  ]);
+  state.loading.member =
+    true;
+
+
+  try {
+    const identity =
+      state.identity ||
+      await getCurrentIdentity();
+
+
+    state.identity =
+      identity;
+
+
+    if (
+      !identity
+        ?.authenticated ||
+      !identity
+        ?.profileId
+    ) {
+      state.membership =
+        null;
+
+      state.attendance =
+        [];
+
+
+      renderMemberOverview();
+
+      return;
+    }
+
+
+    await Promise.all([
+      loadCurrentMembership(
+        identity.profileId
+      ),
+
+      loadMemberAttendance(
+        identity.profileId
+      ),
+    ]);
+
+
+    renderMemberOverview();
+  } catch (error) {
+    console.error(
+      '[SKy Fit Home] Member overview:',
+      error
+    );
+
+
+    renderMemberOverview();
+
+
+    // Public homepage işləməyə davam etməlidir.
+    // Member widget xətasına görə bütün səhifəyə toast atmırıq.
+  } finally {
+    state.loading.member =
+      false;
+  }
 }
 
 
 // ============================================================
-// 11. CURRENT MEMBERSHIP
+// 12. CURRENT MEMBERSHIP
+//
+// Explicit FK istifadə olunur.
+// PGRST201 problemini bununla aradan qaldırırıq.
 // ============================================================
 
-async function loadCurrentMembership() {
-  const profileId =
-    state.identity
-      ?.profile
-      ?.id;
-
-  if (!profileId) {
-    return;
-  }
-
+async function loadCurrentMembership(
+  profileId
+) {
   const {
     data,
     error,
@@ -531,257 +939,397 @@ async function loadCurrentMembership() {
         TABLES.memberships
       )
       .select(`
-        *,
-        membership_plans (
+        id,
+        member_id,
+        plan_id,
+        start_date,
+        end_date,
+        price,
+        status,
+        payment_status,
+        created_by,
+        updated_by,
+        operator_shift_id,
+        membership_plan:membership_plans!memberships_plan_id_fkey (
           id,
           name,
           price,
           duration_days,
-          is_daily
+          is_daily,
+          is_active
         )
       `)
       .eq(
-        'profile_id',
+        'member_id',
         profileId
       )
+      .eq(
+        'status',
+        'active'
+      )
       .order(
-        'created_at',
+        'end_date',
         {
-          ascending: false,
+          ascending:
+            false,
         }
       )
       .limit(1)
       .maybeSingle();
 
+
   if (error) {
-    console.error(
-      'Membership load error:',
-      error
-    );
+    throw error;
+  }
 
-    setText(
-      elements.membershipPlan,
-      '—'
-    );
 
-    setText(
-      elements.membershipExpiry,
-      'Məlumat alınmadı'
+  state.membership =
+    data || null;
+}
+
+
+// ============================================================
+// 13. ATTENDANCE
+//
+// checked_in_at istifadə olunur.
+// created_at yoxdur.
+// ============================================================
+
+async function loadMemberAttendance(
+  profileId
+) {
+  const {
+    data,
+    error,
+  } =
+    await supabase
+      .from(
+        TABLES.attendance
+      )
+      .select(`
+        id,
+        member_id,
+        membership_id,
+        attendance_type,
+        amount,
+        checked_in_at,
+        created_by,
+        updated_by,
+        operator_shift_id
+      `)
+      .eq(
+        'member_id',
+        profileId
+      )
+      .order(
+        'checked_in_at',
+        {
+          ascending:
+            false,
+        }
+      )
+      .limit(100);
+
+
+  if (error) {
+    throw error;
+  }
+
+
+  state.attendance =
+    rows(data);
+}
+
+
+// ============================================================
+// 14. MEMBER OVERVIEW RENDER
+// ============================================================
+
+function renderMemberOverview() {
+  const elements =
+    getElements();
+
+
+  const identity =
+    state.identity;
+
+
+  if (
+    !identity
+      ?.authenticated
+  ) {
+    hideElement(
+      elements.memberSection
     );
 
     return;
   }
 
-  if (!data) {
-    setText(
-      elements.membershipPlan,
-      'Aktiv üzvlük yoxdur'
-    );
 
-    setText(
-      elements.membershipExpiry,
-      '—'
-    );
+  showElement(
+    elements.memberSection
+  );
 
+
+  if (
+    elements.memberGreeting
+  ) {
+    setText(
+      elements.memberGreeting,
+      identity.name
+    );
+  }
+
+
+  renderMembershipSummary();
+
+  renderAttendanceSummary();
+}
+
+
+// ============================================================
+// 15. MEMBERSHIP SUMMARY
+// ============================================================
+
+function renderMembershipSummary() {
+  const elements =
+    getElements();
+
+
+  const membership =
+    state.membership;
+
+
+  if (!membership) {
     if (
       elements.membershipStatus
     ) {
-      elements.membershipStatus
+      elements
+        .membershipStatus
         .className =
           'ui-badge ui-badge--neutral';
 
-      elements.membershipStatus
-        .textContent =
-          'Yoxdur';
+
+      setText(
+        elements
+          .membershipStatus,
+        'Aktiv üzvlük yoxdur'
+      );
     }
+
+
+    setText(
+      elements
+        .membershipPlan,
+      '—'
+    );
+
+
+    setText(
+      elements
+        .membershipExpiry,
+      '—'
+    );
+
+
+    setText(
+      elements
+        .membershipDays,
+      '—'
+    );
+
 
     return;
   }
 
-  const meta =
-    membershipStatus({
-      status:
-        data.status,
 
-      endDate:
-        data.end_date,
-    });
+  const active =
+    membershipIsActive(
+      membership
+    );
+
 
   if (
     elements.membershipStatus
   ) {
-    elements.membershipStatus
+    elements
+      .membershipStatus
       .className =
-        meta.className;
+        active
+          ? 'ui-badge ui-badge--success'
+          : 'ui-badge ui-badge--warning';
 
-    elements.membershipStatus
-      .textContent =
-        meta.label;
+
+    setText(
+      elements
+        .membershipStatus,
+      membershipStatusLabel(
+        membership
+      )
+    );
   }
+
 
   setText(
     elements.membershipPlan,
-    data.membership_plans
+    membership
+      .membership_plan
       ?.name ||
-      'Üzvlük'
+    'Üzvlük'
   );
+
 
   setText(
     elements.membershipExpiry,
-    data.end_date
-      ? `${formatDate(
-          data.end_date
-        )}-dək`
+    membership.end_date
+      ? formatDate(
+          membership.end_date
+        )
       : '—'
+  );
+
+
+  const remaining =
+    membershipDaysRemaining(
+      membership
+    );
+
+
+  setText(
+    elements.membershipDays,
+    active
+      ? `${remaining} gün`
+      : 'Bitib'
   );
 }
 
 
 // ============================================================
-// 12. ATTENDANCE SUMMARY
+// 16. ATTENDANCE SUMMARY
 // ============================================================
 
-async function loadAttendanceSummary() {
-  const profileId =
-    state.identity
-      ?.profile
-      ?.id;
+function renderAttendanceSummary() {
+  const elements =
+    getElements();
 
-  if (!profileId) {
-    return;
-  }
-
-  const [
-    latestResult,
-    countResult,
-  ] =
-    await Promise.all([
-      supabase
-        .from(
-          TABLES.attendance
-        )
-        .select('*')
-        .eq(
-          'profile_id',
-          profileId
-        )
-        .order(
-          'created_at',
-          {
-            ascending: false,
-          }
-        )
-        .limit(1)
-        .maybeSingle(),
-
-      supabase
-        .from(
-          TABLES.attendance
-        )
-        .select(
-          'id',
-          {
-            count: 'exact',
-            head: true,
-          }
-        )
-        .eq(
-          'profile_id',
-          profileId
-        ),
-    ]);
-
-
-  if (
-    latestResult.error
-  ) {
-    console.error(
-      'Latest attendance error:',
-      latestResult.error
-    );
-  }
-
-  if (
-    countResult.error
-  ) {
-    console.error(
-      'Attendance count error:',
-      countResult.error
-    );
-  }
-
-  const latest =
-    latestResult.data;
-
-  if (latest) {
-    const dateValue =
-      latest.created_at ||
-      latest.attended_at ||
-      latest.entry_at;
-
-    setText(
-      elements.latestAttendanceDate,
-      formatDate(
-        dateValue
-      )
-    );
-
-    setText(
-      elements.latestAttendanceTime,
-      formatTime(
-        dateValue
-      )
-    );
-  } else {
-    setText(
-      elements.latestAttendanceDate,
-      'Giriş yoxdur'
-    );
-
-    setText(
-      elements.latestAttendanceTime,
-      '—'
-    );
-  }
 
   setText(
     elements.attendanceCount,
-    countResult.count ?? 0
+    state.attendance.length
   );
-}
 
 
-// ============================================================
-// 13. HERO BACKGROUND
-// ============================================================
+  const latest =
+    state.attendance[0];
 
-function initHero() {
-  const heroMedia =
-    byId(
-      'home-hero-media'
+
+  if (!latest) {
+    setText(
+      elements
+        .latestAttendanceDate,
+      'Giriş yoxdur'
     );
 
-  if (!heroMedia) {
+
+    setText(
+      elements
+        .latestAttendanceTime,
+      '—'
+    );
+
+
+    setText(
+      elements
+        .latestAttendanceType,
+      '—'
+    );
+
+
     return;
   }
 
-  heroMedia.setAttribute(
-    'aria-hidden',
-    'true'
+
+  const date =
+    attendanceDate(
+      latest
+    );
+
+
+  setText(
+    elements
+      .latestAttendanceDate,
+    formatDate(date)
+  );
+
+
+  setText(
+    elements
+      .latestAttendanceTime,
+    formatTime(date)
+  );
+
+
+  setText(
+    elements
+      .latestAttendanceType,
+    attendanceTypeLabel(
+      latest
+    )
   );
 }
 
 
 // ============================================================
-// 14. AUTH CHANGE
+// 17. HERO IMAGE
+//
+// Zal şəkillərini yerləşdirəndə HTML-də:
+// data-gym-image
+//
+// olan img elementlərinə browser fallback tətbiq edə bilərik.
+//
+// Hələ şəkil yolu uydurmuruq.
 // ============================================================
 
-function bindAuthChange() {
+function bindHeroImages() {
+  document
+    .querySelectorAll(
+      '[data-gym-image]'
+    )
+    .forEach(
+      image => {
+        image.addEventListener(
+          'error',
+          () => {
+            image.classList.add(
+              'is-image-missing'
+            );
+          },
+          {
+            once:
+              true,
+          }
+        );
+      }
+    );
+}
+
+
+// ============================================================
+// 18. AUTH CHANGE
+// ============================================================
+
+function bindAuthEvents() {
   window.addEventListener(
-    'skyfit:authchange',
-    async () => {
+    SKYFIT_EVENTS.authChange,
+    async event => {
       state.identity =
-        await getCurrentIdentity();
+        event.detail
+          ?.identity ||
+        await getCurrentIdentity({
+          force:
+            true,
+        });
+
 
       await loadMemberOverview();
     }
@@ -790,10 +1338,81 @@ function bindAuthChange() {
 
 
 // ============================================================
-// 15. INITIAL DATA
+// 19. PROFILE CHANGE
 // ============================================================
 
-async function loadHomeData() {
+function bindProfileEvents() {
+  window.addEventListener(
+    SKYFIT_EVENTS.profileChange,
+    async () => {
+      state.identity =
+        await getCurrentIdentity({
+          force:
+            true,
+        });
+
+
+      renderMemberOverview();
+    }
+  );
+}
+
+
+// ============================================================
+// 20. PAGE VISIBILITY REFRESH
+//
+// Məhsul/stok admin paneldə dəyişibsə və istifadəçi homepage-ə
+// qayıdıbsa məlumat köhnə qalmasın.
+// ============================================================
+
+let lastRefreshAt =
+  Date.now();
+
+
+function bindVisibilityRefresh() {
+  document.addEventListener(
+    'visibilitychange',
+    async () => {
+      if (
+        document.visibilityState !==
+        'visible'
+      ) {
+        return;
+      }
+
+
+      const now =
+        Date.now();
+
+
+      if (
+        now -
+        lastRefreshAt <
+        2 * 60 * 1000
+      ) {
+        return;
+      }
+
+
+      lastRefreshAt =
+        now;
+
+
+      await Promise.all([
+        loadProducts(),
+        loadTrainers(),
+        loadMemberOverview(),
+      ]);
+    }
+  );
+}
+
+
+// ============================================================
+// 21. INITIAL LOAD
+// ============================================================
+
+async function loadInitialData() {
   await Promise.all([
     loadProducts(),
     loadTrainers(),
@@ -803,7 +1422,7 @@ async function loadHomeData() {
 
 
 // ============================================================
-// 16. INIT
+// 22. INIT
 // ============================================================
 
 async function init() {
@@ -811,32 +1430,55 @@ async function init() {
     state.identity =
       await initLayout();
 
-    bindProductEvents();
-    bindTrainerEvents();
-    bindAuthChange();
-    initHero();
 
-    await loadHomeData();
+    bindProductEvents();
+
+    bindTrainerEvents();
+
+    bindHeroImages();
+
+    bindAuthEvents();
+
+    bindProfileEvents();
+
+    bindVisibilityRefresh();
+
+
+    await loadInitialData();
+
+
+    lastRefreshAt =
+      Date.now();
   } catch (error) {
     console.error(
-      'Home initialization error:',
+      '[SKy Fit Home] Init:',
       error
     );
 
+
     notify.error(
-      'Ana səhifə başladılarkən xəta baş verdi.'
+      getErrorMessage(
+        error,
+        'Ana səhifə başladılmadı.'
+      )
     );
   }
 }
 
 
 // ============================================================
-// 17. START
+// 23. START
 // ============================================================
 
 asyncHandler(
   init,
   {
-    notifyOnError: true,
+    notifyOnError:
+      true,
   }
 )();
+
+
+// ============================================================
+// SKY FIT PRO APP.JS COMPLETE
+// ============================================================
