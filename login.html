@@ -1,6 +1,18 @@
-<!doctype html>
-<html lang="az">
+<!DOCTYPE html>
+
+<html
+  lang="az"
+  data-theme="dark"
+  data-theme-source="system"
+>
 <head>
+
+  <!-- ========================================================
+       SKY FIT PRO
+       Login Page
+       File: login.html
+       ======================================================== -->
+
   <meta charset="UTF-8">
 
   <meta
@@ -9,28 +21,29 @@
   >
 
   <meta
+    name="theme-color"
+    content="#090b10"
+  >
+
+  <meta
+    name="color-scheme"
+    content="dark light"
+  >
+
+  <meta
     name="description"
     content="SKy Fit Pro hesabına daxil ol."
   >
 
-  <meta name="theme-color" content="#090b10">
-
   <meta
-    name="apple-mobile-web-app-capable"
-    content="yes"
+    name="author"
+    content="Qərib Səfərli"
   >
 
-  <meta
-    name="apple-mobile-web-app-status-bar-style"
-    content="black-translucent"
-  >
 
-  <meta
-    name="apple-mobile-web-app-title"
-    content="SKy Fit"
-  >
-
-  <title>Daxil ol | SKy Fit Pro</title>
+  <!-- ========================================================
+       PWA
+       ======================================================== -->
 
   <link
     rel="manifest"
@@ -39,8 +52,8 @@
 
   <link
     rel="icon"
-    href="./assets/icons/favicon.png"
     type="image/png"
+    href="./assets/icons/favicon.png"
   >
 
   <link
@@ -48,129 +61,245 @@
     href="./assets/icons/apple-touch-icon.png"
   >
 
+
+  <!-- ========================================================
+       CSS
+       ======================================================== -->
+
   <link
     rel="stylesheet"
     href="./css/app.css"
   >
+
+
+  <title>
+    Daxil ol · SKy Fit Pro
+  </title>
+
 </head>
 
-<body
-  class="app-body auth-page"
-  data-page="login"
->
 
-  <!-- =====================================================
-       GLOBAL APP ROOTS
-       Ortaq komponentlər JS tərəfindən idarə ediləcək.
-  ====================================================== -->
-
-  <div
-    id="app-loader-root"
-    aria-live="polite"
-  ></div>
-
-  <div
-    id="app-toast-root"
-    aria-live="polite"
-    aria-atomic="true"
-  ></div>
-
-  <div
-    id="app-modal-root"
-    aria-live="polite"
-  ></div>
-
-  <div
-    id="app-drawer-root"
-  ></div>
+<body data-page="login">
 
 
-  <!-- =====================================================
+  <!-- ========================================================
+       SHARED LAYOUT ROOTS
+       ======================================================== -->
+
+  <div id="app-header-root"></div>
+
+  <div id="app-drawer-root"></div>
+
+
+  <!-- ========================================================
        AUTH PAGE
-  ====================================================== -->
+       ======================================================== -->
 
   <main
     id="app-main"
-    class="auth-shell"
+    class="app-main auth-page"
   >
 
-    <!-- ===================================================
-         VISUAL PANEL
-    ==================================================== -->
+    <section class="auth-shell">
 
-    <section
-      class="auth-visual"
-      aria-hidden="true"
-    >
 
-      <div class="auth-visual__background"></div>
+      <!-- ====================================================
+           VISUAL SIDE
+           ==================================================== -->
 
-      <div class="auth-visual__glow auth-visual__glow--one"></div>
+      <div class="auth-visual">
 
-      <div class="auth-visual__glow auth-visual__glow--two"></div>
-
-      <div class="auth-visual__content">
-
-        <a
-          href="./index.html"
-          class="brand-mark"
-          tabindex="-1"
+        <div
+          class="auth-visual__background"
+          aria-hidden="true"
         >
-          <span class="brand-mark__icon">
-            SK
-          </span>
 
-          <span class="brand-mark__text">
-            <strong>SKy Fit</strong>
-            <small>PRO</small>
-          </span>
-        </a>
+          <span class="auth-visual__glow auth-visual__glow--one"></span>
 
+          <span class="auth-visual__glow auth-visual__glow--two"></span>
 
-        <div class="auth-visual__copy">
-
-          <span class="auth-visual__eyebrow">
-            SKy Fit Pro
-          </span>
-
-          <h1 class="auth-visual__title">
-            Daha güclü sistem.
-            <br>
-            Daha rahat idarəetmə.
-          </h1>
-
-          <p class="auth-visual__description">
-            Üzvlük, satış, stok, borclar və gündəlik
-            əməliyyatlar bir sistemdə.
-          </p>
+          <span class="auth-visual__grid"></span>
 
         </div>
 
 
-        <div class="auth-visual__metrics">
+        <div class="auth-visual__content">
 
-          <div class="auth-metric">
+          <a
+            href="./index.html"
+            class="auth-brand"
+            aria-label="SKy Fit Pro ana səhifə"
+          >
 
-            <span class="auth-metric__value">
-              24/7
+            <span
+              class="auth-brand__mark"
+              aria-hidden="true"
+            >
+              SK
             </span>
 
-            <span class="auth-metric__label">
-              Sistemə çıxış
+            <span class="auth-brand__text">
+
+              <strong>
+                SKy Fit
+              </strong>
+
+              <small>
+                PRO
+              </small>
+
             </span>
+
+          </a>
+
+
+          <div class="auth-visual__copy">
+
+            <span class="section-eyebrow">
+              SKy Fit Pro
+            </span>
+
+            <h1 class="auth-visual__title">
+              Hesabına daxil ol.
+            </h1>
+
+            <p class="auth-visual__description">
+              Üzvlük, giriş tarixçəsi, şəxsi profil və SKy Fit
+              xidmətlərinə bir hesabdan bax.
+            </p>
 
           </div>
 
 
-          <div class="auth-metric">
+          <div class="auth-visual__features">
 
-            <span class="auth-metric__value">
-              1
-            </span>
+            <article class="auth-feature">
 
-            <span class="auth-metric__label">
-              Vahid platforma
-            </span>
+              <span
+                class="auth-feature__icon"
+                aria-hidden="true"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <rect
+                    x="4"
+                    y="5"
+                    width="16"
+                    height="14"
+                    rx="3"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                  />
+
+                  <path
+                    d="M8 9h8M8 13h5"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    stroke-linecap="round"
+                  />
+                </svg>
+              </span>
+
+              <span>
+
+                <strong>
+                  Üzvlüyün
+                </strong>
+
+                <small>
+                  Aktiv status və tarixlər
+                </small>
+
+              </span>
+
+            </article>
+
+
+            <article class="auth-feature">
+
+              <span
+                class="auth-feature__icon"
+                aria-hidden="true"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="8.5"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                  />
+
+                  <path
+                    d="M12 7.5V12l3 2"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </span>
+
+              <span>
+
+                <strong>
+                  Giriş tarixçəsi
+                </strong>
+
+                <small>
+                  Məşq aktivliyini izlə
+                </small>
+
+              </span>
+
+            </article>
+
+
+            <article class="auth-feature">
+
+              <span
+                class="auth-feature__icon"
+                aria-hidden="true"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <circle
+                    cx="12"
+                    cy="8"
+                    r="3.5"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                  />
+
+                  <path
+                    d="M5.5 20c.6-4 3-6 6.5-6s5.9 2 6.5 6"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    stroke-linecap="round"
+                  />
+                </svg>
+              </span>
+
+              <span>
+
+                <strong>
+                  Profilin
+                </strong>
+
+                <small>
+                  Şəxsi məlumatlar bir yerdə
+                </small>
+
+              </span>
+
+            </article>
 
           </div>
 
@@ -178,386 +307,352 @@
 
       </div>
 
-    </section>
+
+      <!-- ====================================================
+           LOGIN PANEL
+           ==================================================== -->
+
+      <div class="auth-panel">
+
+        <div class="auth-panel__inner">
 
 
-    <!-- ===================================================
-         AUTH FORM PANEL
-    ==================================================== -->
+          <!-- ==================================================
+               MOBILE BRAND
+               ================================================== -->
 
-    <section
-      class="auth-panel"
-      aria-labelledby="login-title"
-    >
-
-      <div class="auth-panel__inner">
-
-        <!-- MOBILE BRAND -->
-
-        <a
-          href="./index.html"
-          class="brand-mark auth-panel__brand"
-          aria-label="SKy Fit ana səhifə"
-        >
-
-          <span class="brand-mark__icon">
-            SK
-          </span>
-
-          <span class="brand-mark__text">
-            <strong>SKy Fit</strong>
-            <small>PRO</small>
-          </span>
-
-        </a>
-
-
-        <!-- AUTH HEADING -->
-
-        <header class="auth-heading">
-
-          <span class="auth-heading__eyebrow">
-            Xoş gəldin
-          </span>
-
-          <h1
-            id="login-title"
-            class="auth-heading__title"
+          <a
+            href="./index.html"
+            class="auth-brand auth-brand--mobile"
+            aria-label="SKy Fit Pro ana səhifə"
           >
-            Hesabına daxil ol
-          </h1>
-
-          <p class="auth-heading__description">
-            SKy Fit hesab məlumatlarını daxil et.
-          </p>
-
-        </header>
-
-
-        <!-- LOGIN FORM -->
-
-        <form
-          id="login-form"
-          class="auth-form"
-          novalidate
-        >
-
-          <!-- EMAIL -->
-
-          <div class="ui-field">
-
-            <label
-              class="ui-field__label"
-              for="login-email"
-            >
-              E-poçt
-            </label>
-
-            <div class="ui-input">
-
-              <span
-                class="ui-input__icon"
-                aria-hidden="true"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M4 6.5h16v11H4v-11Z"
-                    stroke="currentColor"
-                    stroke-width="1.7"
-                    stroke-linejoin="round"
-                  />
-
-                  <path
-                    d="m4.5 7 7.5 6 7.5-6"
-                    stroke="currentColor"
-                    stroke-width="1.7"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
-              </span>
-
-              <input
-                id="login-email"
-                name="email"
-                class="ui-input__control"
-                type="email"
-                inputmode="email"
-                autocomplete="email"
-                autocapitalize="none"
-                spellcheck="false"
-                placeholder="example@email.com"
-                required
-                aria-describedby="login-email-error"
-              >
-
-            </div>
 
             <span
-              id="login-email-error"
-              class="ui-field__error is-hidden"
-            ></span>
+              class="auth-brand__mark"
+              aria-hidden="true"
+            >
+              SK
+            </span>
+
+            <span class="auth-brand__text">
+
+              <strong>
+                SKy Fit
+              </strong>
+
+              <small>
+                PRO
+              </small>
+
+            </span>
+
+          </a>
+
+
+          <!-- ==================================================
+               HEADER
+               ================================================== -->
+
+          <div class="auth-panel__header">
+
+            <span class="section-eyebrow">
+              Xoş gəldin
+            </span>
+
+            <h2 class="auth-panel__title">
+              Daxil ol
+            </h2>
+
+            <p class="auth-panel__description">
+              Hesab məlumatlarını daxil et.
+            </p>
 
           </div>
 
 
-          <!-- PASSWORD -->
+          <!-- ==================================================
+               FORM
+               ================================================== -->
 
-          <div class="ui-field">
+          <form
+            id="login-form"
+            class="auth-form"
+            novalidate
+          >
 
-            <div class="ui-field__top">
+
+            <!-- Email -->
+
+            <div class="ui-field">
 
               <label
                 class="ui-field__label"
-                for="login-password"
+                for="login-email"
               >
-                Şifrə
+                E-poçt
               </label>
 
-              <a
-                href="./reset-password.html"
-                class="ui-field__link"
-              >
-                Şifrəni unutmusansa
-              </a>
+
+              <div class="ui-input">
+
+                <span
+                  class="ui-input__icon"
+                  aria-hidden="true"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+                    <rect
+                      x="3.5"
+                      y="5.5"
+                      width="17"
+                      height="13"
+                      rx="2.5"
+                      stroke="currentColor"
+                      stroke-width="1.7"
+                    />
+
+                    <path
+                      d="m5 8 7 5 7-5"
+                      stroke="currentColor"
+                      stroke-width="1.7"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </span>
+
+
+                <input
+                  id="login-email"
+                  class="ui-input__control"
+                  type="email"
+                  inputmode="email"
+                  autocomplete="email"
+                  autocapitalize="none"
+                  spellcheck="false"
+                  placeholder="email@example.com"
+                  required
+                >
+
+              </div>
+
+
+              <span
+                id="login-email-error"
+                class="ui-field__error is-hidden"
+                hidden
+              ></span>
 
             </div>
 
 
-            <div class="ui-input">
+            <!-- Password -->
+
+            <div class="ui-field">
+
+              <div class="ui-field__header">
+
+                <label
+                  class="ui-field__label"
+                  for="login-password"
+                >
+                  Şifrə
+                </label>
+
+
+                <a
+                  id="auth-go-reset"
+                  href="./reset-password.html"
+                  class="ui-field__action"
+                >
+                  Şifrəni unutdum
+                </a>
+
+              </div>
+
+
+              <div class="ui-input">
+
+                <span
+                  class="ui-input__icon"
+                  aria-hidden="true"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+                    <rect
+                      x="5"
+                      y="10"
+                      width="14"
+                      height="10"
+                      rx="2.5"
+                      stroke="currentColor"
+                      stroke-width="1.7"
+                    />
+
+                    <path
+                      d="M8.5 10V7.5a3.5 3.5 0 0 1 7 0V10"
+                      stroke="currentColor"
+                      stroke-width="1.7"
+                      stroke-linecap="round"
+                    />
+                  </svg>
+                </span>
+
+
+                <input
+                  id="login-password"
+                  class="ui-input__control"
+                  type="password"
+                  autocomplete="current-password"
+                  placeholder="Şifrən"
+                  required
+                >
+
+
+                <button
+                  type="button"
+                  class="ui-input__action"
+                  data-password-toggle="login-password"
+                  aria-label="Şifrəni göstər"
+                  aria-pressed="false"
+                >
+
+                  <svg
+                    class="password-icon password-icon--show"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M3.5 12s3.1-5 8.5-5 8.5 5 8.5 5-3.1 5-8.5 5-8.5-5-8.5-5Z"
+                      stroke="currentColor"
+                      stroke-width="1.7"
+                    />
+
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="2.3"
+                      stroke="currentColor"
+                      stroke-width="1.7"
+                    />
+                  </svg>
+
+
+                  <svg
+                    class="password-icon password-icon--hide is-hidden"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="m4 4 16 16"
+                      stroke="currentColor"
+                      stroke-width="1.7"
+                      stroke-linecap="round"
+                    />
+
+                    <path
+                      d="M9.8 7.3A9.5 9.5 0 0 1 12 7c5.4 0 8.5 5 8.5 5a14 14 0 0 1-2.2 2.7M14.5 16.6A8.8 8.8 0 0 1 12 17c-5.4 0-8.5-5-8.5-5a14.8 14.8 0 0 1 2.4-2.9"
+                      stroke="currentColor"
+                      stroke-width="1.7"
+                      stroke-linecap="round"
+                    />
+                  </svg>
+
+                </button>
+
+              </div>
+
 
               <span
-                class="ui-input__icon"
-                aria-hidden="true"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <rect
-                    x="5"
-                    y="10"
-                    width="14"
-                    height="10"
-                    rx="2.5"
-                    stroke="currentColor"
-                    stroke-width="1.7"
-                  />
-
-                  <path
-                    d="M8 10V7a4 4 0 0 1 8 0v3"
-                    stroke="currentColor"
-                    stroke-width="1.7"
-                    stroke-linecap="round"
-                  />
-                </svg>
-              </span>
-
-              <input
-                id="login-password"
-                name="password"
-                class="ui-input__control"
-                type="password"
-                autocomplete="current-password"
-                placeholder="Şifrən"
-                required
-                minlength="6"
-                aria-describedby="login-password-error"
-              >
-
-              <button
-                type="button"
-                id="login-password-toggle"
-                class="ui-input__action"
-                aria-label="Şifrəni göstər"
-                aria-pressed="false"
-              >
-
-                <svg
-                  class="password-icon password-icon--show"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M2.8 12s3.2-5 9.2-5 9.2 5 9.2 5-3.2 5-9.2 5-9.2-5-9.2-5Z"
-                    stroke="currentColor"
-                    stroke-width="1.7"
-                    stroke-linejoin="round"
-                  />
-
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="2.5"
-                    stroke="currentColor"
-                    stroke-width="1.7"
-                  />
-                </svg>
-
-
-                <svg
-                  class="password-icon password-icon--hide is-hidden"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="m4 4 16 16"
-                    stroke="currentColor"
-                    stroke-width="1.7"
-                    stroke-linecap="round"
-                  />
-
-                  <path
-                    d="M9.8 7.3A10.5 10.5 0 0 1 12 7c6 0 9.2 5 9.2 5a14 14 0 0 1-2.6 3.1"
-                    stroke="currentColor"
-                    stroke-width="1.7"
-                    stroke-linecap="round"
-                  />
-
-                  <path
-                    d="M14.2 16.7A9.2 9.2 0 0 1 12 17c-6 0-9.2-5-9.2-5a13.8 13.8 0 0 1 2.7-3.2"
-                    stroke="currentColor"
-                    stroke-width="1.7"
-                    stroke-linecap="round"
-                  />
-                </svg>
-
-              </button>
+                id="login-password-error"
+                class="ui-field__error is-hidden"
+                hidden
+              ></span>
 
             </div>
 
-            <span
-              id="login-password-error"
-              class="ui-field__error is-hidden"
-            ></span>
 
-          </div>
+            <!-- Submit -->
 
+            <button
+              id="login-submit"
+              class="ui-button ui-button--primary ui-button--full auth-submit"
+              type="submit"
+            >
 
-          <!-- OPTIONS -->
-
-          <div class="auth-form__options">
-
-            <label class="ui-checkbox">
-
-              <input
-                id="remember-session"
-                class="ui-checkbox__input"
-                type="checkbox"
-                checked
-              >
+              <span class="ui-button__label">
+                Daxil ol
+              </span>
 
               <span
-                class="ui-checkbox__box"
+                class="ui-button__spinner is-hidden"
                 aria-hidden="true"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="m6.5 12.5 3.5 3.5 7.5-8"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
-              </span>
+              ></span>
 
-              <span class="ui-checkbox__label">
-                Məni yadda saxla
-              </span>
+            </button>
 
-            </label>
-
-          </div>
+          </form>
 
 
-          <!-- SUBMIT -->
+          <!-- ==================================================
+               REGISTER LINK
+               ================================================== -->
 
-          <button
-            id="login-submit"
-            class="ui-button ui-button--primary ui-button--full"
-            type="submit"
-          >
+          <div class="auth-switch">
 
-            <span class="ui-button__label">
-              Daxil ol
+            <span>
+              Hesabın yoxdur?
             </span>
 
-            <span
-              class="ui-button__spinner is-hidden"
-              aria-hidden="true"
-            ></span>
+            <a
+              id="auth-go-register"
+              href="./register.html"
+            >
+              Qeydiyyatdan keç
+            </a>
 
-          </button>
-
-
-          <!-- FORM STATUS -->
-
-          <div
-            id="login-form-status"
-            class="auth-form__status is-hidden"
-            role="status"
-            aria-live="polite"
-          ></div>
-
-        </form>
+          </div>
 
 
-        <!-- REGISTER LINK -->
-
-        <div class="auth-switch">
-
-          <span>
-            Hesabın yoxdur?
-          </span>
-
-          <a href="./register.html">
-            Qeydiyyatdan keç
-          </a>
-
-        </div>
-
-
-        <!-- HOME -->
-
-        <div class="auth-panel__footer">
+          <!-- ==================================================
+               BACK
+               ================================================== -->
 
           <a
             href="./index.html"
             class="auth-back-link"
           >
 
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              aria-hidden="true"
-            >
-              <path
-                d="m15 18-6-6 6-6"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
+            <span aria-hidden="true">
+              ←
+            </span>
 
             Ana səhifəyə qayıt
 
           </a>
+
+
+          <!-- ==================================================
+               DEVELOPER CREDIT
+               ================================================== -->
+
+          <div class="auth-developer-credit">
+
+            <span>
+              Senior Full Stack Developer
+            </span>
+
+            <strong>
+              Qərib Səfərli
+            </strong>
+
+          </div>
 
         </div>
 
@@ -568,31 +663,45 @@
   </main>
 
 
-  <!-- =====================================================
+  <!-- ========================================================
+       SHARED ROOTS
+       ======================================================== -->
+
+  <div id="app-footer-root"></div>
+
+  <div id="app-bottom-nav-root"></div>
+
+  <div id="app-modal-root"></div>
+
+  <div id="app-toast-root"></div>
+
+  <div id="app-loader-root"></div>
+
+
+  <!-- ========================================================
        NOSCRIPT
-  ====================================================== -->
+       ======================================================== -->
 
   <noscript>
 
     <div class="noscript-message">
 
       <strong>
-        JavaScript tələb olunur
+        JavaScript aktiv deyil
       </strong>
 
-      <p>
-        SKy Fit Pro sisteminə daxil olmaq üçün
-        brauzerdə JavaScript aktiv olmalıdır.
-      </p>
+      <span>
+        SKy Fit Pro giriş sistemi üçün JavaScript aktiv olmalıdır.
+      </span>
 
     </div>
 
   </noscript>
 
 
-  <!-- =====================================================
-       AUTH ENTRY
-  ====================================================== -->
+  <!-- ========================================================
+       AUTH MODULE
+       ======================================================== -->
 
   <script
     type="module"
