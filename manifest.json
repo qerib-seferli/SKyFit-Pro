@@ -2,83 +2,130 @@
   "id": "/",
   "name": "SKy Fit Pro",
   "short_name": "SKy Fit",
-  "description": "SKy Fit Pro — fitness klubu, üzvlük, satış, stok və idarəetmə platforması.",
+  "description": "SKy Fit Pro — fitness klub idarəetməsi, üzvlük, giriş, məhsullar və şəxsi profil sistemi.",
   "lang": "az",
   "dir": "ltr",
+
   "start_url": "./index.html",
   "scope": "./",
+
   "display": "standalone",
+  "display_override": [
+    "window-controls-overlay",
+    "standalone",
+    "minimal-ui"
+  ],
+
   "orientation": "portrait-primary",
-  "background_color": "#080a0f",
+
+  "background_color": "#090b10",
   "theme_color": "#090b10",
+
   "categories": [
     "fitness",
     "health",
-    "business",
-    "lifestyle"
+    "lifestyle",
+    "shopping"
   ],
+
   "icons": [
     {
-      "src": "./assets/icons/icon-192.png",
+      "src": "./assets/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png"
+    },
+    {
+      "src": "./assets/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png"
+    },
+    {
+      "src": "./assets/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png"
+    },
+    {
+      "src": "./assets/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png"
+    },
+    {
+      "src": "./assets/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png"
+    },
+    {
+      "src": "./assets/icons/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "./assets/icons/icon-192-maskable.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
+      "src": "./assets/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png"
     },
     {
-      "src": "./assets/icons/icon-512.png",
+      "src": "./assets/icons/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "./assets/icons/icon-512-maskable.png",
+      "src": "./assets/icons/maskable-icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./assets/icons/maskable-icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
     }
   ],
+
   "shortcuts": [
+    {
+      "name": "Ana səhifə",
+      "short_name": "Ana səhifə",
+      "description": "SKy Fit Pro ana səhifəsini aç",
+      "url": "./index.html",
+      "icons": [
+        {
+          "src": "./assets/icons/icon-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
     {
       "name": "Profil",
       "short_name": "Profil",
-      "description": "SKy Fit profilini aç",
+      "description": "Şəxsi profil və üzvlük məlumatlarını aç",
       "url": "./profile.html",
       "icons": [
         {
-          "src": "./assets/icons/icon-192.png",
-          "sizes": "192x192"
+          "src": "./assets/icons/icon-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
         }
       ]
     },
     {
       "name": "Sevimlilər",
-      "short_name": "Sevimli",
+      "short_name": "Sevimlilər",
       "description": "Sevimli məhsulları aç",
       "url": "./favorites.html",
       "icons": [
         {
-          "src": "./assets/icons/icon-192.png",
-          "sizes": "192x192"
-        }
-      ]
-    },
-    {
-      "name": "İdarəetmə",
-      "short_name": "Admin",
-      "description": "SKy Fit idarəetmə panelini aç",
-      "url": "./admin.html",
-      "icons": [
-        {
-          "src": "./assets/icons/icon-192.png",
-          "sizes": "192x192"
+          "src": "./assets/icons/icon-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
         }
       ]
     }
-  ]
+  ],
+
+  "prefer_related_applications": false
 }
