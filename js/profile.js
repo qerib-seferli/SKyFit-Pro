@@ -2,6 +2,9 @@
 // SKY FIT PRO
 // Profile Page Controller
 // File: js/profile.js
+//
+// PART 1 / 2
+// Real Supabase Schema
 // ============================================================
 
 import {
@@ -11,6 +14,8 @@ import {
 } from './config.js';
 
 import {
+  SKYFIT_EVENTS,
+
   $,
   byId,
   createElement,
@@ -18,36 +23,53 @@ import {
   showElement,
   hideElement,
   setText,
+
   normalizeString,
+  escapeHtml,
+
   formatDate,
   formatTime,
-  daysLeft,
-  membershipStatus,
+  formatDateTime,
+
   getCurrentIdentity,
   getProfileName,
-  getInitials,
-  getPublicStorageUrl,
+  getProfileInitials,
+  getProfileAvatar,
+
   roleLabel,
-  roleBadgeClass,
+
+  membershipIsActive,
+  membershipDaysRemaining,
+  membershipStatusLabel,
+
+  attendanceDate,
+  attendanceTypeLabel,
+  attendanceAmount,
+
+  money,
+
   openModal,
   closeModal,
   confirmDialog,
+
   notify,
   getErrorMessage,
+
   validatePhone,
   setFieldError,
   clearFormErrors,
   setButtonLoading,
-  cycleTheme,
+
   getStoredTheme,
+  cycleTheme,
+
   signOut,
-  requireAuth,
   asyncHandler,
 } from './core.js';
 
 import {
   initLayout,
-  refreshLayout,
+  refreshLayoutIdentity,
 } from './layout.js';
 
 
@@ -56,15 +78,30 @@ import {
 // ============================================================
 
 const state = {
-  identity: null,
 
-  membership: null,
+  identity:
+    null,
 
-  attendance: [],
+  profile:
+    null,
 
-  attendanceExpanded: false,
+  membership:
+    null,
 
-  avatarUploading: false,
+  memberships:
+    [],
+
+  attendance:
+    [],
+
+  attendanceExpanded:
+    false,
+
+  avatarUploading:
+    false,
+
+  savingProfile:
+    false,
 };
 
 
@@ -72,363 +109,528 @@ const state = {
 // 02. DOM
 // ============================================================
 
-const elements = {
-  avatarButton:
-    byId('profile-avatar-button'),
+function getElements() {
+  return {
 
-  avatarInput:
-    byId('profile-avatar-input'),
+    // --------------------------------------------------------
+    // Main profile identity
+    // --------------------------------------------------------
 
-  avatarImage:
-    byId('profile-avatar-image'),
+    avatarButton:
+      byId(
+        'profile-avatar-button'
+      ),
 
-  avatarFallback:
-    byId('profile-avatar-fallback'),
+    avatarInput:
+      byId(
+        'profile-avatar-input'
+      ),
 
-  roleBadge:
-    byId('profile-role-badge'),
+    avatarImage:
+      byId(
+        'profile-avatar-image'
+      ),
 
-  profileTitle:
-    byId('profile-title'),
+    avatarFallback:
+      byId(
+        'profile-avatar-fallback'
+      ),
 
-  profileEmail:
-    byId('profile-email'),
+    profileTitle:
+      byId(
+        'profile-title'
+      ),
 
-  editButton:
-    byId('profile-edit-button'),
+    profileEmail:
+      byId(
+        'profile-email'
+      ),
 
-  overviewMembershipStatus:
-    byId('profile-membership-status'),
+    roleBadge:
+      byId(
+        'profile-role-badge'
+      ),
 
-  overviewMembershipPlan:
-    byId('profile-membership-plan'),
+    editButton:
+      byId(
+        'profile-edit-button'
+      ),
 
-  overviewMembershipExpiry:
-    byId('profile-membership-expiry'),
 
-  attendanceCount:
-    byId('profile-attendance-count'),
+    // --------------------------------------------------------
+    // Detail fields
+    // --------------------------------------------------------
 
-  lastAttendanceDate:
-    byId('profile-last-attendance-date'),
+    fullName:
+      byId(
+        'profile-full-name'
+      ),
 
-  lastAttendanceTime:
-    byId('profile-last-attendance-time'),
+    phone:
+      byId(
+        'profile-phone'
+      ),
 
-  fullName:
-    byId('profile-full-name'),
+    emailDetail:
+      byId(
+        'profile-email-detail'
+      ),
 
-  phone:
-    byId('profile-phone'),
+    birthDate:
+      byId(
+        'profile-birth-date'
+      ),
 
-  emailDetail:
-    byId('profile-email-detail'),
+    address:
+      byId(
+        'profile-address'
+      ),
 
-  membershipCard:
-    byId('profile-membership-card'),
 
-  membershipEmpty:
-    byId('profile-membership-empty'),
+    // --------------------------------------------------------
+    // Overview
+    // --------------------------------------------------------
 
-  membershipCardStatus:
-    byId('membership-card-status'),
+    membershipStatus:
+      byId(
+        'profile-membership-status'
+      ),
 
-  membershipCardPlan:
-    byId('membership-card-plan'),
+    membershipPlan:
+      byId(
+        'profile-membership-plan'
+      ),
 
-  membershipCardProgress:
-    byId('membership-card-progress'),
+    membershipExpiry:
+      byId(
+        'profile-membership-expiry'
+      ),
 
-  membershipCardStart:
-    byId('membership-card-start'),
+    membershipDays:
+      byId(
+        'profile-membership-days'
+      ),
 
-  membershipCardEnd:
-    byId('membership-card-end'),
+    attendanceCount:
+      byId(
+        'profile-attendance-count'
+      ),
 
-  membershipCardDaysLeft:
-    byId('membership-card-days-left'),
+    lastAttendanceDate:
+      byId(
+        'profile-last-attendance-date'
+      ),
 
-  attendanceList:
-    byId('profile-attendance-list'),
+    lastAttendanceTime:
+      byId(
+        'profile-last-attendance-time'
+      ),
 
-  attendanceEmpty:
-    byId('profile-attendance-empty'),
 
-  attendanceShowAll:
-    byId('attendance-show-all-button'),
+    // --------------------------------------------------------
+    // Membership card
+    // --------------------------------------------------------
 
-  changePasswordButton:
-    byId('profile-change-password-button'),
+    membershipCard:
+      byId(
+        'profile-membership-card'
+      ),
 
-  themeButton:
-    byId('profile-theme-button'),
+    membershipEmpty:
+      byId(
+        'profile-membership-empty'
+      ),
 
-  themeLabel:
-    byId('profile-theme-label'),
+    membershipCardStatus:
+      byId(
+        'membership-card-status'
+      ),
 
-  logoutButton:
-    byId('profile-logout-button'),
-};
+    membershipCardPlan:
+      byId(
+        'membership-card-plan'
+      ),
+
+    membershipCardStart:
+      byId(
+        'membership-card-start'
+      ),
+
+    membershipCardEnd:
+      byId(
+        'membership-card-end'
+      ),
+
+    membershipCardDaysLeft:
+      byId(
+        'membership-card-days-left'
+      ),
+
+    membershipCardPrice:
+      byId(
+        'membership-card-price'
+      ),
+
+    membershipCardProgress:
+      byId(
+        'membership-card-progress'
+      ),
+
+
+    // --------------------------------------------------------
+    // Attendance history
+    // --------------------------------------------------------
+
+    attendanceList:
+      byId(
+        'profile-attendance-list'
+      ),
+
+    attendanceEmpty:
+      byId(
+        'profile-attendance-empty'
+      ),
+
+    attendanceShowAll:
+      byId(
+        'attendance-show-all-button'
+      ),
+
+
+    // --------------------------------------------------------
+    // Settings/actions
+    // --------------------------------------------------------
+
+    changePasswordButton:
+      byId(
+        'profile-change-password-button'
+      ),
+
+    themeButton:
+      byId(
+        'profile-theme-button'
+      ),
+
+    themeLabel:
+      byId(
+        'profile-theme-label'
+      ),
+
+    logoutButton:
+      byId(
+        'profile-logout-button'
+      ),
+  };
+}
 
 
 // ============================================================
-// 03. PROFILE FIELD HELPERS
-// Mövcud backend strukturu dəyişdirilmir.
+// 03. REQUIRE PROFILE
 // ============================================================
 
-function profileHasColumn(column) {
-  return (
-    state.identity?.profile &&
-    Object.prototype.hasOwnProperty.call(
-      state.identity.profile,
-      column
-    )
-  );
-}
+async function loadIdentity() {
+  const identity =
+    await getCurrentIdentity({
+      force:
+        true,
+    });
 
-
-function readProfileValue(
-  candidates,
-  fallback = ''
-) {
-  const profile =
-    state.identity?.profile;
-
-  if (!profile) {
-    return fallback;
-  }
-
-  for (const key of candidates) {
-    const value =
-      profile[key];
-
-    if (
-      value !== null &&
-      value !== undefined &&
-      String(value).trim() !== ''
-    ) {
-      return value;
-    }
-  }
-
-  return fallback;
-}
-
-
-function firstName() {
-  return normalizeString(
-    readProfileValue(
-      [
-        'first_name',
-        'firstName',
-        'name',
-      ]
-    )
-  );
-}
-
-
-function lastName() {
-  return normalizeString(
-    readProfileValue(
-      [
-        'last_name',
-        'lastName',
-        'surname',
-      ]
-    )
-  );
-}
-
-
-function phoneNumber() {
-  return normalizeString(
-    readProfileValue(
-      [
-        'phone',
-        'phone_number',
-        'mobile',
-      ]
-    )
-  );
-}
-
-
-// ============================================================
-// 04. AVATAR HELPERS
-// ============================================================
-
-function avatarStoredValue() {
-  return normalizeString(
-    readProfileValue(
-      [
-        'avatar_url',
-        'avatar_path',
-        'avatar',
-      ]
-    )
-  );
-}
-
-
-function avatarColumn() {
-  const candidates = [
-    'avatar_url',
-    'avatar_path',
-    'avatar',
-  ];
-
-  return (
-    candidates.find(
-      profileHasColumn
-    ) || null
-  );
-}
-
-
-function avatarUrl() {
-  const stored =
-    avatarStoredValue();
-
-  if (!stored) {
-    return '';
-  }
 
   if (
-    stored.startsWith('https://') ||
-    stored.startsWith('http://')
+    !identity
+      ?.authenticated
   ) {
-    return stored;
+    window.location.replace(
+      APP_CONFIG.routes.login
+    );
+
+    return null;
   }
 
-  return getPublicStorageUrl(
-    APP_CONFIG.storage.avatars,
-    stored
-  );
+
+  state.identity =
+    identity;
+
+
+  state.profile =
+    identity.profile;
+
+
+  return identity;
 }
 
 
 // ============================================================
-// 05. RENDER PROFILE IDENTITY
+// 04. PROFILE RENDER
 // ============================================================
 
-function renderIdentity() {
+function renderProfile() {
+  const elements =
+    getElements();
+
+
+  const profile =
+    state.profile;
+
+
   const identity =
     state.identity;
 
-  if (!identity) return;
 
-  const profile =
-    identity.profile;
+  if (
+    !profile ||
+    !identity
+  ) {
+    return;
+  }
 
-  const user =
-    identity.user;
 
   const name =
     getProfileName(
       profile,
-      user
+      identity.email
     );
 
-  const email =
-    normalizeString(
-      user?.email
+
+  const avatar =
+    getProfileAvatar(
+      profile
     );
+
 
   const initials =
-    getInitials(
-      firstName(),
-      lastName()
+    getProfileInitials(
+      profile
     );
 
-  const imageUrl =
-    avatarUrl();
 
+  // ----------------------------------------------------------
+  // Main identity
+  // ----------------------------------------------------------
 
   setText(
     elements.profileTitle,
     name
   );
 
+
   setText(
     elements.profileEmail,
-    email
+    profile.email ||
+    identity.email ||
+    '—'
   );
+
 
   setText(
     elements.fullName,
     name
   );
 
-  setText(
-    elements.phone,
-    phoneNumber(),
-    'Əlavə edilməyib'
-  );
 
   setText(
     elements.emailDetail,
-    email
+    profile.email ||
+    identity.email ||
+    '—'
   );
 
 
-  if (elements.roleBadge) {
-    elements.roleBadge.className =
-      roleBadgeClass(
-        identity.role
-      );
+  setText(
+    elements.phone,
+    profile.phone ||
+    'Əlavə edilməyib'
+  );
 
-    elements.roleBadge.textContent =
+
+  setText(
+    elements.birthDate,
+    profile.birth_date
+      ? formatDate(
+          profile.birth_date
+        )
+      : 'Əlavə edilməyib'
+  );
+
+
+  setText(
+    elements.address,
+    profile.address ||
+    'Əlavə edilməyib'
+  );
+
+
+  // ----------------------------------------------------------
+  // Role
+  // ----------------------------------------------------------
+
+  if (
+    elements.roleBadge
+  ) {
+    elements.roleBadge
+      .className =
+        roleClass(
+          profile.role
+        );
+
+
+    setText(
+      elements.roleBadge,
       roleLabel(
-        identity.role
-      );
+        profile.role
+      )
+    );
   }
 
 
-  if (imageUrl) {
-    if (elements.avatarImage) {
+  // ----------------------------------------------------------
+  // Avatar
+  // ----------------------------------------------------------
+
+  if (avatar) {
+    if (
+      elements.avatarImage
+    ) {
       elements.avatarImage.src =
-        imageUrl;
+        avatar;
+
 
       elements.avatarImage.alt =
         `${name} profil şəkli`;
 
-      showElement(
-        elements.avatarImage
-      );
+
+      elements.avatarImage.hidden =
+        false;
+
+
+      elements.avatarImage.onload =
+        () => {
+          hideElement(
+            elements.avatarFallback
+          );
+        };
+
+
+      elements.avatarImage.onerror =
+        () => {
+          elements.avatarImage.hidden =
+            true;
+
+
+          renderAvatarFallback(
+            initials
+          );
+        };
     }
+
 
     hideElement(
       elements.avatarFallback
     );
   } else {
-    if (elements.avatarFallback) {
-      elements.avatarFallback
-        .textContent =
-          initials;
+    if (
+      elements.avatarImage
+    ) {
+      elements.avatarImage.hidden =
+        true;
     }
 
-    showElement(
-      elements.avatarFallback
-    );
 
-    hideElement(
-      elements.avatarImage
+    renderAvatarFallback(
+      initials
     );
   }
 }
 
 
 // ============================================================
-// 06. MEMBERSHIP QUERY
+// 05. AVATAR FALLBACK
 // ============================================================
 
-async function loadMembership() {
+function renderAvatarFallback(
+  initials
+) {
+  const elements =
+    getElements();
+
+
+  if (
+    !elements.avatarFallback
+  ) {
+    return;
+  }
+
+
+  setText(
+    elements.avatarFallback,
+    initials ||
+    'SK'
+  );
+
+
+  showElement(
+    elements.avatarFallback
+  );
+}
+
+
+// ============================================================
+// 06. ROLE STYLE
+// ============================================================
+
+function roleClass(
+  role
+) {
+  switch (
+    normalizeString(
+      role
+    )
+  ) {
+    case 'admin':
+      return (
+        'ui-badge ui-badge--danger'
+      );
+
+
+    case 'staff':
+      return (
+        'ui-badge ui-badge--warning'
+      );
+
+
+    case 'member':
+      return (
+        'ui-badge ui-badge--success'
+      );
+
+
+    default:
+      return (
+        'ui-badge ui-badge--neutral'
+      );
+  }
+}
+
+
+// ============================================================
+// 07. LOAD MEMBERSHIPS
+//
+// Explicit FK aliases.
+// PGRST201 burada baş verməməlidir.
+// ============================================================
+
+async function loadMemberships() {
   const profileId =
-    state.identity?.profile?.id;
+    state.identity
+      ?.profileId;
+
 
   if (!profileId) {
-    state.membership = null;
+    state.memberships =
+      [];
+
+    state.membership =
+      null;
 
     renderMembership();
 
@@ -441,51 +643,141 @@ async function loadMembership() {
     error,
   } =
     await supabase
-      .from(TABLES.memberships)
+      .from(
+        TABLES.memberships
+      )
       .select(`
-        *,
-        membership_plans (*)
+        id,
+        member_id,
+        plan_id,
+        start_date,
+        end_date,
+        price,
+        status,
+        payment_status,
+        created_by,
+        updated_by,
+        operator_shift_id,
+
+        membership_plan:membership_plans!memberships_plan_id_fkey (
+          id,
+          name,
+          price,
+          duration_days,
+          is_daily,
+          is_active
+        ),
+
+        created_by_profile:profiles!memberships_created_by_fkey (
+          id,
+          full_name,
+          role,
+          avatar_url
+        ),
+
+        updated_by_profile:profiles!memberships_updated_by_fkey (
+          id,
+          full_name,
+          role,
+          avatar_url
+        )
       `)
       .eq(
-        'profile_id',
+        'member_id',
         profileId
       )
       .order(
-        'created_at',
+        'end_date',
         {
-          ascending: false,
+          ascending:
+            false,
         }
-      )
-      .limit(1)
-      .maybeSingle();
+      );
 
 
   if (error) {
     console.error(
-      'Profile membership error:',
+      '[SKy Fit Profile] Memberships:',
       error
     );
 
-    state.membership = null;
+
+    state.memberships =
+      [];
+
+    state.membership =
+      null;
+
 
     renderMembership();
+
 
     return;
   }
 
 
+  state.memberships =
+    Array.isArray(data)
+      ? data
+      : [];
+
+
   state.membership =
-    data || null;
+    findCurrentMembership(
+      state.memberships
+    );
+
 
   renderMembership();
 }
 
 
 // ============================================================
-// 07. MEMBERSHIP RENDER
+// 08. CURRENT MEMBERSHIP
+// ============================================================
+
+function findCurrentMembership(
+  memberships
+) {
+  if (
+    !Array.isArray(
+      memberships
+    )
+  ) {
+    return null;
+  }
+
+
+  const active =
+    memberships.find(
+      membership =>
+        membershipIsActive(
+          membership
+        )
+    );
+
+
+  if (active) {
+    return active;
+  }
+
+
+  return (
+    memberships[0] ||
+    null
+  );
+}
+
+
+// ============================================================
+// 09. MEMBERSHIP RENDER
 // ============================================================
 
 function renderMembership() {
+  const elements =
+    getElements();
+
+
   const membership =
     state.membership;
 
@@ -495,36 +787,46 @@ function renderMembership() {
       elements.membershipCard
     );
 
+
     showElement(
       elements.membershipEmpty
     );
 
 
-    setText(
-      elements.overviewMembershipPlan,
-      'Aktiv üzvlük yoxdur'
-    );
+    if (
+      elements.membershipStatus
+    ) {
+      elements
+        .membershipStatus
+        .className =
+          'ui-badge ui-badge--neutral';
+
+
+      setText(
+        elements
+          .membershipStatus,
+        'Üzvlük yoxdur'
+      );
+    }
+
 
     setText(
-      elements.overviewMembershipExpiry,
+      elements.membershipPlan,
       '—'
     );
 
 
-    if (
-      elements
-        .overviewMembershipStatus
-    ) {
-      elements
-        .overviewMembershipStatus
-        .className =
-          'ui-badge ui-badge--neutral';
+    setText(
+      elements.membershipExpiry,
+      '—'
+    );
 
-      elements
-        .overviewMembershipStatus
-        .textContent =
-          'Yoxdur';
-    }
+
+    setText(
+      elements.membershipDays,
+      '—'
+    );
+
 
     return;
   }
@@ -534,166 +836,207 @@ function renderMembership() {
     elements.membershipCard
   );
 
+
   hideElement(
     elements.membershipEmpty
   );
 
 
-  const startDate =
-    membership.start_date ||
-    membership.starts_at ||
-    membership.created_at;
-
-  const endDate =
-    membership.end_date ||
-    membership.expires_at;
-
-
-  const status =
-    membershipStatus({
-      status:
-        membership.status,
-
-      endDate,
-    });
-
-
   const plan =
-    membership.membership_plans;
+    membership
+      .membership_plan;
 
-  const planName =
-    normalizeString(
-      plan?.name ||
-      membership.plan_name,
-      'Üzvlük'
+
+  const active =
+    membershipIsActive(
+      membership
     );
 
 
+  const days =
+    membershipDaysRemaining(
+      membership
+    );
+
+
+  const statusLabel =
+    membershipStatusLabel(
+      membership
+    );
+
+
+  const statusClass =
+    active
+      ? 'ui-badge ui-badge--success'
+      : membership.status ===
+          'cancelled'
+        ? 'ui-badge ui-badge--danger'
+        : 'ui-badge ui-badge--warning';
+
+
+  // ----------------------------------------------------------
+  // Overview
+  // ----------------------------------------------------------
+
   if (
-    elements
-      .overviewMembershipStatus
+    elements.membershipStatus
   ) {
     elements
-      .overviewMembershipStatus
+      .membershipStatus
       .className =
-        status.className;
-
-    elements
-      .overviewMembershipStatus
-      .textContent =
-        status.label;
-  }
+        statusClass;
 
 
-  if (
-    elements
-      .membershipCardStatus
-  ) {
-    elements
-      .membershipCardStatus
-      .className =
-        status.className;
-
-    elements
-      .membershipCardStatus
-      .textContent =
-        status.label;
+    setText(
+      elements
+        .membershipStatus,
+      statusLabel
+    );
   }
 
 
   setText(
-    elements.overviewMembershipPlan,
-    planName
+    elements.membershipPlan,
+    plan?.name ||
+    'Üzvlük'
   );
 
 
   setText(
-    elements.overviewMembershipExpiry,
-    endDate
-      ? `${formatDate(endDate)}-dək`
+    elements.membershipExpiry,
+    membership.end_date
+      ? formatDate(
+          membership.end_date
+        )
       : '—'
   );
 
 
   setText(
-    elements.membershipCardPlan,
-    planName
+    elements.membershipDays,
+    active
+      ? `${days} gün`
+      : 'Bitib'
+  );
+
+
+  // ----------------------------------------------------------
+  // Detail card
+  // ----------------------------------------------------------
+
+  if (
+    elements
+      .membershipCardStatus
+  ) {
+    elements
+      .membershipCardStatus
+      .className =
+        statusClass;
+
+
+    setText(
+      elements
+        .membershipCardStatus,
+      statusLabel
+    );
+  }
+
+
+  setText(
+    elements
+      .membershipCardPlan,
+    plan?.name ||
+    'Üzvlük'
   );
 
 
   setText(
-    elements.membershipCardStart,
-    formatDate(startDate)
+    elements
+      .membershipCardStart,
+    formatDate(
+      membership.start_date
+    )
   );
 
 
   setText(
-    elements.membershipCardEnd,
-    formatDate(endDate)
+    elements
+      .membershipCardEnd,
+    formatDate(
+      membership.end_date
+    )
   );
 
 
-  const remaining =
-    endDate
-      ? daysLeft(endDate)
-      : 0;
+  setText(
+    elements
+      .membershipCardDaysLeft,
+    active
+      ? `${days} gün`
+      : 'Bitib'
+  );
 
 
   setText(
-    elements.membershipCardDaysLeft,
-    endDate
-      ? remaining > 0
-        ? `${remaining} gün`
-        : remaining === 0
-          ? 'Bu gün'
-          : 'Bitib'
-      : '—'
+    elements
+      .membershipCardPrice,
+    money(
+      membership.price ??
+      plan?.price ??
+      0
+    )
   );
 
 
   renderMembershipProgress(
-    startDate,
-    endDate
+    membership
   );
 }
 
 
 // ============================================================
-// 08. MEMBERSHIP PROGRESS
+// 10. MEMBERSHIP PROGRESS
 // ============================================================
 
 function renderMembershipProgress(
-  startDate,
-  endDate
+  membership
 ) {
-  if (
-    !elements.membershipCardProgress
-  ) {
+  const elements =
+    getElements();
+
+
+  const progress =
+    elements
+      .membershipCardProgress;
+
+
+  if (!progress) {
     return;
   }
 
 
   const start =
-    startDate
-      ? new Date(startDate)
-      : null;
+    new Date(
+      membership.start_date
+    );
+
 
   const end =
-    endDate
-      ? new Date(endDate)
-      : null;
+    new Date(
+      membership.end_date
+    );
 
 
   if (
-    !start ||
-    !end ||
-    Number.isNaN(start.getTime()) ||
-    Number.isNaN(end.getTime())
+    Number.isNaN(
+      start.getTime()
+    ) ||
+    Number.isNaN(
+      end.getTime()
+    )
   ) {
-    elements
-      .membershipCardProgress
-      .style.width =
-        '0%';
+    progress.style.width =
+      '0%';
 
     return;
   }
@@ -703,48 +1046,57 @@ function renderMembershipProgress(
     end.getTime() -
     start.getTime();
 
-  const elapsed =
-    Date.now() -
-    start.getTime();
 
-
-  if (total <= 0) {
-    elements
-      .membershipCardProgress
-      .style.width =
-        '100%';
+  if (
+    total <= 0
+  ) {
+    progress.style.width =
+      '100%';
 
     return;
   }
 
 
-  const progress =
+  const elapsed =
+    Date.now() -
+    start.getTime();
+
+
+  const percent =
     Math.max(
       0,
       Math.min(
         100,
-        (elapsed / total) * 100
+        elapsed /
+        total *
+        100
       )
     );
 
 
-  elements
-    .membershipCardProgress
-    .style.width =
-      `${progress}%`;
+  progress.style.width =
+    `${percent}%`;
 }
 
 
 // ============================================================
-// 09. ATTENDANCE QUERY
+// 11. LOAD ATTENDANCE
+//
+// Real timestamp:
+// checked_in_at
+//
+// Explicit member/operator aliases də var.
 // ============================================================
 
 async function loadAttendance() {
   const profileId =
-    state.identity?.profile?.id;
+    state.identity
+      ?.profileId;
+
 
   if (!profileId) {
-    state.attendance = [];
+    state.attendance =
+      [];
 
     renderAttendance();
 
@@ -757,16 +1109,36 @@ async function loadAttendance() {
     error,
   } =
     await supabase
-      .from(TABLES.attendance)
-      .select('*')
+      .from(
+        TABLES.attendance
+      )
+      .select(`
+        id,
+        member_id,
+        membership_id,
+        attendance_type,
+        amount,
+        checked_in_at,
+        created_by,
+        updated_by,
+        operator_shift_id,
+
+        operator:profiles!attendance_created_by_fkey (
+          id,
+          full_name,
+          role,
+          avatar_url
+        )
+      `)
       .eq(
-        'profile_id',
+        'member_id',
         profileId
       )
       .order(
-        'created_at',
+        'checked_in_at',
         {
-          ascending: false,
+          ascending:
+            false,
         }
       )
       .limit(200);
@@ -774,13 +1146,17 @@ async function loadAttendance() {
 
   if (error) {
     console.error(
-      'Profile attendance error:',
+      '[SKy Fit Profile] Attendance:',
       error
     );
 
-    state.attendance = [];
+
+    state.attendance =
+      [];
+
 
     renderAttendance();
+
 
     return;
   }
@@ -797,70 +1173,79 @@ async function loadAttendance() {
 
 
 // ============================================================
-// 10. ATTENDANCE DATE
+// 12. ATTENDANCE SUMMARY
 // ============================================================
 
-function attendanceDateValue(
-  item
-) {
-  return (
-    item?.attended_at ||
-    item?.entry_at ||
-    item?.checked_in_at ||
-    item?.created_at ||
-    null
+function renderAttendanceSummary() {
+  const elements =
+    getElements();
+
+
+  setText(
+    elements.attendanceCount,
+    state.attendance.length
+  );
+
+
+  const latest =
+    state.attendance[0];
+
+
+  if (!latest) {
+    setText(
+      elements
+        .lastAttendanceDate,
+      'Giriş yoxdur'
+    );
+
+
+    setText(
+      elements
+        .lastAttendanceTime,
+      '—'
+    );
+
+
+    return;
+  }
+
+
+  const date =
+    attendanceDate(
+      latest
+    );
+
+
+  setText(
+    elements
+      .lastAttendanceDate,
+    formatDate(date)
+  );
+
+
+  setText(
+    elements
+      .lastAttendanceTime,
+    formatTime(date)
   );
 }
 
 
 // ============================================================
-// 11. ATTENDANCE RENDER
+// 13. ATTENDANCE RENDER
 // ============================================================
 
 function renderAttendance() {
-  const list =
-    state.attendance;
+  const elements =
+    getElements();
 
 
-  setText(
-    elements.attendanceCount,
-    list.length
-  );
+  renderAttendanceSummary();
 
 
-  const latest =
-    list[0];
-
-
-  if (latest) {
-    const value =
-      attendanceDateValue(
-        latest
-      );
-
-    setText(
-      elements.lastAttendanceDate,
-      formatDate(value)
-    );
-
-    setText(
-      elements.lastAttendanceTime,
-      formatTime(value)
-    );
-  } else {
-    setText(
-      elements.lastAttendanceDate,
-      'Giriş yoxdur'
-    );
-
-    setText(
-      elements.lastAttendanceTime,
-      '—'
-    );
-  }
-
-
-  if (!elements.attendanceList) {
+  if (
+    !elements.attendanceList
+  ) {
     return;
   }
 
@@ -870,14 +1255,21 @@ function renderAttendance() {
   );
 
 
-  if (list.length === 0) {
+  if (
+    state.attendance.length ===
+    0
+  ) {
     showElement(
-      elements.attendanceEmpty
+      elements
+        .attendanceEmpty
     );
 
+
     hideElement(
-      elements.attendanceShowAll
+      elements
+        .attendanceShowAll
     );
+
 
     return;
   }
@@ -888,66 +1280,89 @@ function renderAttendance() {
   );
 
 
-  const limit =
+  const visible =
     state.attendanceExpanded
-      ? list.length
-      : 10;
+      ? state.attendance
+      : state.attendance.slice(
+          0,
+          10
+        );
 
 
-  list
-    .slice(0, limit)
-    .forEach(
-      item => {
-        elements.attendanceList.append(
-          createAttendanceItem(
-            item
+  visible.forEach(
+    attendance => {
+      elements
+        .attendanceList
+        .append(
+          createAttendanceRow(
+            attendance
           )
         );
-      }
-    );
+    }
+  );
 
 
   if (
-    elements.attendanceShowAll
-  ) {
     elements
       .attendanceShowAll
-      .classList.toggle(
-        'is-hidden',
-        list.length <= 10
+  ) {
+    if (
+      state.attendance.length >
+      10
+    ) {
+      showElement(
+        elements
+          .attendanceShowAll
       );
 
-    elements
-      .attendanceShowAll
-      .textContent =
-        state.attendanceExpanded
-          ? 'Daha az'
-          : 'Hamısı';
+
+      setText(
+        elements
+          .attendanceShowAll,
+        state
+          .attendanceExpanded
+          ? 'Daha az göstər'
+          : 'Hamısını göstər'
+      );
+    } else {
+      hideElement(
+        elements
+          .attendanceShowAll
+      );
+    }
   }
 }
 
 
 // ============================================================
-// 12. ATTENDANCE COMPONENT
+// 14. ATTENDANCE ROW
 // ============================================================
 
-function createAttendanceItem(
-  item
+function createAttendanceRow(
+  attendance
 ) {
-  const value =
-    attendanceDateValue(
-      item
+  const date =
+    attendanceDate(
+      attendance
     );
 
-  const entryType =
+
+  const operatorName =
     normalizeString(
-      item?.entry_type ||
-      item?.type ||
-      item?.attendance_type
+      attendance
+        ?.operator
+        ?.full_name,
+      'Sistem'
     );
 
 
-  const row =
+  const amount =
+    attendanceAmount(
+      attendance
+    );
+
+
+  const item =
     createElement(
       'article',
       {
@@ -957,8 +1372,9 @@ function createAttendanceItem(
     );
 
 
-  row.innerHTML = `
+  item.innerHTML = `
     <span class="history-item__icon">
+
       <svg
         viewBox="0 0 24 24"
         fill="none"
@@ -968,7 +1384,6 @@ function createAttendanceItem(
           d="M5 4h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5V4Z"
           stroke="currentColor"
           stroke-width="1.7"
-          stroke-linejoin="round"
         />
 
         <path
@@ -978,64 +1393,96 @@ function createAttendanceItem(
           stroke-linejoin="round"
         />
       </svg>
+
     </span>
+
 
     <span class="history-item__content">
 
       <strong class="history-item__title">
-        Giriş qeydiyyatı
+        ${escapeHtml(
+          attendanceTypeLabel(
+            attendance
+          )
+        )}
       </strong>
 
       <span class="history-item__meta">
+
         ${
-          entryType
-            ? escapeText(entryType)
-            : 'SKy Fit'
+          amount > 0
+            ? `${escapeHtml(
+                money(amount)
+              )} · `
+            : ''
         }
+
+        Operator:
+        ${escapeHtml(
+          operatorName
+        )}
+
       </span>
 
     </span>
 
+
     <span class="history-item__side">
 
       <strong>
-        ${formatDate(value)}
+        ${formatDate(date)}
       </strong>
 
       <span>
-        ${formatTime(value)}
+        ${formatTime(date)}
       </span>
 
     </span>
   `;
 
 
-  return row;
+  return item;
 }
 
 
 // ============================================================
-// 13. LOCAL ESCAPE
+// 15. ATTENDANCE EVENTS
 // ============================================================
 
-function escapeText(value) {
-  const element =
-    document.createElement(
-      'span'
+function bindAttendanceEvents() {
+  const elements =
+    getElements();
+
+
+  elements
+    .attendanceShowAll
+    ?.addEventListener(
+      'click',
+      () => {
+        state.attendanceExpanded =
+          !state.attendanceExpanded;
+
+
+        renderAttendance();
+      }
     );
-
-  element.textContent =
-    normalizeString(value);
-
-  return element.innerHTML;
 }
 
 
 // ============================================================
-// 14. PROFILE EDIT MODAL
+// 16. PROFILE EDIT MODAL
 // ============================================================
 
 function openProfileEditor() {
+  const profile =
+    state.profile;
+
+
+  if (!profile) {
+    return;
+  }
+
+
   const content =
     createElement(
       'form',
@@ -1046,123 +1493,45 @@ function openProfileEditor() {
         attrs: {
           id:
             'profile-edit-form',
-          novalidate: '',
+
+          novalidate:
+            '',
         },
       }
     );
 
 
   content.innerHTML = `
-    <div class="modal-form__grid">
+    <div class="ui-field">
 
-      <div class="ui-field">
+      <label
+        class="ui-field__label"
+        for="profile-edit-full-name"
+      >
+        Ad və soyad
+      </label>
 
-        <label
-          class="ui-field__label"
-          for="profile-edit-first-name"
+      <div class="ui-input">
+
+        <input
+          id="profile-edit-full-name"
+          class="ui-input__control"
+          type="text"
+          autocomplete="name"
+          maxlength="150"
+          value="${escapeHtml(
+            profile.full_name ||
+            ''
+          )}"
+          placeholder="Ad Soyad"
         >
-          Ad
-        </label>
-
-        <div class="ui-input">
-
-          <span class="ui-input__icon">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              aria-hidden="true"
-            >
-              <circle
-                cx="12"
-                cy="8"
-                r="3.5"
-                stroke="currentColor"
-                stroke-width="1.7"
-              />
-
-              <path
-                d="M5.5 20c.6-4 3-6 6.5-6s5.9 2 6.5 6"
-                stroke="currentColor"
-                stroke-width="1.7"
-                stroke-linecap="round"
-              />
-            </svg>
-          </span>
-
-          <input
-            id="profile-edit-first-name"
-            class="ui-input__control"
-            type="text"
-            autocomplete="given-name"
-            maxlength="60"
-            value="${escapeText(
-              firstName()
-            )}"
-          >
-
-        </div>
-
-        <span
-          id="profile-edit-first-name-error"
-          class="ui-field__error is-hidden"
-        ></span>
 
       </div>
 
-
-      <div class="ui-field">
-
-        <label
-          class="ui-field__label"
-          for="profile-edit-last-name"
-        >
-          Soyad
-        </label>
-
-        <div class="ui-input">
-
-          <span class="ui-input__icon">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              aria-hidden="true"
-            >
-              <circle
-                cx="12"
-                cy="8"
-                r="3.5"
-                stroke="currentColor"
-                stroke-width="1.7"
-              />
-
-              <path
-                d="M5.5 20c.6-4 3-6 6.5-6s5.9 2 6.5 6"
-                stroke="currentColor"
-                stroke-width="1.7"
-                stroke-linecap="round"
-              />
-            </svg>
-          </span>
-
-          <input
-            id="profile-edit-last-name"
-            class="ui-input__control"
-            type="text"
-            autocomplete="family-name"
-            maxlength="60"
-            value="${escapeText(
-              lastName()
-            )}"
-          >
-
-        </div>
-
-        <span
-          id="profile-edit-last-name-error"
-          class="ui-field__error is-hidden"
-        ></span>
-
-      </div>
+      <span
+        id="profile-edit-full-name-error"
+        class="ui-field__error is-hidden"
+      ></span>
 
     </div>
 
@@ -1178,29 +1547,16 @@ function openProfileEditor() {
 
       <div class="ui-input">
 
-        <span class="ui-input__icon">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            aria-hidden="true"
-          >
-            <path
-              d="M7.2 3.8 4.8 6.2c-.8.8-.7 2.6.2 4.5 1.4 3 4.4 6 7.4 7.4 1.9.9 3.7 1 4.5.2l2.4-2.4c.5-.5.5-1.3 0-1.8l-2.7-2.7c-.5-.5-1.2-.5-1.7-.1l-1.6 1.3a14.6 14.6 0 0 1-4-4l1.3-1.6c.4-.5.4-1.2-.1-1.7L9 3.8c-.5-.5-1.3-.5-1.8 0Z"
-              stroke="currentColor"
-              stroke-width="1.6"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </span>
-
         <input
           id="profile-edit-phone"
           class="ui-input__control"
           type="tel"
           autocomplete="tel"
-          value="${escapeText(
-            phoneNumber()
+          value="${escapeHtml(
+            profile.phone ||
+            ''
           )}"
+          placeholder="+994..."
         >
 
       </div>
@@ -1213,11 +1569,66 @@ function openProfileEditor() {
     </div>
 
 
+    <div class="ui-field">
+
+      <label
+        class="ui-field__label"
+        for="profile-edit-birth-date"
+      >
+        Doğum tarixi
+      </label>
+
+      <div class="ui-input">
+
+        <input
+          id="profile-edit-birth-date"
+          class="ui-input__control"
+          type="date"
+          value="${escapeHtml(
+            profile.birth_date ||
+            ''
+          )}"
+        >
+
+      </div>
+
+    </div>
+
+
+    <div class="ui-field">
+
+      <label
+        class="ui-field__label"
+        for="profile-edit-address"
+      >
+        Ünvan
+      </label>
+
+      <div class="ui-input">
+
+        <input
+          id="profile-edit-address"
+          class="ui-input__control"
+          type="text"
+          maxlength="300"
+          value="${escapeHtml(
+            profile.address ||
+            ''
+          )}"
+          placeholder="Ünvan"
+        >
+
+      </div>
+
+    </div>
+
+
     <button
       id="profile-edit-submit"
       class="ui-button ui-button--primary ui-button--full"
       type="submit"
     >
+
       <span class="ui-button__label">
         Yadda saxla
       </span>
@@ -1226,58 +1637,84 @@ function openProfileEditor() {
         class="ui-button__spinner is-hidden"
         aria-hidden="true"
       ></span>
+
     </button>
   `;
 
 
   openModal({
     eyebrow:
-      'Şəxsi məlumatlar',
+      'Profil',
 
     title:
-      'Profili redaktə et',
+      'Məlumatları redaktə et',
 
     content,
 
     trigger:
-      elements.editButton,
+      getElements()
+        .editButton,
 
-    onOpen: () => {
-      bindProfileEditForm(
-        content
-      );
-    },
+    onOpen:
+      () => {
+        bindProfileEditForm(
+          content
+        );
+      },
   });
 }
 
 
 // ============================================================
-// 15. PROFILE EDIT FORM
+
+// ============================================================
+// 17. PROFILE EDIT FORM
 // ============================================================
 
 function bindProfileEditForm(
   form
 ) {
-  const firstInput =
-    $('#profile-edit-first-name', form);
-
-  const lastInput =
-    $('#profile-edit-last-name', form);
+  const fullNameInput =
+    $(
+      '#profile-edit-full-name',
+      form
+    );
 
   const phoneInput =
-    $('#profile-edit-phone', form);
+    $(
+      '#profile-edit-phone',
+      form
+    );
 
-  const firstError =
-    $('#profile-edit-first-name-error', form);
+  const birthDateInput =
+    $(
+      '#profile-edit-birth-date',
+      form
+    );
 
-  const lastError =
-    $('#profile-edit-last-name-error', form);
+  const addressInput =
+    $(
+      '#profile-edit-address',
+      form
+    );
+
+  const fullNameError =
+    $(
+      '#profile-edit-full-name-error',
+      form
+    );
 
   const phoneError =
-    $('#profile-edit-phone-error', form);
+    $(
+      '#profile-edit-phone-error',
+      form
+    );
 
   const submit =
-    $('#profile-edit-submit', form);
+    $(
+      '#profile-edit-submit',
+      form
+    );
 
 
   form.addEventListener(
@@ -1285,18 +1722,24 @@ function bindProfileEditForm(
     async event => {
       event.preventDefault();
 
-      clearFormErrors(form);
+
+      if (
+        state.savingProfile
+      ) {
+        return;
+      }
 
 
-      const first =
+      clearFormErrors(
+        form
+      );
+
+
+      const fullName =
         normalizeString(
-          firstInput?.value
+          fullNameInput?.value
         );
 
-      const last =
-        normalizeString(
-          lastInput?.value
-        );
 
       const phone =
         normalizeString(
@@ -1304,40 +1747,50 @@ function bindProfileEditForm(
         );
 
 
-      let valid = true;
-
-
-      if (
-        first &&
-        first.length < 2
-      ) {
-        setFieldError(
-          firstInput,
-          firstError,
-          'Ad minimum 2 simvol olmalıdır.'
+      const birthDate =
+        normalizeString(
+          birthDateInput?.value
         );
 
-        valid = false;
+
+      const address =
+        normalizeString(
+          addressInput?.value
+        );
+
+
+      let valid =
+        true;
+
+
+      // ------------------------------------------------------
+      // Full name
+      // ------------------------------------------------------
+
+      if (
+        fullName.length < 2
+      ) {
+        setFieldError(
+          fullNameInput,
+          fullNameError,
+          'Ad və soyad minimum 2 simvol olmalıdır.'
+        );
+
+
+        valid =
+          false;
       }
 
 
-      if (
-        last &&
-        last.length < 2
-      ) {
-        setFieldError(
-          lastInput,
-          lastError,
-          'Soyad minimum 2 simvol olmalıdır.'
-        );
-
-        valid = false;
-      }
-
+      // ------------------------------------------------------
+      // Phone
+      // ------------------------------------------------------
 
       if (
         phone &&
-        !validatePhone(phone)
+        !validatePhone(
+          phone
+        )
       ) {
         setFieldError(
           phoneInput,
@@ -1345,7 +1798,9 @@ function bindProfileEditForm(
           'Telefon nömrəsi düzgün deyil.'
         );
 
-        valid = false;
+
+        valid =
+          false;
       }
 
 
@@ -1354,24 +1809,8 @@ function bindProfileEditForm(
       }
 
 
-      const updates =
-        buildProfileUpdate({
-          first,
-          last,
-          phone,
-        });
-
-
-      if (
-        Object.keys(updates)
-          .length === 0
-      ) {
-        notify.warning(
-          'Mövcud profiles strukturunda redaktə edilə biləcək uyğun sütun tapılmadı.'
-        );
-
-        return;
-      }
+      state.savingProfile =
+        true;
 
 
       setButtonLoading(
@@ -1386,9 +1825,33 @@ function bindProfileEditForm(
 
       try {
         const profileId =
-          state.identity
-            ?.profile
-            ?.id;
+          state.profile?.id;
+
+
+        if (!profileId) {
+          throw new Error(
+            'Profil ID-si tapılmadı.'
+          );
+        }
+
+
+        const payload = {
+
+          full_name:
+            fullName,
+
+          phone:
+            phone ||
+            null,
+
+          birth_date:
+            birthDate ||
+            null,
+
+          address:
+            address ||
+            null,
+        };
 
 
         const {
@@ -1399,12 +1862,28 @@ function bindProfileEditForm(
             .from(
               TABLES.profiles
             )
-            .update(updates)
+            .update(
+              payload
+            )
             .eq(
               'id',
               profileId
             )
-            .select('*')
+            .select(`
+              id,
+              auth_user_id,
+              role,
+              full_name,
+              email,
+              phone,
+              birth_date,
+              address,
+              avatar_url,
+              is_manual,
+              is_active,
+              created_at,
+              updated_at
+            `)
             .single();
 
 
@@ -1413,26 +1892,78 @@ function bindProfileEditForm(
         }
 
 
-        state.identity.profile =
+        state.profile =
           data;
 
 
-        renderIdentity();
+        if (
+          state.identity
+        ) {
+          state.identity.profile =
+            data;
 
-        await refreshLayout();
+
+          state.identity.name =
+            getProfileName(
+              data,
+              state.identity.email
+            );
+
+
+          state.identity.avatar =
+            getProfileAvatar(
+              data
+            );
+        }
+
+
+        renderProfile();
+
+
+        closeModal();
+
+
+        await refreshLayoutIdentity();
+
+
+        window.dispatchEvent(
+          new CustomEvent(
+            SKYFIT_EVENTS
+              .profileChange,
+            {
+              detail: {
+                profile:
+                  data,
+
+                type:
+                  'profile-update',
+              },
+            }
+          )
+        );
 
 
         notify.success(
           'Profil məlumatları yeniləndi.'
         );
-
-
-        closeModal();
       } catch (error) {
+        console.error(
+          '[SKy Fit Profile] Update:',
+          error
+        );
+
+
         notify.error(
-          getErrorMessage(error)
+          getErrorMessage(
+            error,
+            'Profil məlumatları yenilənmədi.'
+          )
         );
       } finally {
+        state.savingProfile =
+          false;
+
+
         setButtonLoading(
           submit,
           false
@@ -1444,84 +1975,28 @@ function bindProfileEditForm(
 
 
 // ============================================================
-// 16. SAFE PROFILE UPDATE PAYLOAD
+// 18. EDIT BUTTON
 // ============================================================
 
-function buildProfileUpdate({
-  first,
-  last,
-  phone,
-}) {
-  const updates = {};
-
-
-  if (
-    profileHasColumn(
-      'first_name'
-    )
-  ) {
-    updates.first_name =
-      first;
-  } else if (
-    profileHasColumn(
-      'name'
-    )
-  ) {
-    updates.name =
-      first;
-  }
-
-
-  if (
-    profileHasColumn(
-      'last_name'
-    )
-  ) {
-    updates.last_name =
-      last;
-  } else if (
-    profileHasColumn(
-      'surname'
-    )
-  ) {
-    updates.surname =
-      last;
-  }
-
-
-  if (
-    profileHasColumn(
-      'phone'
-    )
-  ) {
-    updates.phone =
-      phone || null;
-  } else if (
-    profileHasColumn(
-      'phone_number'
-    )
-  ) {
-    updates.phone_number =
-      phone || null;
-  } else if (
-    profileHasColumn(
-      'mobile'
-    )
-  ) {
-    updates.mobile =
-      phone || null;
-  }
-
-
-  return updates;
+function bindEditAction() {
+  getElements()
+    .editButton
+    ?.addEventListener(
+      'click',
+      openProfileEditor
+    );
 }
 
 
 // ============================================================
-// 17. AVATAR PICKER
+// 19. AVATAR EVENTS
 // ============================================================
 
 function bindAvatarEvents() {
+  const elements =
+    getElements();
+
+
   elements.avatarButton
     ?.addEventListener(
       'click',
@@ -1532,7 +2007,9 @@ function bindAvatarEvents() {
           return;
         }
 
-        elements.avatarInput
+
+        elements
+          .avatarInput
           ?.click();
       }
     );
@@ -1543,32 +2020,42 @@ function bindAvatarEvents() {
       'change',
       async event => {
         const file =
-          event.target.files?.[0];
+          event.target
+            ?.files
+            ?.[0];
 
-        event.target.value = '';
+
+        // Eyni faylı ardıcıl seçməyə imkan verir.
+        event.target.value =
+          '';
+
 
         if (!file) {
           return;
         }
 
-        await uploadAvatar(file);
+
+        await uploadAvatar(
+          file
+        );
       }
     );
 }
 
 
 // ============================================================
-// 18. AVATAR VALIDATION
+// 20. AVATAR VALIDATION
 // ============================================================
 
 function validateAvatarFile(
   file
 ) {
-  const allowed = new Set([
-    'image/jpeg',
-    'image/png',
-    'image/webp',
-  ]);
+  const allowed =
+    new Set([
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+    ]);
 
 
   if (
@@ -1577,47 +2064,128 @@ function validateAvatarFile(
     )
   ) {
     return {
-      valid: false,
+      valid:
+        false,
+
       message:
-        'Avatar JPG, PNG və ya WEBP formatında olmalıdır.',
+        'Profil şəkli JPG, PNG və ya WEBP formatında olmalıdır.',
     };
   }
 
 
-  const maxBytes =
-    5 * 1024 * 1024;
+  const maxSize =
+    5 *
+    1024 *
+    1024;
 
 
   if (
-    file.size > maxBytes
+    file.size >
+    maxSize
   ) {
     return {
-      valid: false,
+      valid:
+        false,
+
       message:
-        'Avatar maksimum 5 MB ola bilər.',
+        'Profil şəkli maksimum 5 MB ola bilər.',
     };
   }
 
 
   return {
-    valid: true,
-    message: '',
+    valid:
+      true,
+
+    message:
+      '',
   };
 }
 
 
 // ============================================================
-// 19. AVATAR UPLOAD
+// 21. AVATAR EXTENSION
+// ============================================================
+
+function avatarExtension(
+  file
+) {
+  switch (
+    file?.type
+  ) {
+    case 'image/png':
+      return 'png';
+
+    case 'image/webp':
+      return 'webp';
+
+    default:
+      return 'jpg';
+  }
+}
+
+
+// ============================================================
+// 22. AVATAR STORAGE PATH
+//
+// profiles.id istifadə edirik.
+// auth.users.id ilə qarışdırmırıq.
+//
+// avatars/
+//   {profile_id}/
+//      avatar-{timestamp}.webp
+// ============================================================
+
+function buildAvatarPath(
+  file
+) {
+  const profileId =
+    state.profile?.id;
+
+
+  if (!profileId) {
+    throw new Error(
+      'Profil ID-si tapılmadı.'
+    );
+  }
+
+
+  const extension =
+    avatarExtension(
+      file
+    );
+
+
+  return (
+    `${profileId}/` +
+    `avatar-${Date.now()}.${extension}`
+  );
+}
+
+
+// ============================================================
+// 23. AVATAR UPLOAD
 // ============================================================
 
 async function uploadAvatar(
   file
 ) {
+  if (
+    state.avatarUploading
+  ) {
+    return;
+  }
+
+
   const validation =
-    validateAvatarFile(file);
+    validateAvatarFile(
+      file
+    );
 
 
-  if (!validation.valid) {
+  if (
+    !validation.valid
+  ) {
     notify.warning(
       validation.message
     );
@@ -1626,24 +2194,15 @@ async function uploadAvatar(
   }
 
 
-  const column =
-    avatarColumn();
+  const profileId =
+    state.profile?.id;
 
 
-  if (!column) {
-    notify.warning(
-      'profiles cədvəlində avatar üçün uyğun sütun tapılmadı. Backend diaqnostikası tələb olunur.'
+  if (!profileId) {
+    notify.error(
+      'Profil məlumatı tapılmadı.'
     );
 
-    return;
-  }
-
-
-  const userId =
-    state.identity?.user?.id;
-
-
-  if (!userId) {
     return;
   }
 
@@ -1652,56 +2211,66 @@ async function uploadAvatar(
     true;
 
 
-  const extension =
-    file.name
-      .split('.')
-      .pop()
-      ?.toLowerCase() ||
-    'jpg';
+  const oldAvatar =
+    normalizeString(
+      state.profile
+        ?.avatar_url
+    );
 
 
-  const safeExtension =
-    ['jpg', 'jpeg', 'png', 'webp']
-      .includes(extension)
-      ? extension
-      : 'jpg';
-
-
-  const path =
-    `${userId}/avatar.${safeExtension}`;
+  let newPath =
+    '';
 
 
   try {
+    newPath =
+      buildAvatarPath(
+        file
+      );
+
+
+    // --------------------------------------------------------
+    // Storage upload
+    // --------------------------------------------------------
+
     const {
-      error: uploadError,
+      error:
+        uploadError,
     } =
-      await supabase.storage
+      await supabase
+        .storage
         .from(
-          APP_CONFIG.storage
+          APP_CONFIG
+            .storage
             .avatars
         )
         .upload(
-          path,
+          newPath,
           file,
           {
-            upsert: true,
             cacheControl:
               '3600',
+
+            upsert:
+              false,
+
             contentType:
               file.type,
           }
         );
 
 
-    if (uploadError) {
+    if (
+      uploadError
+    ) {
       throw uploadError;
     }
 
 
-    const payload = {
-      [column]: path,
-    };
-
+    // --------------------------------------------------------
+    // profiles.avatar_url update
+    // DB-də relative path saxlayırıq.
+    // --------------------------------------------------------
 
     const {
       data,
@@ -1711,27 +2280,111 @@ async function uploadAvatar(
         .from(
           TABLES.profiles
         )
-        .update(payload)
+        .update({
+          avatar_url:
+            newPath,
+        })
         .eq(
           'id',
-          userId
+          profileId
         )
-        .select('*')
+        .select(`
+          id,
+          auth_user_id,
+          role,
+          full_name,
+          email,
+          phone,
+          birth_date,
+          address,
+          avatar_url,
+          is_manual,
+          is_active,
+          created_at,
+          updated_at
+        `)
         .single();
 
 
     if (error) {
+      // DB update alınmasa yeni yüklənmiş lazımsız faylı silirik.
+      await removeAvatarObject(
+        newPath
+      );
+
+
       throw error;
     }
 
 
-    state.identity.profile =
+    state.profile =
       data;
 
 
-    renderIdentity();
+    if (
+      state.identity
+    ) {
+      state.identity.profile =
+        data;
 
-    await refreshLayout();
+
+      state.identity.avatar =
+        getProfileAvatar(
+          data
+        );
+    }
+
+
+    renderProfile();
+
+
+    await refreshLayoutIdentity();
+
+
+    window.dispatchEvent(
+      new CustomEvent(
+        SKYFIT_EVENTS
+          .profileChange,
+        {
+          detail: {
+            profile:
+              data,
+
+            type:
+              'avatar-update',
+          },
+        }
+      )
+    );
+
+
+    // --------------------------------------------------------
+    // Köhnə avatar artıq DB tərəfindən istifadə olunmur.
+    // Safe şəkildə storage-dan silməyə cəhd edirik.
+    // --------------------------------------------------------
+
+    const oldPath =
+      extractAvatarStoragePath(
+        oldAvatar
+      );
+
+
+    if (
+      oldPath &&
+      oldPath !==
+        newPath
+    ) {
+      removeAvatarObject(
+        oldPath
+      ).catch(
+        error => {
+          console.warn(
+            '[SKy Fit Profile] Old avatar cleanup:',
+            error
+          );
+        }
+      );
+    }
 
 
     notify.success(
@@ -1739,9 +2392,10 @@ async function uploadAvatar(
     );
   } catch (error) {
     console.error(
-      'Avatar upload error:',
+      '[SKy Fit Profile] Avatar:',
       error
     );
+
 
     notify.error(
       getErrorMessage(
@@ -1757,32 +2411,148 @@ async function uploadAvatar(
 
 
 // ============================================================
-// 20. ATTENDANCE SHOW ALL
+// 24. EXTRACT AVATAR STORAGE PATH
+//
+// DB-də:
+// profile-id/avatar.jpg
+//
+// və ya köhnədən tam public URL qalıbsa onu da tanıyır.
 // ============================================================
 
-function bindAttendanceEvents() {
-  elements.attendanceShowAll
-    ?.addEventListener(
-      'click',
-      () => {
-        state.attendanceExpanded =
-          !state.attendanceExpanded;
-
-        renderAttendance();
-      }
+function extractAvatarStoragePath(
+  value
+) {
+  const source =
+    normalizeString(
+      value
     );
+
+
+  if (!source) {
+    return '';
+  }
+
+
+  if (
+    !source.startsWith(
+      'http://'
+    ) &&
+    !source.startsWith(
+      'https://'
+    )
+  ) {
+    return source
+      .replace(
+        /^\/+/,
+        ''
+      );
+  }
+
+
+  try {
+    const url =
+      new URL(source);
+
+
+    const marker =
+      '/storage/v1/object/public/avatars/';
+
+
+    const index =
+      url.pathname.indexOf(
+        marker
+      );
+
+
+    if (
+      index === -1
+    ) {
+      return '';
+    }
+
+
+    return decodeURIComponent(
+      url.pathname.slice(
+        index +
+        marker.length
+      )
+    );
+  } catch {
+    return '';
+  }
 }
 
 
 // ============================================================
-// 21. PASSWORD ACTION
+// 25. REMOVE AVATAR OBJECT
+// ============================================================
+
+async function removeAvatarObject(
+  path
+) {
+  const safePath =
+    normalizeString(
+      path
+    );
+
+
+  if (!safePath) {
+    return false;
+  }
+
+
+  const {
+    error,
+  } =
+    await supabase
+      .storage
+      .from(
+        APP_CONFIG
+          .storage
+          .avatars
+      )
+      .remove([
+        safePath,
+      ]);
+
+
+  if (error) {
+    throw error;
+  }
+
+
+  return true;
+}
+
+
+// ============================================================
+// 26. CHANGE PASSWORD
 // ============================================================
 
 function bindPasswordAction() {
-  elements.changePasswordButton
+  getElements()
+    .changePasswordButton
     ?.addEventListener(
       'click',
       async () => {
+        const email =
+          normalizeString(
+            state.identity
+              ?.email ||
+            state.profile
+              ?.email
+          );
+
+
+        if (!email) {
+          notify.error(
+            'Hesabın e-poçt ünvanı tapılmadı.'
+          );
+
+          return;
+        }
+
+
         const confirmed =
           await confirmDialog({
             eyebrow:
@@ -1792,7 +2562,7 @@ function bindPasswordAction() {
               'Şifrə dəyişdirilsin?',
 
             message:
-              'Hesabına bağlı e-poçt ünvanına təhlükəsiz şifrə yeniləmə keçidi göndəriləcək.',
+              `${email} ünvanına təhlükəsiz şifrə yeniləmə keçidi göndəriləcək.`,
 
             confirmText:
               'Keçid göndər',
@@ -1807,25 +2577,11 @@ function bindPasswordAction() {
         }
 
 
-        const email =
-          state.identity
-            ?.user
-            ?.email;
-
-
-        if (!email) {
-          notify.error(
-            'Hesabın e-poçt ünvanı tapılmadı.'
-          );
-
-          return;
-        }
-
-
         try {
-          const redirectTo =
+          const redirectUrl =
             new URL(
-              APP_CONFIG.routes
+              APP_CONFIG
+                .routes
                 .updatePassword,
               window.location.href
             ).href;
@@ -1834,11 +2590,13 @@ function bindPasswordAction() {
           const {
             error,
           } =
-            await supabase.auth
+            await supabase
+              .auth
               .resetPasswordForEmail(
                 email,
                 {
-                  redirectTo,
+                  redirectTo:
+                    redirectUrl,
                 }
               );
 
@@ -1849,11 +2607,20 @@ function bindPasswordAction() {
 
 
           notify.success(
-            'Şifrə yeniləmə keçidi e-poçtuna göndərildi.'
+            'Şifrə yeniləmə keçidi e-poçt ünvanına göndərildi.'
           );
         } catch (error) {
+          console.error(
+            '[SKy Fit Profile] Password reset:',
+            error
+          );
+
+
           notify.error(
-            getErrorMessage(error)
+            getErrorMessage(
+              error,
+              'Şifrə yeniləmə keçidi göndərilmədi.'
+            )
           );
         }
       }
@@ -1862,10 +2629,10 @@ function bindPasswordAction() {
 
 
 // ============================================================
-// 22. THEME
+// 27. THEME LABEL
 // ============================================================
 
-function themeLabel() {
+function currentThemeLabel() {
   switch (
     getStoredTheme()
   ) {
@@ -1881,20 +2648,34 @@ function themeLabel() {
 }
 
 
+// ============================================================
+// 28. SYNC THEME LABEL
+// ============================================================
+
 function syncThemeLabel() {
   setText(
-    elements.themeLabel,
-    themeLabel()
+    getElements()
+      .themeLabel,
+    currentThemeLabel()
   );
 }
 
 
+// ============================================================
+// 29. THEME ACTION
+// ============================================================
+
 function bindThemeAction() {
+  const elements =
+    getElements();
+
+
   elements.themeButton
     ?.addEventListener(
       'click',
       () => {
         cycleTheme();
+
 
         syncThemeLabel();
       }
@@ -1902,7 +2683,8 @@ function bindThemeAction() {
 
 
   window.addEventListener(
-    'skyfit:themechange',
+    SKYFIT_EVENTS
+      .themeChange,
     syncThemeLabel
   );
 
@@ -1912,11 +2694,12 @@ function bindThemeAction() {
 
 
 // ============================================================
-// 23. LOGOUT
+// 30. LOGOUT
 // ============================================================
 
-function bindLogout() {
-  elements.logoutButton
+function bindLogoutAction() {
+  getElements()
+    .logoutButton
     ?.addEventListener(
       'click',
       async () => {
@@ -1947,35 +2730,34 @@ function bindLogout() {
         }
 
 
-        await signOut();
+        await signOut({
+          redirect:
+            true,
+
+          redirectTo:
+            APP_CONFIG
+              .routes
+              .login,
+        });
       }
     );
 }
 
 
 // ============================================================
-// 24. EDIT BUTTON
+// 31. AUTH CHANGE
 // ============================================================
 
-function bindEditAction() {
-  elements.editButton
-    ?.addEventListener(
-      'click',
-      openProfileEditor
-    );
-}
-
-
-// ============================================================
-// 25. AUTH CHANGE
-// ============================================================
-
-function bindAuthChange() {
+function bindAuthEvents() {
   window.addEventListener(
-    'skyfit:authchange',
+    SKYFIT_EVENTS
+      .authChange,
     async event => {
       const authEvent =
-        event.detail?.event;
+        normalizeString(
+          event.detail
+            ?.event
+        );
 
 
       if (
@@ -1986,75 +2768,117 @@ function bindAuthChange() {
       }
 
 
-      const identity =
-        await getCurrentIdentity();
+      try {
+        const identity =
+          event.detail
+            ?.identity ||
+          await getCurrentIdentity({
+            force:
+              true,
+          });
 
 
-      if (
-        !identity
-          ?.isAuthenticated
-      ) {
-        return;
+        if (
+          !identity
+            ?.authenticated
+        ) {
+          return;
+        }
+
+
+        state.identity =
+          identity;
+
+
+        state.profile =
+          identity.profile;
+
+
+        renderProfile();
+      } catch (error) {
+        console.error(
+          '[SKy Fit Profile] Auth refresh:',
+          error
+        );
       }
-
-
-      state.identity =
-        identity;
-
-
-      renderIdentity();
     }
   );
 }
 
 
 // ============================================================
-// 26. DATA LOAD
+// 32. PROFILE CHANGE
+//
+// Eyni event-i özümüz də dispatch etdiyimiz üçün
+// profile detail başqa komponentdən dəyişəndə sinxronlaşır.
+// ============================================================
+
+function bindProfileChangeEvents() {
+  window.addEventListener(
+    SKYFIT_EVENTS
+      .profileChange,
+    event => {
+      const profile =
+        event.detail
+          ?.profile;
+
+
+      if (!profile) {
+        return;
+      }
+
+
+      state.profile =
+        profile;
+
+
+      if (
+        state.identity
+      ) {
+        state.identity.profile =
+          profile;
+
+
+        state.identity.name =
+          getProfileName(
+            profile,
+            state.identity.email
+          );
+
+
+        state.identity.avatar =
+          getProfileAvatar(
+            profile
+          );
+      }
+
+
+      renderProfile();
+    }
+  );
+}
+
+
+// ============================================================
+// 33. LOAD PROFILE PAGE DATA
 // ============================================================
 
 async function loadProfileData() {
   await Promise.all([
-    loadMembership(),
+    loadMemberships(),
     loadAttendance(),
   ]);
 }
 
 
 // ============================================================
-// 27. INIT
+// 34. BIND EVENTS
 // ============================================================
 
-async function init() {
-  const session =
-    await requireAuth();
-
-
-  if (!session) {
-    return;
-  }
-
-
-  state.identity =
-    await initLayout();
-
-
-  if (
-    !state.identity
-      ?.isAuthenticated
-  ) {
-    window.location.replace(
-      APP_CONFIG.routes.login
-    );
-
-    return;
-  }
-
-
-  renderIdentity();
+function bindEvents() {
+  bindEditAction();
 
   bindAvatarEvents();
-
-  bindEditAction();
 
   bindAttendanceEvents();
 
@@ -2062,27 +2886,71 @@ async function init() {
 
   bindThemeAction();
 
-  bindLogout();
+  bindLogoutAction();
 
-  bindAuthChange();
+  bindAuthEvents();
 
-
-  await loadProfileData();
+  bindProfileChangeEvents();
 }
 
 
 // ============================================================
-// 28. START
+// 35. INIT
+// ============================================================
+
+async function init() {
+  try {
+    // Layout dərhal render olunub.
+    // Burada yalnız real identity hydrate edilir.
+    await initLayout();
+
+
+    const identity =
+      await loadIdentity();
+
+
+    if (!identity) {
+      return;
+    }
+
+
+    renderProfile();
+
+
+    bindEvents();
+
+
+    await loadProfileData();
+  } catch (error) {
+    console.error(
+      '[SKy Fit Profile] Init:',
+      error
+    );
+
+
+    notify.error(
+      getErrorMessage(
+        error,
+        'Profil səhifəsi başladılmadı.'
+      )
+    );
+  }
+}
+
+
+// ============================================================
+// 36. START
 // ============================================================
 
 asyncHandler(
   init,
   {
-    notifyOnError: true,
+    notifyOnError:
+      true,
   }
 )();
 
 
 // ============================================================
-// PROFILE.JS COMPLETE
+// SKY FIT PRO PROFILE.JS COMPLETE
 // ============================================================
