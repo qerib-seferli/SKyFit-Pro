@@ -1,20 +1,21 @@
 // ============================================================
 // SKY FIT PRO
-// Admin Operations Controller
+// Admin / Staff Management Controller
 // File: js/admin.js
+//
+// PART 1 / 4
+// REAL SUPABASE SCHEMA VERSION
 // ============================================================
 
 import {
   supabase,
   APP_CONFIG,
   TABLES,
-  RPC,
-  STORAGE_KEYS,
-  UI_CONFIG,
-  USER_ROLES,
 } from './config.js';
 
 import {
+  SKYFIT_EVENTS,
+
   $,
   $$,
   byId,
@@ -23,37 +24,62 @@ import {
   showElement,
   hideElement,
   setText,
+
   normalizeString,
-  normalizeNumber,
-  money,
+  normalizeSearch,
+  escapeHtml,
+
   number,
+  money,
+
   formatDate,
-  formatDateTime,
   formatTime,
+  formatDateTime,
+  todayIso,
+
   debounce,
-  storageGet,
-  storageSet,
+  rows,
+
   getCurrentIdentity,
   getProfileName,
-  getInitials,
+  getProfileInitials,
+
   roleLabel,
-  membershipStatus,
-  paymentStatusMeta,
-  stockStatusMeta,
+
+  productName,
+  productPrice,
+  productStock,
+  productStockUnit,
+  productUnitLabel,
+  productImage,
+  productStockState,
+  productSaleMode,
+
+  trainerName,
+  trainerSpecialty,
+  trainerImage,
+
+  membershipIsActive,
+  membershipStatusLabel,
+
+  attendanceDate,
+  attendanceTypeLabel,
+
+  ledgerType,
+  ledgerAmount,
+
+  debtBalance,
+
   openModal,
   closeModal,
   confirmDialog,
+
   notify,
   getErrorMessage,
-  setButtonLoading,
-  validatePhone,
-  validateEmail,
   setFieldError,
-  clearFormErrors,
-  getPublicStorageUrl,
+  setButtonLoading,
+
   asyncHandler,
-  requireStaff,
-  escapeHtml,
 } from './core.js';
 
 import {
@@ -66,154 +92,229 @@ import {
 // ============================================================
 
 const state = {
-  identity: null,
+
+  identity:
+    null,
 
   activeTab:
-    storageGet(
-      STORAGE_KEYS.lastAdminTab,
-      'dashboard'
-    ),
+    'dashboard',
+
+  products:
+    [],
+
+  members:
+    [],
+
+  membershipPlans:
+    [],
+
+  memberships:
+    [],
+
+  attendance:
+    [],
+
+  debts:
+    [],
+
+  debtTransactions:
+    [],
+
+  ledger:
+    [],
+
+  trainers:
+    [],
+
+  stockMovements:
+    [],
+
+  sales:
+    [],
+
+  history:
+    [],
 
   dashboard: {
-    sales: [],
-    memberships: [],
-    attendance: [],
-    debts: [],
-    ledger: [],
-    stock: [],
+    loaded:
+      false,
   },
 
-  products: [],
-  members: [],
-  memberships: [],
-  attendance: [],
-  debts: [],
-  ledger: [],
-  trainers: [],
-  stockMovements: [],
+  loading: {
+    dashboard:
+      false,
 
-  filters: {
-    products: '',
-    members: '',
-    memberships: '',
-    attendance: '',
-    debts: '',
-    trainers: '',
-    history: '',
+    products:
+      false,
 
-    productStatus: 'all',
-    membershipStatus: 'all',
-    memberRole: 'all',
-    stock: 'all',
-    financeType: 'all',
-    historyType: 'all',
+    members:
+      false,
+
+    memberships:
+      false,
+
+    attendance:
+      false,
+
+    debts:
+      false,
+
+    finance:
+      false,
+
+    trainers:
+      false,
+
+    history:
+      false,
   },
 
-  busy: false,
+  busy:
+    false,
 };
 
 
 // ============================================================
-// 02. ADMIN TABS
+// 02. TABS
 // ============================================================
 
-const VALID_TABS = new Set([
-  'dashboard',
-  'pos',
-  'members',
-  'memberships',
-  'attendance',
-  'products',
-  'stock',
-  'debts',
-  'finance',
-  'trainers',
-  'history',
-]);
+const ADMIN_TABS =
+  new Set([
+    'dashboard',
+    'pos',
+    'members',
+    'memberships',
+    'attendance',
+    'products',
+    'stock',
+    'debts',
+    'finance',
+    'trainers',
+    'history',
+  ]);
 
 
-function normalizeTab(tab) {
-  return VALID_TABS.has(tab)
+// ============================================================
+// 03. TAB NORMALIZER
+// ============================================================
+
+function normalizeTab(
+  value
+) {
+  const tab =
+    normalizeString(
+      value,
+      'dashboard'
+    );
+
+
+  return ADMIN_TABS.has(
+    tab
+  )
     ? tab
     : 'dashboard';
 }
 
 
+// ============================================================
+// 04. SET TAB
+// ============================================================
+
 function setActiveTab(
   tab,
-  {
-    persist = true,
-    load = true,
-  } = {}
+  options = {}
 ) {
   const target =
-    normalizeTab(tab);
+    normalizeTab(
+      tab
+    );
+
 
   state.activeTab =
     target;
 
-  if (persist) {
-    storageSet(
-      STORAGE_KEYS.lastAdminTab,
-      target
-    );
-  }
 
-
-  $$('[data-admin-tab]')
-    .forEach(button => {
+  $$(
+    '[data-admin-tab]'
+  ).forEach(
+    button => {
       const active =
-        button.dataset.adminTab ===
+        button.dataset
+          .adminTab ===
         target;
+
 
       button.classList.toggle(
         'is-active',
         active
       );
 
+
       button.setAttribute(
         'aria-selected',
         String(active)
       );
-    });
+    }
+  );
 
 
-  $$('[data-admin-panel]')
-    .forEach(panel => {
+  $$(
+    '[data-admin-panel]'
+  ).forEach(
+    panel => {
+      const active =
+        panel.dataset
+          .adminPanel ===
+        target;
+
+
       panel.classList.toggle(
         'is-hidden',
-        panel.dataset.adminPanel !==
-          target
+        !active
       );
-    });
 
 
-  if (load) {
-    loadActiveTab();
+      panel.hidden =
+        !active;
+    }
+  );
+
+
+  if (
+    options.load !==
+    false
+  ) {
+    void loadActiveTab();
   }
 }
 
 
 // ============================================================
-// 03. TAB EVENTS
+// 05. TAB EVENTS
 // ============================================================
 
 function bindTabEvents() {
-  $$('[data-admin-tab]')
-    .forEach(button => {
+  $$(
+    '[data-admin-tab]'
+  ).forEach(
+    button => {
       button.addEventListener(
         'click',
         () => {
           setActiveTab(
-            button.dataset.adminTab
+            button.dataset
+              .adminTab
           );
         }
       );
-    });
+    }
+  );
 
 
-  $$('[data-admin-open-tab]')
-    .forEach(button => {
+  $$(
+    '[data-admin-open-tab]'
+  ).forEach(
+    button => {
       button.addEventListener(
         'click',
         () => {
@@ -223,12 +324,99 @@ function bindTabEvents() {
           );
         }
       );
-    });
+    }
+  );
 }
 
 
 // ============================================================
-// 04. ACTIVE TAB LOADER
+// 06. STAFF ACCESS
+// ============================================================
+
+async function requireAdminStaff() {
+  const identity =
+    await getCurrentIdentity({
+      force:
+        true,
+    });
+
+
+  if (
+    !identity
+      ?.authenticated
+  ) {
+    window.location.replace(
+      APP_CONFIG.routes.login
+    );
+
+    return null;
+  }
+
+
+  if (
+    !identity.isStaff
+  ) {
+    window.location.replace(
+      APP_CONFIG.routes.home
+    );
+
+    return null;
+  }
+
+
+  state.identity =
+    identity;
+
+
+  return identity;
+}
+
+
+// ============================================================
+// 07. OPERATOR HEADER
+// ============================================================
+
+function renderOperator() {
+  const identity =
+    state.identity;
+
+
+  if (!identity) {
+    return;
+  }
+
+
+  setText(
+    byId(
+      'admin-operator-label'
+    ),
+    `${identity.name} · ${roleLabel(
+      identity.role
+    )}`
+  );
+
+
+  setText(
+    byId(
+      'admin-operator-name'
+    ),
+    identity.name
+  );
+
+
+  setText(
+    byId(
+      'admin-operator-role'
+    ),
+    roleLabel(
+      identity.role
+    )
+  );
+}
+
+
+// ============================================================
+// 08. ACTIVE TAB LOADER
 // ============================================================
 
 async function loadActiveTab() {
@@ -239,30 +427,41 @@ async function loadActiveTab() {
       await loadDashboard();
       break;
 
+
     case 'pos':
       await loadProducts();
       renderPosProducts();
       break;
 
+
     case 'members':
       await loadMembers();
+      renderMembers();
       break;
+
 
     case 'memberships':
       await Promise.all([
-        loadMemberships(),
         loadMembershipPlans(),
+        loadMemberships(),
       ]);
+
+      renderMembershipPlans();
+      renderMemberships();
       break;
+
 
     case 'attendance':
       await loadAttendance();
+      renderAttendanceAdmin();
       break;
+
 
     case 'products':
       await loadProducts();
       renderAdminProducts();
       break;
+
 
     case 'stock':
       await Promise.all([
@@ -273,21 +472,34 @@ async function loadActiveTab() {
       renderStock();
       break;
 
+
     case 'debts':
-      await loadDebts();
+      await Promise.all([
+        loadDebts(),
+        loadDebtTransactions(),
+      ]);
+
+      renderDebts();
       break;
+
 
     case 'finance':
       await loadLedger();
+      renderFinance();
       break;
+
 
     case 'trainers':
       await loadTrainers();
+      renderAdminTrainers();
       break;
+
 
     case 'history':
       await loadHistory();
+      renderHistory();
       break;
+
 
     default:
       break;
@@ -296,397 +508,1168 @@ async function loadActiveTab() {
 
 
 // ============================================================
-// 05. OPERATOR LABEL
+// 09. PRODUCTS LOADER
+//
+// Real products schema.
 // ============================================================
 
-function renderOperator() {
-  const label =
-    byId(
-      'admin-operator-label'
-    );
-
-  if (!label) return;
-
-  const identity =
-    state.identity;
-
-  const name =
-    getProfileName(
-      identity?.profile,
-      identity?.user
-    );
-
-  const role =
-    roleLabel(
-      identity?.role
-    );
-
-  label.textContent =
-    `${name} · ${role}`;
-}
+async function loadProducts() {
+  if (
+    state.loading.products
+  ) {
+    return state.products;
+  }
 
 
-// ============================================================
-// 06. DATE HELPERS
-// ============================================================
-
-function startOfTodayIso() {
-  const date =
-    new Date();
-
-  date.setHours(
-    0,
-    0,
-    0,
-    0
-  );
-
-  return date.toISOString();
-}
+  state.loading.products =
+    true;
 
 
-function endOfTodayIso() {
-  const date =
-    new Date();
-
-  date.setHours(
-    23,
-    59,
-    59,
-    999
-  );
-
-  return date.toISOString();
-}
-
-
-// ============================================================
-// 07. SAFE ARRAY
-// ============================================================
-
-function rows(data) {
-  return Array.isArray(data)
-    ? data
-    : [];
-}
-
-
-// ============================================================
-// 08. DASHBOARD
-// ============================================================
-
-async function loadDashboard() {
-  const todayStart =
-    startOfTodayIso();
-
-  const todayEnd =
-    endOfTodayIso();
-
-
-  const [
-    salesResult,
-    membershipsResult,
-    attendanceResult,
-    debtResult,
-    ledgerResult,
-    stockResult,
-  ] =
-    await Promise.all([
-
-      supabase
-        .from(TABLES.sales)
-        .select('*')
-        .gte(
-          'created_at',
-          todayStart
+  try {
+    const {
+      data,
+      error,
+    } =
+      await supabase
+        .from(
+          TABLES.products
         )
-        .lte(
-          'created_at',
-          todayEnd
-        )
+        .select(`
+          id,
+          name,
+          description,
+          sku,
+          image_url,
+          category,
+          sale_mode,
+          stock_unit,
+          stock_quantity,
+          portion_size,
+          retail_price,
+          portion_price,
+          cost_price,
+          low_stock_threshold,
+          show_public,
+          is_active,
+          created_at,
+          updated_at,
+          created_by,
+          updated_by,
+          operator_shift_id
+        `)
         .order(
           'created_at',
           {
-            ascending: false,
+            ascending:
+              false,
+          }
+        );
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    state.products =
+      rows(data);
+
+
+    return state.products;
+  } catch (error) {
+    console.error(
+      '[SKy Fit Admin] Products:',
+      error
+    );
+
+
+    state.products =
+      [];
+
+
+    notify.error(
+      getErrorMessage(
+        error,
+        'Məhsullar yüklənmədi.'
+      )
+    );
+
+
+    return [];
+  } finally {
+    state.loading.products =
+      false;
+  }
+}
+
+
+// ============================================================
+// 10. MEMBERS LOADER
+//
+// profiles.full_name real sütundur.
+// ============================================================
+
+async function loadMembers() {
+  if (
+    state.loading.members
+  ) {
+    return state.members;
+  }
+
+
+  state.loading.members =
+    true;
+
+
+  try {
+    const {
+      data,
+      error,
+    } =
+      await supabase
+        .from(
+          TABLES.profiles
+        )
+        .select(`
+          id,
+          auth_user_id,
+          role,
+          full_name,
+          email,
+          phone,
+          birth_date,
+          address,
+          avatar_url,
+          is_manual,
+          is_active,
+          created_at,
+          updated_at
+        `)
+        .order(
+          'full_name',
+          {
+            ascending:
+              true,
+          }
+        );
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    state.members =
+      rows(data);
+
+
+    return state.members;
+  } catch (error) {
+    console.error(
+      '[SKy Fit Admin] Members:',
+      error
+    );
+
+
+    state.members =
+      [];
+
+
+    notify.error(
+      getErrorMessage(
+        error,
+        'Üzvlər yüklənmədi.'
+      )
+    );
+
+
+    return [];
+  } finally {
+    state.loading.members =
+      false;
+  }
+}
+
+
+// ============================================================
+// 11. MEMBERSHIP PLANS
+// ============================================================
+
+async function loadMembershipPlans() {
+  try {
+    const {
+      data,
+      error,
+    } =
+      await supabase
+        .from(
+          TABLES.membershipPlans
+        )
+        .select(`
+          id,
+          name,
+          price,
+          duration_days,
+          is_daily,
+          is_active,
+          created_at
+        `)
+        .order(
+          'is_daily',
+          {
+            ascending:
+              true,
           }
         )
-        .limit(100),
+        .order(
+          'price',
+          {
+            ascending:
+              true,
+          }
+        );
 
-      supabase
+
+    if (error) {
+      throw error;
+    }
+
+
+    state.membershipPlans =
+      rows(data);
+
+
+    return state
+      .membershipPlans;
+  } catch (error) {
+    console.error(
+      '[SKy Fit Admin] Plans:',
+      error
+    );
+
+
+    state.membershipPlans =
+      [];
+
+
+    notify.error(
+      getErrorMessage(
+        error,
+        'Üzvlük planları yüklənmədi.'
+      )
+    );
+
+
+    return [];
+  }
+}
+
+
+// ============================================================
+// 12. MEMBERSHIPS
+//
+// Burada relationship-lər explicit göstərilir.
+// Eyni profiles cədvəlinə 3 FK olduğuna görə sadə profiles(*)
+// istifadə ETMİRİK.
+// ============================================================
+
+async function loadMemberships() {
+  if (
+    state.loading.memberships
+  ) {
+    return state.memberships;
+  }
+
+
+  state.loading.memberships =
+    true;
+
+
+  try {
+    const {
+      data,
+      error,
+    } =
+      await supabase
         .from(
           TABLES.memberships
         )
         .select(`
-          *,
-          profiles (*),
-          membership_plans (*)
+          id,
+          member_id,
+          plan_id,
+          start_date,
+          end_date,
+          price,
+          status,
+          payment_status,
+          created_by,
+          updated_by,
+          operator_shift_id,
+
+          member:profiles!memberships_member_id_fkey (
+            id,
+            full_name,
+            email,
+            phone,
+            role,
+            avatar_url,
+            is_active
+          ),
+
+          membership_plan:membership_plans!memberships_plan_id_fkey (
+            id,
+            name,
+            price,
+            duration_days,
+            is_daily,
+            is_active
+          ),
+
+          created_by_profile:profiles!memberships_created_by_fkey (
+            id,
+            full_name,
+            role
+          ),
+
+          updated_by_profile:profiles!memberships_updated_by_fkey (
+            id,
+            full_name,
+            role
+          )
         `)
         .order(
-          'created_at',
+          'end_date',
           {
-            ascending: false,
+            ascending:
+              false,
           }
-        )
-        .limit(300),
+        );
 
-      supabase
+
+    if (error) {
+      throw error;
+    }
+
+
+    state.memberships =
+      rows(data);
+
+
+    return state.memberships;
+  } catch (error) {
+    console.error(
+      '[SKy Fit Admin] Memberships:',
+      error
+    );
+
+
+    state.memberships =
+      [];
+
+
+    notify.error(
+      getErrorMessage(
+        error,
+        'Üzvlüklər yüklənmədi.'
+      )
+    );
+
+
+    return [];
+  } finally {
+    state.loading.memberships =
+      false;
+  }
+}
+
+
+// ============================================================
+// 13. ATTENDANCE
+//
+// checked_in_at real timestamp.
+// Operator və üzv explicit FK ilə çəkilir.
+// ============================================================
+
+async function loadAttendance() {
+  if (
+    state.loading.attendance
+  ) {
+    return state.attendance;
+  }
+
+
+  state.loading.attendance =
+    true;
+
+
+  try {
+    const {
+      data,
+      error,
+    } =
+      await supabase
         .from(
           TABLES.attendance
         )
         .select(`
-          *,
-          profiles (*)
+          id,
+          member_id,
+          membership_id,
+          attendance_type,
+          amount,
+          checked_in_at,
+          created_by,
+          updated_by,
+          operator_shift_id,
+
+          member:profiles!attendance_member_id_fkey (
+            id,
+            full_name,
+            email,
+            phone,
+            role,
+            avatar_url
+          ),
+
+          operator:profiles!attendance_created_by_fkey (
+            id,
+            full_name,
+            role
+          )
         `)
-        .gte(
-          'created_at',
-          todayStart
-        )
-        .lte(
-          'created_at',
-          todayEnd
-        )
         .order(
-          'created_at',
+          'checked_in_at',
           {
-            ascending: false,
+            ascending:
+              false,
           }
         )
-        .limit(300),
+        .limit(1000);
 
-      supabase
+
+    if (error) {
+      throw error;
+    }
+
+
+    state.attendance =
+      rows(data);
+
+
+    return state.attendance;
+  } catch (error) {
+    console.error(
+      '[SKy Fit Admin] Attendance:',
+      error
+    );
+
+
+    state.attendance =
+      [];
+
+
+    notify.error(
+      getErrorMessage(
+        error,
+        'Giriş tarixçəsi yüklənmədi.'
+      )
+    );
+
+
+    return [];
+  } finally {
+    state.loading.attendance =
+      false;
+  }
+}
+
+
+// ============================================================
+// 14. DEBTS
+//
+// debt_accounts primary key = member_id.
+// account.id YOXDUR.
+// ============================================================
+
+async function loadDebts() {
+  if (
+    state.loading.debts
+  ) {
+    return state.debts;
+  }
+
+
+  state.loading.debts =
+    true;
+
+
+  try {
+    const {
+      data,
+      error,
+    } =
+      await supabase
         .from(
           TABLES.debtAccounts
         )
         .select(`
-          *,
-          profiles (*)
+          member_id,
+          balance,
+          updated_at,
+
+          member:profiles (
+            id,
+            full_name,
+            email,
+            phone,
+            avatar_url,
+            is_active
+          )
         `)
+        .order(
+          'balance',
+          {
+            ascending:
+              false,
+          }
+        );
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    state.debts =
+      rows(data);
+
+
+    return state.debts;
+  } catch (error) {
+    console.error(
+      '[SKy Fit Admin] Debts:',
+      error
+    );
+
+
+    state.debts =
+      [];
+
+
+    notify.error(
+      getErrorMessage(
+        error,
+        'Borc hesabları yüklənmədi.'
+      )
+    );
+
+
+    return [];
+  } finally {
+    state.loading.debts =
+      false;
+  }
+}
+
+
+// ============================================================
+// 15. DEBT TRANSACTIONS
+// ============================================================
+
+async function loadDebtTransactions() {
+  try {
+    const {
+      data,
+      error,
+    } =
+      await supabase
+        .from(
+          TABLES.debtTransactions
+        )
+        .select('*')
         .order(
           'created_at',
           {
-            ascending: false,
+            ascending:
+              false,
           }
         )
-        .limit(300),
+        .limit(1000);
 
-      supabase
+
+    if (error) {
+      throw error;
+    }
+
+
+    state.debtTransactions =
+      rows(data);
+
+
+    return state
+      .debtTransactions;
+  } catch (error) {
+    console.error(
+      '[SKy Fit Admin] Debt transactions:',
+      error
+    );
+
+
+    state.debtTransactions =
+      [];
+
+
+    return [];
+  }
+}
+
+
+// ============================================================
+// 16. LEDGER
+//
+// entry_date biznes tarixi,
+// created_at əməliyyat timestamp-ıdır.
+// ============================================================
+
+async function loadLedger() {
+  if (
+    state.loading.finance
+  ) {
+    return state.ledger;
+  }
+
+
+  state.loading.finance =
+    true;
+
+
+  try {
+    const {
+      data,
+      error,
+    } =
+      await supabase
         .from(
           TABLES.ledgerEntries
         )
         .select('*')
-        .gte(
-          'created_at',
-          todayStart
-        )
-        .lte(
-          'created_at',
-          todayEnd
+        .order(
+          'entry_date',
+          {
+            ascending:
+              false,
+          }
         )
         .order(
           'created_at',
           {
-            ascending: false,
+            ascending:
+              false,
           }
         )
-        .limit(300),
+        .limit(2000);
 
-      supabase
+
+    if (error) {
+      throw error;
+    }
+
+
+    state.ledger =
+      rows(data);
+
+
+    return state.ledger;
+  } catch (error) {
+    console.error(
+      '[SKy Fit Admin] Ledger:',
+      error
+    );
+
+
+    state.ledger =
+      [];
+
+
+    notify.error(
+      getErrorMessage(
+        error,
+        'Maliyyə məlumatları yüklənmədi.'
+      )
+    );
+
+
+    return [];
+  } finally {
+    state.loading.finance =
+      false;
+  }
+}
+
+
+// ============================================================
+// 17. STOCK MOVEMENTS
+// ============================================================
+
+async function loadStockMovements() {
+  try {
+    const {
+      data,
+      error,
+    } =
+      await supabase
         .from(
-          TABLES.products
+          TABLES.stockMovements
+        )
+        .select(`
+          *,
+          product:products (
+            id,
+            name,
+            sku,
+            stock_unit
+          )
+        `)
+        .order(
+          'created_at',
+          {
+            ascending:
+              false,
+          }
+        )
+        .limit(1000);
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    state.stockMovements =
+      rows(data);
+
+
+    return state
+      .stockMovements;
+  } catch (error) {
+    console.error(
+      '[SKy Fit Admin] Stock movements:',
+      error
+    );
+
+
+    state.stockMovements =
+      [];
+
+
+    return [];
+  }
+}
+
+
+// ============================================================
+// 18. SALES
+// ============================================================
+
+async function loadSales() {
+  try {
+    const {
+      data,
+      error,
+    } =
+      await supabase
+        .from(
+          TABLES.sales
         )
         .select('*')
-        .eq(
-          'is_active',
-          true
+        .order(
+          'created_at',
+          {
+            ascending:
+              false,
+          }
+        )
+        .limit(1000);
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    state.sales =
+      rows(data);
+
+
+    return state.sales;
+  } catch (error) {
+    console.error(
+      '[SKy Fit Admin] Sales:',
+      error
+    );
+
+
+    state.sales =
+      [];
+
+
+    return [];
+  }
+}
+
+
+// ============================================================
+// 19. TRAINERS
+// ============================================================
+
+async function loadTrainers() {
+  if (
+    state.loading.trainers
+  ) {
+    return state.trainers;
+  }
+
+
+  state.loading.trainers =
+    true;
+
+
+  try {
+    const {
+      data,
+      error,
+    } =
+      await supabase
+        .from(
+          TABLES.trainers
+        )
+        .select('*')
+        .order(
+          'sort_order',
+          {
+            ascending:
+              true,
+          }
         )
         .order(
           'created_at',
           {
-            ascending: false,
+            ascending:
+              false,
           }
-        )
-        .limit(500),
+        );
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    state.trainers =
+      rows(data);
+
+
+    return state.trainers;
+  } catch (error) {
+    console.error(
+      '[SKy Fit Admin] Trainers:',
+      error
+    );
+
+
+    state.trainers =
+      [];
+
+
+    notify.error(
+      getErrorMessage(
+        error,
+        'Məşqçilər yüklənmədi.'
+      )
+    );
+
+
+    return [];
+  } finally {
+    state.loading.trainers =
+      false;
+  }
+}
+
+
+// ============================================================
+// 20. REAL AUDIT HISTORY
+//
+// Süni olaraq sales + ledger + attendance merge etmirik.
+// Backenddə bunun üçün xüsusi RPC artıq var.
+//
+// get_operator_activity(
+//   p_from,
+//   p_to,
+//   p_actor_id,
+//   p_limit
+// )
+// ============================================================
+
+async function loadHistory(
+  options = {}
+) {
+  if (
+    state.loading.history
+  ) {
+    return state.history;
+  }
+
+
+  state.loading.history =
+    true;
+
+
+  try {
+    const {
+      data,
+      error,
+    } =
+      await supabase.rpc(
+        'get_operator_activity',
+        {
+          p_from:
+            options.from ||
+            null,
+
+          p_to:
+            options.to ||
+            null,
+
+          p_actor_id:
+            options.actorId ||
+            null,
+
+          p_limit:
+            options.limit ||
+            1000,
+        }
+      );
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    state.history =
+      rows(data);
+
+
+    return state.history;
+  } catch (error) {
+    console.error(
+      '[SKy Fit Admin] Audit history:',
+      error
+    );
+
+
+    state.history =
+      [];
+
+
+    notify.error(
+      getErrorMessage(
+        error,
+        'Əməliyyat tarixçəsi yüklənmədi.'
+      )
+    );
+
+
+    return [];
+  } finally {
+    state.loading.history =
+      false;
+  }
+}
+
+
+// ============================================================
+// 21. DASHBOARD LOAD
+// ============================================================
+
+async function loadDashboard() {
+  if (
+    state.loading.dashboard
+  ) {
+    return;
+  }
+
+
+  state.loading.dashboard =
+    true;
+
+
+  try {
+    await Promise.all([
+      loadSales(),
+      loadMemberships(),
+      loadAttendance(),
+      loadDebts(),
+      loadLedger(),
+      loadProducts(),
+      loadHistory({
+        limit:
+          50,
+      }),
     ]);
 
 
-  const results = [
-    salesResult,
-    membershipsResult,
-    attendanceResult,
-    debtResult,
-    ledgerResult,
-    stockResult,
-  ];
+    renderDashboard();
 
 
-  results.forEach(
-    result => {
-      if (result.error) {
-        console.error(
-          'Dashboard query error:',
-          result.error
-        );
-      }
-    }
-  );
-
-
-  state.dashboard.sales =
-    rows(
-      salesResult.data
-    );
-
-  state.dashboard.memberships =
-    rows(
-      membershipsResult.data
-    );
-
-  state.dashboard.attendance =
-    rows(
-      attendanceResult.data
-    );
-
-  state.dashboard.debts =
-    rows(
-      debtResult.data
-    );
-
-  state.dashboard.ledger =
-    rows(
-      ledgerResult.data
-    );
-
-  state.dashboard.stock =
-    rows(
-      stockResult.data
+    state.dashboard.loaded =
+      true;
+  } catch (error) {
+    console.error(
+      '[SKy Fit Admin] Dashboard:',
+      error
     );
 
 
-  renderDashboard();
+    notify.error(
+      getErrorMessage(
+        error,
+        'Dashboard yüklənmədi.'
+      )
+    );
+  } finally {
+    state.loading.dashboard =
+      false;
+  }
 }
 
 
 // ============================================================
-// 09. DASHBOARD CALCULATIONS
+// 22. TODAY CHECK
 // ============================================================
 
-function saleAmount(sale) {
-  return normalizeNumber(
-    sale?.total_amount ??
-    sale?.total ??
-    sale?.amount ??
-    0
-  );
-}
-
-
-function debtBalance(account) {
-  return normalizeNumber(
-    account?.balance ??
-    account?.amount ??
-    account?.debt_amount ??
-    0
-  );
-}
-
-
-function ledgerAmount(entry) {
-  return normalizeNumber(
-    entry?.amount ??
-    0
-  );
-}
-
-
-function ledgerType(entry) {
-  return normalizeString(
-    entry?.entry_type ??
-    entry?.type
-  ).toLowerCase();
-}
-
-
-function productStock(product) {
-  return normalizeNumber(
-    product?.stock_quantity ??
-    product?.stock ??
-    product?.quantity ??
-    0
-  );
-}
-
-
-function membershipEndDate(
-  membership
+function isToday(
+  value
 ) {
+  if (!value) {
+    return false;
+  }
+
+
+  const date =
+    new Date(value);
+
+
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+    return false;
+  }
+
+
+  const now =
+    new Date();
+
+
   return (
-    membership?.end_date ||
-    membership?.expires_at ||
-    null
+    date.getFullYear() ===
+      now.getFullYear() &&
+    date.getMonth() ===
+      now.getMonth() &&
+    date.getDate() ===
+      now.getDate()
   );
 }
 
 
 // ============================================================
-// 10. DASHBOARD RENDER
+// 23. TODAY LEDGER
+// ============================================================
+
+function todayLedgerEntries() {
+  const today =
+    todayIso();
+
+
+  return state.ledger.filter(
+    entry =>
+      entry.entry_date ===
+      today
+  );
+}
+
+
+// ============================================================
+// 24. DASHBOARD RENDER
 // ============================================================
 
 function renderDashboard() {
-  const sales =
-    state.dashboard.sales;
-
-  const memberships =
-    state.dashboard.memberships;
-
-  const attendance =
-    state.dashboard.attendance;
-
-  const debts =
-    state.dashboard.debts;
-
-  const ledger =
-    state.dashboard.ledger;
-
-  const stock =
-    state.dashboard.stock;
+  const todaySales =
+    state.sales.filter(
+      sale =>
+        isToday(
+          sale.created_at
+        )
+    );
 
 
-  const salesTotal =
-    sales.reduce(
+  const paidSales =
+    todaySales.filter(
+      sale =>
+        sale.payment_status ===
+        'paid'
+    );
+
+
+  const todaySalesTotal =
+    paidSales.reduce(
       (
         total,
         sale
       ) =>
         total +
-        saleAmount(sale),
+        number(
+          sale.total_amount
+        ),
       0
     );
 
 
   const activeMemberships =
-    memberships.filter(
-      membership => {
-        const meta =
-          membershipStatus({
-            status:
-              membership.status,
+    state.memberships.filter(
+      membership =>
+        membershipIsActive(
+          membership
+        )
+    );
 
-            endDate:
-              membershipEndDate(
-                membership
-              ),
-          });
 
-        return (
-          meta.value ===
-          'active'
-        );
-      }
+  const todayAttendance =
+    state.attendance.filter(
+      attendance =>
+        isToday(
+          attendanceDate(
+            attendance
+          )
+        )
+    );
+
+
+  const openDebts =
+    state.debts.filter(
+      account =>
+        debtBalance(
+          account
+        ) > 0
     );
 
 
   const totalDebt =
-    debts.reduce(
+    openDebts.reduce(
       (
         total,
         account
@@ -699,11 +1682,17 @@ function renderDashboard() {
     );
 
 
+  const todayLedger =
+    todayLedgerEntries();
+
+
   const income =
-    ledger
+    todayLedger
       .filter(
         entry =>
-          ledgerType(entry) ===
+          ledgerType(
+            entry
+          ) ===
           'income'
       )
       .reduce(
@@ -712,16 +1701,20 @@ function renderDashboard() {
           entry
         ) =>
           total +
-          ledgerAmount(entry),
+          ledgerAmount(
+            entry
+          ),
         0
       );
 
 
   const expense =
-    ledger
+    todayLedger
       .filter(
         entry =>
-          ledgerType(entry) ===
+          ledgerType(
+            entry
+          ) ===
           'expense'
       )
       .reduce(
@@ -730,16 +1723,24 @@ function renderDashboard() {
           entry
         ) =>
           total +
-          ledgerAmount(entry),
+          ledgerAmount(
+            entry
+          ),
         0
       );
 
+
+  // ----------------------------------------------------------
+  // KPI values
+  // ----------------------------------------------------------
 
   setText(
     byId(
       'dashboard-sales-total'
     ),
-    money(salesTotal)
+    money(
+      todaySalesTotal
+    )
   );
 
 
@@ -747,7 +1748,7 @@ function renderDashboard() {
     byId(
       'dashboard-sales-count'
     ),
-    `${sales.length} satış`
+    `${todaySales.length} satış`
   );
 
 
@@ -763,7 +1764,7 @@ function renderDashboard() {
     byId(
       'dashboard-attendance-today'
     ),
-    attendance.length
+    todayAttendance.length
   );
 
 
@@ -771,7 +1772,9 @@ function renderDashboard() {
     byId(
       'dashboard-debt-total'
     ),
-    money(totalDebt)
+    money(
+      totalDebt
+    )
   );
 
 
@@ -779,11 +1782,7 @@ function renderDashboard() {
     byId(
       'dashboard-debt-accounts'
     ),
-    `${debts.filter(
-      item =>
-        debtBalance(item) >
-        0
-    ).length} açıq hesab`
+    `${openDebts.length} açıq hesab`
   );
 
 
@@ -791,7 +1790,9 @@ function renderDashboard() {
     byId(
       'dashboard-income-today'
     ),
-    number(income)
+    money(
+      income
+    )
   );
 
 
@@ -799,73 +1800,109 @@ function renderDashboard() {
     byId(
       'dashboard-expense-today'
     ),
-    number(expense)
+    money(
+      expense
+    )
   );
 
 
-  renderDashboardLowStock(
-    stock
+  setText(
+    byId(
+      'dashboard-balance-today'
+    ),
+    money(
+      income -
+      expense
+    )
   );
 
-  renderDashboardExpiringMemberships(
-    activeMemberships
-  );
 
-  renderDashboardOpenDebts(
-    debts
-  );
+  renderDashboardLowStock();
 
-  renderDashboardRecentOperations();
+  renderDashboardMemberships();
+
+  renderDashboardDebts();
+
+  renderDashboardActivity();
 }
 
 
 // ============================================================
-// 11. LOW STOCK
+// 25. LOW STOCK DASHBOARD
 // ============================================================
 
-function renderDashboardLowStock(
-  products
-) {
+function renderDashboardLowStock() {
   const root =
     byId(
       'dashboard-low-stock'
     );
 
-  if (!root) return;
 
-  clearElement(root);
+  if (!root) {
+    return;
+  }
 
 
-  const lowStock =
-    products
+  clearElement(
+    root
+  );
+
+
+  const products =
+    state.products
       .filter(
-        product =>
-          productStock(product) <=
-          5
+        product => {
+          const meta =
+            productStockState(
+              product
+            );
+
+
+          return (
+            meta.key ===
+              'low' ||
+            meta.key ===
+              'out'
+          );
+        }
       )
       .sort(
-        (a, b) =>
+        (
+          a,
+          b
+        ) =>
           productStock(a) -
           productStock(b)
       )
-      .slice(0, 6);
+      .slice(
+        0,
+        8
+      );
 
 
   if (
-    lowStock.length === 0
+    products.length ===
+    0
   ) {
     root.append(
       createDashboardEmpty(
-        'Az stoklu məhsul yoxdur.'
+        'Stok xəbərdarlığı yoxdur.'
       )
     );
+
 
     return;
   }
 
 
-  lowStock.forEach(
+  products.forEach(
     product => {
+      const meta =
+        productStockState(
+          product
+        );
+
+
       const item =
         createElement(
           'article',
@@ -885,13 +1922,18 @@ function renderDashboardLowStock(
 
           <strong class="compact-list-item__title">
             ${escapeHtml(
-              product.name ||
-              'Məhsul'
+              productName(
+                product
+              )
             )}
           </strong>
 
           <span class="compact-list-item__meta">
-            Stok vəziyyəti
+            ${escapeHtml(
+              productStockUnit(
+                product
+              )
+            )}
           </span>
 
         </span>
@@ -899,40 +1941,52 @@ function renderDashboardLowStock(
         <span class="compact-list-item__side">
 
           <strong>
-            ${number(
-              productStock(product)
+            ${escapeHtml(
+              String(
+                productStock(
+                  product
+                )
+              )
             )}
           </strong>
 
-          <span>
-            qalıb
+          <span class="${meta.className}">
+            ${escapeHtml(
+              meta.label
+            )}
           </span>
 
         </span>
       `;
 
 
-      root.append(item);
+      root.append(
+        item
+      );
     }
   );
 }
 
 
 // ============================================================
-// 12. EXPIRING MEMBERSHIPS
+// 26. MEMBERSHIP DASHBOARD
 // ============================================================
 
-function renderDashboardExpiringMemberships(
-  memberships
-) {
+function renderDashboardMemberships() {
   const root =
     byId(
       'dashboard-expiring-memberships'
     );
 
-  if (!root) return;
 
-  clearElement(root);
+  if (!root) {
+    return;
+  }
+
+
+  clearElement(
+    root
+  );
 
 
   const now =
@@ -940,28 +1994,30 @@ function renderDashboardExpiringMemberships(
 
 
   const upcoming =
-    memberships
+    state.memberships
+      .filter(
+        membership =>
+          membershipIsActive(
+            membership
+          )
+      )
       .map(
         membership => {
           const end =
             new Date(
-              membershipEndDate(
-                membership
-              )
+              membership.end_date
             );
 
+
           const days =
-            Number.isNaN(
-              end.getTime()
-            )
-              ? 9999
-              : Math.ceil(
-                  (
-                    end.getTime() -
-                    now.getTime()
-                  ) /
-                  86400000
-                );
+            Math.ceil(
+              (
+                end.getTime() -
+                now.getTime()
+              ) /
+              86400000
+            );
+
 
           return {
             membership,
@@ -975,20 +2031,29 @@ function renderDashboardExpiringMemberships(
           item.days <= 7
       )
       .sort(
-        (a, b) =>
-          a.days - b.days
+        (
+          a,
+          b
+        ) =>
+          a.days -
+          b.days
       )
-      .slice(0, 6);
+      .slice(
+        0,
+        8
+      );
 
 
   if (
-    upcoming.length === 0
+    upcoming.length ===
+    0
   ) {
     root.append(
       createDashboardEmpty(
-        'Yaxın günlərdə bitən üzvlük yoxdur.'
+        '7 gün ərzində bitən üzvlük yoxdur.'
       )
     );
+
 
     return;
   }
@@ -999,8 +2064,9 @@ function renderDashboardExpiringMemberships(
       membership,
       days,
     }) => {
-      const profile =
-        membership.profiles;
+      const member =
+        membership.member;
+
 
       const item =
         createElement(
@@ -1015,12 +2081,8 @@ function renderDashboardExpiringMemberships(
       item.innerHTML = `
         <span class="compact-list-item__icon">
           ${escapeHtml(
-            getInitials(
-              profile?.first_name ||
-              profile?.name ||
-              '',
-              profile?.last_name ||
-              ''
+            getProfileInitials(
+              member
             )
           )}
         </span>
@@ -1030,20 +2092,18 @@ function renderDashboardExpiringMemberships(
           <strong class="compact-list-item__title">
             ${escapeHtml(
               getProfileName(
-                profile
+                member
               )
             )}
           </strong>
 
           <span class="compact-list-item__meta">
-            ${
-              escapeHtml(
-                membership
-                  ?.membership_plans
-                  ?.name ||
-                'Üzvlük'
-              )
-            }
+            ${escapeHtml(
+              membership
+                .membership_plan
+                ?.name ||
+              'Üzvlük'
+            )}
           </span>
 
         </span>
@@ -1059,68 +2119,86 @@ function renderDashboardExpiringMemberships(
           </strong>
 
           <span>
-            qalır
+            ${formatDate(
+              membership.end_date
+            )}
           </span>
 
         </span>
       `;
 
 
-      root.append(item);
+      root.append(
+        item
+      );
     }
   );
 }
 
 
 // ============================================================
-// 13. OPEN DEBTS
+// 27. DEBT DASHBOARD
 // ============================================================
 
-function renderDashboardOpenDebts(
-  debts
-) {
+function renderDashboardDebts() {
   const root =
     byId(
       'dashboard-open-debts'
     );
 
-  if (!root) return;
 
-  clearElement(root);
+  if (!root) {
+    return;
+  }
 
 
-  const open =
-    debts
+  clearElement(
+    root
+  );
+
+
+  const debts =
+    state.debts
       .filter(
         account =>
-          debtBalance(account) >
-          0
+          debtBalance(
+            account
+          ) > 0
       )
       .sort(
-        (a, b) =>
+        (
+          a,
+          b
+        ) =>
           debtBalance(b) -
           debtBalance(a)
       )
-      .slice(0, 6);
+      .slice(
+        0,
+        8
+      );
 
 
   if (
-    open.length === 0
+    debts.length ===
+    0
   ) {
     root.append(
       createDashboardEmpty(
-        'Açıq borc hesabı yoxdur.'
+        'Açıq borc yoxdur.'
       )
     );
+
 
     return;
   }
 
 
-  open.forEach(
+  debts.forEach(
     account => {
-      const profile =
-        account.profiles;
+      const member =
+        account.member;
+
 
       const item =
         createElement(
@@ -1135,12 +2213,8 @@ function renderDashboardOpenDebts(
       item.innerHTML = `
         <span class="compact-list-item__icon">
           ${escapeHtml(
-            getInitials(
-              profile?.first_name ||
-              profile?.name ||
-              '',
-              profile?.last_name ||
-              ''
+            getProfileInitials(
+              member
             )
           )}
         </span>
@@ -1148,24 +2222,22 @@ function renderDashboardOpenDebts(
         <span class="compact-list-item__content">
 
           <strong class="compact-list-item__title">
-            ${
-              escapeHtml(
-                getProfileName(
-                  profile
-                )
+            ${escapeHtml(
+              getProfileName(
+                member
               )
-            }
+            )}
           </strong>
 
           <span class="compact-list-item__meta">
-            Borc hesabı
+            Açıq borc
           </span>
 
         </span>
 
         <span class="compact-list-item__side">
 
-          <strong class="text-warning">
+          <strong class="finance-amount finance-amount--expense">
             ${escapeHtml(
               money(
                 debtBalance(
@@ -1176,120 +2248,51 @@ function renderDashboardOpenDebts(
           </strong>
 
           <span>
-            qalıb
+            ${formatDate(
+              account.updated_at
+            )}
           </span>
 
         </span>
       `;
 
 
-      root.append(item);
+      root.append(
+        item
+      );
     }
   );
 }
 
 
 // ============================================================
-// 14. RECENT OPERATIONS
-// Hazırda mövcud cədvəllərdən birləşdirilir.
+// 28. AUDIT DASHBOARD
 // ============================================================
 
-function renderDashboardRecentOperations() {
+function renderDashboardActivity() {
   const root =
     byId(
       'dashboard-recent-operations'
     );
 
-  if (!root) return;
 
-  clearElement(root);
-
-
-  const operations = [];
+  if (!root) {
+    return;
+  }
 
 
-  state.dashboard.sales
-    .forEach(
-      sale => {
-        operations.push({
-          type: 'sale',
-
-          title:
-            'Satış',
-
-          meta:
-            `${money(
-              saleAmount(sale)
-            )}`,
-
-          date:
-            sale.created_at,
-        });
-      }
-    );
+  clearElement(
+    root
+  );
 
 
-  state.dashboard.attendance
-    .forEach(
-      attendance => {
-        operations.push({
-          type: 'attendance',
-
-          title:
-            'Giriş qeydiyyatı',
-
-          meta:
-            getProfileName(
-              attendance.profiles
-            ),
-
-          date:
-            attendance.created_at,
-        });
-      }
-    );
-
-
-  state.dashboard.ledger
-    .forEach(
-      entry => {
-        operations.push({
-          type:
-            ledgerType(entry),
-
-          title:
-            ledgerType(entry) ===
-            'expense'
-              ? 'Xərc'
-              : 'Gəlir',
-
-          meta:
-            money(
-              ledgerAmount(
-                entry
-              )
-            ),
-
-          date:
-            entry.created_at,
-        });
-      }
-    );
-
-
-  operations
-    .sort(
-      (a, b) =>
-        new Date(b.date) -
-        new Date(a.date)
-    )
+  state.history
     .slice(
       0,
-      UI_CONFIG.history
-        .dashboardLimit
+      10
     )
     .forEach(
-      operation => {
+      log => {
         const item =
           createElement(
             'article',
@@ -1309,13 +2312,22 @@ function renderDashboardRecentOperations() {
 
             <strong class="operation-item__title">
               ${escapeHtml(
-                operation.title
+                auditActionLabel(
+                  log
+                )
               )}
             </strong>
 
             <span class="operation-item__meta">
               ${escapeHtml(
-                operation.meta
+                log.actor_name ||
+                'Sistem'
+              )}
+              ·
+              ${escapeHtml(
+                roleLabel(
+                  log.actor_role
+                )
               )}
             </span>
 
@@ -1325,13 +2337,13 @@ function renderDashboardRecentOperations() {
 
             <strong>
               ${formatDate(
-                operation.date
+                log.created_at
               )}
             </strong>
 
             <span>
               ${formatTime(
-                operation.date
+                log.created_at
               )}
             </span>
 
@@ -1339,13 +2351,16 @@ function renderDashboardRecentOperations() {
         `;
 
 
-        root.append(item);
+        root.append(
+          item
+        );
       }
     );
 
 
   if (
-    root.children.length === 0
+    root.children.length ===
+    0
   ) {
     root.append(
       createDashboardEmpty(
@@ -1357,13 +2372,87 @@ function renderDashboardRecentOperations() {
 
 
 // ============================================================
-// 15. EMPTY ROW
+// 29. AUDIT ACTION LABEL
+// ============================================================
+
+function auditActionLabel(
+  log
+) {
+  const table =
+    normalizeString(
+      log?.table_name
+    );
+
+
+  const action =
+    normalizeString(
+      log?.action
+    ).toUpperCase();
+
+
+  const tableNames = {
+    products:
+      'Məhsul',
+
+    sales:
+      'Satış',
+
+    memberships:
+      'Üzvlük',
+
+    attendance:
+      'Giriş',
+
+    debt_transactions:
+      'Borc',
+
+    ledger_entries:
+      'Maliyyə',
+
+    stock_movements:
+      'Stok',
+
+    trainers:
+      'Məşqçi',
+
+    staff_shifts:
+      'Növbə',
+
+    staff_cash_transactions:
+      'Əməkdaş kassası',
+  };
+
+
+  const actionNames = {
+    INSERT:
+      'əlavə edildi',
+
+    UPDATE:
+      'yeniləndi',
+
+    DELETE:
+      'silindi',
+  };
+
+
+  return `${
+    tableNames[table] ||
+    table
+  } ${
+    actionNames[action] ||
+    action
+  }`;
+}
+
+
+// ============================================================
+// 30. DASHBOARD EMPTY
 // ============================================================
 
 function createDashboardEmpty(
   message
 ) {
-  const element =
+  const item =
     createElement(
       'div',
       {
@@ -1373,478 +2462,54 @@ function createDashboardEmpty(
     );
 
 
-  element.innerHTML = `
+  item.innerHTML = `
     <span class="compact-list-item__content">
+
       <span class="compact-list-item__meta">
-        ${escapeHtml(message)}
+        ${escapeHtml(
+          message
+        )}
       </span>
+
     </span>
   `;
 
 
-  return element;
+  return item;
 }
 
 
 // ============================================================
-// 16. DASHBOARD REFRESH
+// 31. DASHBOARD REFRESH
 // ============================================================
 
-function bindDashboardRefresh() {
+function bindDashboardEvents() {
   byId(
     'admin-dashboard-refresh'
   )?.addEventListener(
     'click',
-    asyncHandler(
-      async () => {
-        await loadDashboard();
+    async () => {
+      await loadDashboard();
 
-        notify.success(
-          'Panel məlumatları yeniləndi.'
-        );
-      }
-    )
+
+      notify.success(
+        'Dashboard yeniləndi.'
+      );
+    }
   );
 }
 
 
 // ============================================================
-// 17. PRODUCTS QUERY
-// Digər tablar da eyni cache-dən istifadə edir.
-// ============================================================
-
-async function loadProducts() {
-  const {
-    data,
-    error,
-  } =
-    await supabase
-      .from(
-        TABLES.products
-      )
-      .select('*')
-      .order(
-        'created_at',
-        {
-          ascending: false,
-        }
-      )
-      .limit(
-        UI_CONFIG.products
-          .adminLimit
-      );
-
-
-  if (error) {
-    console.error(
-      'Admin products error:',
-      error
-    );
-
-    notify.error(
-      'Məhsullar yüklənmədi.'
-    );
-
-    state.products = [];
-
-    return [];
-  }
-
-
-  state.products =
-    rows(data);
-
-  return state.products;
-}
-
-
-// ============================================================
-// 18. MEMBERS QUERY
-// ============================================================
-
-async function loadMembers() {
-  const {
-    data,
-    error,
-  } =
-    await supabase
-      .from(
-        TABLES.profiles
-      )
-      .select('*')
-      .order(
-        'created_at',
-        {
-          ascending: false,
-        }
-      )
-      .limit(1000);
-
-
-  if (error) {
-    console.error(
-      'Members error:',
-      error
-    );
-
-    notify.error(
-      'İstifadəçilər yüklənmədi.'
-    );
-
-    state.members = [];
-
-    return;
-  }
-
-
-  state.members =
-    rows(data);
-
-  renderMembers();
-}
-
-
-// ============================================================
-// 19. MEMBERSHIPS QUERY
-// ============================================================
-
-async function loadMemberships() {
-  const {
-    data,
-    error,
-  } =
-    await supabase
-      .from(
-        TABLES.memberships
-      )
-      .select(`
-        *,
-        profiles (*),
-        membership_plans (*)
-      `)
-      .order(
-        'created_at',
-        {
-          ascending: false,
-        }
-      )
-      .limit(1000);
-
-
-  if (error) {
-    console.error(
-      'Memberships error:',
-      error
-    );
-
-    notify.error(
-      'Üzvlüklər yüklənmədi.'
-    );
-
-    state.memberships = [];
-
-    return;
-  }
-
-
-  state.memberships =
-    rows(data);
-
-  renderMemberships();
-}
-
-
-// ============================================================
-// 20. MEMBERSHIP PLANS QUERY
-// ============================================================
-
-let membershipPlans = [];
-
-
-async function loadMembershipPlans() {
-  const {
-    data,
-    error,
-  } =
-    await supabase
-      .from(
-        TABLES.membershipPlans
-      )
-      .select('*')
-      .order(
-        'created_at',
-        {
-          ascending: true,
-        }
-      );
-
-
-  if (error) {
-    console.error(
-      'Membership plans error:',
-      error
-    );
-
-    membershipPlans = [];
-
-    return;
-  }
-
-
-  membershipPlans =
-    rows(data);
-
-  renderMembershipPlans();
-}
-
-
-// ============================================================
-// 21. ATTENDANCE QUERY
-// ============================================================
-
-async function loadAttendance() {
-  const {
-    data,
-    error,
-  } =
-    await supabase
-      .from(
-        TABLES.attendance
-      )
-      .select(`
-        *,
-        profiles (*)
-      `)
-      .order(
-        'created_at',
-        {
-          ascending: false,
-        }
-      )
-      .limit(
-        UI_CONFIG.attendance
-          .adminHistoryLimit
-      );
-
-
-  if (error) {
-    console.error(
-      'Admin attendance error:',
-      error
-    );
-
-    notify.error(
-      'Giriş tarixçəsi yüklənmədi.'
-    );
-
-    state.attendance = [];
-
-    return;
-  }
-
-
-  state.attendance =
-    rows(data);
-
-  renderAttendanceAdmin();
-}
-
-
-// ============================================================
-// 22. DEBT QUERY
-// ============================================================
-
-async function loadDebts() {
-  const {
-    data,
-    error,
-  } =
-    await supabase
-      .from(
-        TABLES.debtAccounts
-      )
-      .select(`
-        *,
-        profiles (*)
-      `)
-      .order(
-        'created_at',
-        {
-          ascending: false,
-        }
-      )
-      .limit(1000);
-
-
-  if (error) {
-    console.error(
-      'Debt accounts error:',
-      error
-    );
-
-    notify.error(
-      'Borclar yüklənmədi.'
-    );
-
-    state.debts = [];
-
-    return;
-  }
-
-
-  state.debts =
-    rows(data);
-
-  renderDebts();
-}
-
-
-// ============================================================
-// 23. LEDGER QUERY
-// ============================================================
-
-async function loadLedger() {
-  const {
-    data,
-    error,
-  } =
-    await supabase
-      .from(
-        TABLES.ledgerEntries
-      )
-      .select('*')
-      .order(
-        'created_at',
-        {
-          ascending: false,
-        }
-      )
-      .limit(1500);
-
-
-  if (error) {
-    console.error(
-      'Ledger error:',
-      error
-    );
-
-    notify.error(
-      'Maliyyə məlumatları yüklənmədi.'
-    );
-
-    state.ledger = [];
-
-    return;
-  }
-
-
-  state.ledger =
-    rows(data);
-
-  renderFinance();
-}
-
-
-// ============================================================
-// 24. STOCK MOVEMENTS QUERY
-// ============================================================
-
-async function loadStockMovements() {
-  const {
-    data,
-    error,
-  } =
-    await supabase
-      .from(
-        TABLES.stockMovements
-      )
-      .select(`
-        *,
-        products (*)
-      `)
-      .order(
-        'created_at',
-        {
-          ascending: false,
-        }
-      )
-      .limit(500);
-
-
-  if (error) {
-    console.error(
-      'Stock movements error:',
-      error
-    );
-
-    state.stockMovements = [];
-
-    return;
-  }
-
-
-  state.stockMovements =
-    rows(data);
-}
-
-
-// ============================================================
-// 25. TRAINERS QUERY
-// ============================================================
-
-async function loadTrainers() {
-  const {
-    data,
-    error,
-  } =
-    await supabase
-      .from(
-        TABLES.trainers
-      )
-      .select('*')
-      .order(
-        'created_at',
-        {
-          ascending: false,
-        }
-      )
-      .limit(
-        UI_CONFIG.trainers
-          .adminLimit
-      );
-
-
-  if (error) {
-    console.error(
-      'Admin trainers error:',
-      error
-    );
-
-    notify.error(
-      'Məşqçilər yüklənmədi.'
-    );
-
-    state.trainers = [];
-
-    return;
-  }
-
-
-  state.trainers =
-    rows(data);
-
-  renderAdminTrainers();
-}
-
-
-// ============================================================
-// 26. INIT — HISSƏ 1 ÜÇÜN
-// Tam init faylın son hissəsində çağırılacaq.
+// 32. BASE INIT
 // ============================================================
 
 async function initAdminBase() {
+  await initLayout();
+
+
   const identity =
-    await requireStaff();
+    await requireAdminStaff();
 
 
   if (!identity) {
@@ -1852,33 +2517,19 @@ async function initAdminBase() {
   }
 
 
-  state.identity =
-    await initLayout();
-
-
-  if (
-    !state.identity?.isStaff
-  ) {
-    window.location.replace(
-      APP_CONFIG.routes.home
-    );
-
-    return false;
-  }
-
-
   renderOperator();
+
 
   bindTabEvents();
 
-  bindDashboardRefresh();
+  bindDashboardEvents();
 
 
   setActiveTab(
-    state.activeTab,
+    'dashboard',
     {
-      persist: false,
-      load: false,
+      load:
+        false,
     }
   );
 
@@ -1888,186 +2539,192 @@ async function initAdminBase() {
 
 
 // ============================================================
-// ADMIN.JS — HISSƏ 1/4 SONU
-// ============================================================
 
 // ============================================================
-// 27. PRODUCT FIELD HELPERS
-// Mövcud backend sütunlarını təhlükəsiz oxuyuruq.
+// 33. ACTIVE MEMBERS
+// POS və digər əməliyyatlarda yalnız aktiv member-lər.
 // ============================================================
 
-function productValue(
-  product,
-  candidates,
-  fallback = null
-) {
-  if (!product) {
-    return fallback;
-  }
-
-  for (const key of candidates) {
-    if (
-      Object.prototype.hasOwnProperty.call(
-        product,
-        key
-      )
-    ) {
-      const value =
-        product[key];
-
-      if (
-        value !== null &&
-        value !== undefined
-      ) {
-        return value;
-      }
-    }
-  }
-
-  return fallback;
-}
-
-
-function productHasColumn(
-  column
-) {
-  const sample =
-    state.products[0];
-
-  if (!sample) {
-    return false;
-  }
-
-  return Object.prototype
-    .hasOwnProperty.call(
-      sample,
-      column
+function activeMembers() {
+  return state.members
+    .filter(
+      member =>
+        member.role ===
+          'member' &&
+        member.is_active !==
+          false
+    )
+    .sort(
+      (
+        a,
+        b
+      ) =>
+        getProfileName(a)
+          .localeCompare(
+            getProfileName(b),
+            'az'
+          )
     );
 }
 
 
-function productName(
-  product
+// ============================================================
+// 34. MEMBER OPTION MARKUP
+// ============================================================
+
+function memberOptionsMarkup(
+  selectedId = ''
 ) {
-  return normalizeString(
-    productValue(
-      product,
-      ['name'],
-      'Məhsul'
+  return activeMembers()
+    .map(
+      member => `
+        <option
+          value="${escapeHtml(
+            member.id
+          )}"
+          ${
+            String(
+              selectedId
+            ) ===
+            String(
+              member.id
+            )
+              ? 'selected'
+              : ''
+          }
+        >
+          ${escapeHtml(
+            getProfileName(
+              member
+            )
+          )}
+          ${
+            member.phone
+              ? ` — ${escapeHtml(
+                  member.phone
+                )}`
+              : ''
+          }
+        </option>
+      `
     )
-  );
+    .join('');
 }
 
 
-function productPrice(
-  product
-) {
-  return normalizeNumber(
-    productValue(
-      product,
-      [
-        'price',
-        'sale_price',
-      ],
-      0
-    )
-  );
-}
+// ============================================================
+// 35. PAYMENT METHOD LABEL
+// ============================================================
 
-
-function productImage(
-  product
+function paymentMethodLabel(
+  value
 ) {
-  const value =
+  switch (
     normalizeString(
-      productValue(
-        product,
-        [
-          'image_url',
-          'image',
-          'image_path',
-        ],
-        ''
-      )
-    );
-
-
-  if (!value) {
-    return '';
-  }
-
-
-  if (
-    value.startsWith(
-      'https://'
-    ) ||
-    value.startsWith(
-      'http://'
+      value
     )
   ) {
-    return value;
+    case 'card':
+      return 'Kart';
+
+    case 'transfer':
+      return 'Köçürmə';
+
+    default:
+      return 'Nağd';
   }
-
-
-  return getPublicStorageUrl(
-    APP_CONFIG.storage
-      .productImages,
-    value
-  );
-}
-
-
-function productActive(
-  product
-) {
-  const value =
-    productValue(
-      product,
-      [
-        'is_active',
-        'active',
-      ],
-      true
-    );
-
-  return value !== false;
 }
 
 
 // ============================================================
-// 28. POS FILTERED PRODUCTS
+// 36. PAYMENT STATUS LABEL
+// ============================================================
+
+function paymentStatusLabel(
+  value
+) {
+  switch (
+    normalizeString(
+      value
+    )
+  ) {
+    case 'debt':
+      return 'Borc';
+
+    case 'cancelled':
+      return 'Ləğv edilib';
+
+    case 'refunded':
+      return 'Geri qaytarılıb';
+
+    default:
+      return 'Ödənilib';
+  }
+}
+
+
+// ============================================================
+// 37. PAYMENT STATUS CLASS
+// ============================================================
+
+function paymentStatusClass(
+  value
+) {
+  switch (
+    normalizeString(
+      value
+    )
+  ) {
+    case 'paid':
+      return (
+        'ui-badge ui-badge--success'
+      );
+
+    case 'debt':
+      return (
+        'ui-badge ui-badge--warning'
+      );
+
+    case 'refunded':
+      return (
+        'ui-badge ui-badge--neutral'
+      );
+
+    default:
+      return (
+        'ui-badge ui-badge--danger'
+      );
+  }
+}
+
+
+// ============================================================
+// 38. POS FILTER
 // ============================================================
 
 function filteredPosProducts() {
-  const input =
-    byId(
-      'pos-product-search'
+  const search =
+    normalizeSearch(
+      byId(
+        'pos-product-search'
+      )?.value
     );
+
 
   const filter =
-    byId(
-      'pos-product-filter'
-    );
-
-
-  const search =
     normalizeString(
-      input?.value
-    )
-      .toLocaleLowerCase(
-        'az-AZ'
-      );
-
-
-  const mode =
-    filter?.value ||
-    'all';
+      byId(
+        'pos-product-filter'
+      )?.value,
+      'all'
+    );
 
 
   return state.products
     .filter(
       product =>
-        productActive(product)
+        product.is_active !==
+        false
     )
     .filter(
       product => {
@@ -2075,13 +2732,24 @@ function filteredPosProducts() {
           return true;
         }
 
-        return productName(
-          product
-        )
-          .toLocaleLowerCase(
-            'az-AZ'
-          )
-          .includes(search);
+
+        const text =
+          [
+            product.name,
+            product.sku,
+            product.category,
+            product.description,
+          ]
+            .filter(Boolean)
+            .join(' ')
+            .toLocaleLowerCase(
+              'az-AZ'
+            );
+
+
+        return text.includes(
+          search
+        );
       }
     )
     .filter(
@@ -2091,20 +2759,39 @@ function filteredPosProducts() {
             product
           );
 
+
         if (
-          mode === 'available'
+          filter ===
+          'available'
         ) {
           return stock > 0;
         }
 
+
         if (
-          mode === 'low'
+          filter ===
+          'low'
         ) {
+          const status =
+            productStockState(
+              product
+            );
+
+
           return (
-            stock > 0 &&
-            stock <= 5
+            status.key ===
+            'low'
           );
         }
+
+
+        if (
+          filter ===
+          'empty'
+        ) {
+          return stock <= 0;
+        }
+
 
         return true;
       }
@@ -2113,7 +2800,7 @@ function filteredPosProducts() {
 
 
 // ============================================================
-// 29. POS CARD
+// 39. POS PRODUCT CARD
 // ============================================================
 
 function createPosCard(
@@ -2124,10 +2811,18 @@ function createPosCard(
       product
     );
 
+
   const image =
     productImage(
       product
     );
+
+
+  const status =
+    productStockState(
+      product
+    );
+
 
   const card =
     createElement(
@@ -2141,10 +2836,12 @@ function createPosCard(
           }`,
 
         attrs: {
-          type: 'button',
+          type:
+            'button',
+
           disabled:
             stock <= 0
-              ? ''
+              ? true
               : null,
         },
 
@@ -2163,25 +2860,30 @@ function createPosCard(
         image
           ? `
             <img
-              src="${escapeHtml(image)}"
+              src="${escapeHtml(
+                image
+              )}"
               alt="${escapeHtml(
-                productName(product)
+                productName(
+                  product
+                )
               )}"
               loading="lazy"
+              decoding="async"
             >
           `
           : `
-            <span
-              style="
-                color:var(--brand);
-                font-size:11px;
-                font-weight:800;
-              "
-            >
+            <span class="product-card__image-fallback">
               SK
             </span>
           `
       }
+
+      <span class="${status.className}">
+        ${escapeHtml(
+          status.label
+        )}
+      </span>
 
     </div>
 
@@ -2190,9 +2892,21 @@ function createPosCard(
 
       <strong class="pos-product-card__name">
         ${escapeHtml(
-          productName(product)
+          productName(
+            product
+          )
         )}
       </strong>
+
+
+      <span class="pos-product-card__unit">
+        ${escapeHtml(
+          productUnitLabel(
+            product
+          )
+        )}
+      </span>
+
 
       <div class="pos-product-card__row">
 
@@ -2207,7 +2921,14 @@ function createPosCard(
         </span>
 
         <span class="pos-product-card__stock">
-          ${number(stock)} stok
+          ${escapeHtml(
+            String(stock)
+          )}
+          ${escapeHtml(
+            productStockUnit(
+              product
+            )
+          )}
         </span>
 
       </div>
@@ -2216,11 +2937,13 @@ function createPosCard(
   `;
 
 
-  if (stock > 0) {
+  if (
+    stock > 0
+  ) {
     card.addEventListener(
       'click',
       () => {
-        openPosConfirmation(
+        openPosSaleModal(
           product,
           card
         );
@@ -2234,7 +2957,7 @@ function createPosCard(
 
 
 // ============================================================
-// 30. POS RENDER
+// 40. POS RENDER
 // ============================================================
 
 function renderPosProducts() {
@@ -2243,16 +2966,21 @@ function renderPosProducts() {
       'pos-products-grid'
     );
 
+
   const empty =
     byId(
       'pos-products-empty'
     );
 
 
-  if (!root) return;
+  if (!root) {
+    return;
+  }
 
 
-  clearElement(root);
+  clearElement(
+    root
+  );
 
 
   const products =
@@ -2271,39 +2999,33 @@ function renderPosProducts() {
 
 
   if (empty) {
-    empty.classList.toggle(
-      'is-hidden',
-      products.length > 0
-    );
+    products.length ===
+      0
+      ? showElement(empty)
+      : hideElement(empty);
   }
 }
 
 
 // ============================================================
-// 31. POS EVENTS
+// 41. POS EVENTS
 // ============================================================
 
 function bindPosEvents() {
-  const search =
-    byId(
-      'pos-product-search'
-    );
-
-  const filter =
-    byId(
-      'pos-product-filter'
-    );
-
-
-  search?.addEventListener(
+  byId(
+    'pos-product-search'
+  )?.addEventListener(
     'input',
     debounce(
-      renderPosProducts
+      renderPosProducts,
+      180
     )
   );
 
 
-  filter?.addEventListener(
+  byId(
+    'pos-product-filter'
+  )?.addEventListener(
     'change',
     renderPosProducts
   );
@@ -2311,29 +3033,62 @@ function bindPosEvents() {
 
 
 // ============================================================
-// 32. POS CONFIRMATION
+// 42. POS SALE MODAL
+//
+// Kart vurulan kimi satılmır.
+// Modal açılır.
 // ============================================================
 
-function openPosConfirmation(
+async function openPosSaleModal(
   product,
-  trigger
+  trigger = null
 ) {
+  if (
+    state.members.length ===
+    0
+  ) {
+    await loadMembers();
+  }
+
+
+  const mode =
+    productSaleMode(
+      product
+    );
+
+
   const stock =
     productStock(
       product
     );
+
+
+  const price =
+    productPrice(
+      product
+    );
+
 
   const image =
     productImage(
       product
     );
 
+
   const content =
     createElement(
-      'div',
+      'form',
       {
         className:
-          'pos-confirm',
+          'modal-form',
+
+        attrs: {
+          id:
+            'pos-sale-form',
+
+          novalidate:
+            '',
+        },
       }
     );
 
@@ -2347,19 +3102,18 @@ function openPosConfirmation(
           image
             ? `
               <img
-                src="${escapeHtml(image)}"
+                src="${escapeHtml(
+                  image
+                )}"
                 alt="${escapeHtml(
-                  productName(product)
+                  productName(
+                    product
+                  )
                 )}"
               >
             `
             : `
-              <span
-                style="
-                  color:var(--brand);
-                  font-weight:800;
-                "
-              >
+              <span class="product-card__image-fallback">
                 SK
               </span>
             `
@@ -2368,29 +3122,159 @@ function openPosConfirmation(
       </div>
 
 
-      <div>
+      <div class="pos-confirm__identity">
 
         <strong class="pos-confirm__name">
           ${escapeHtml(
-            productName(product)
+            productName(
+              product
+            )
           )}
         </strong>
 
         <span class="pos-confirm__price">
           ${escapeHtml(
-            money(
-              productPrice(
-                product
-              )
-            )
+            money(price)
           )}
         </span>
 
         <span class="pos-confirm__stock">
-          Stok: ${number(stock)}
+          Stok:
+          ${escapeHtml(
+            String(stock)
+          )}
+          ${escapeHtml(
+            productStockUnit(
+              product
+            )
+          )}
         </span>
 
       </div>
+
+    </div>
+
+
+    <div class="modal-form__grid">
+
+      <div class="ui-field">
+
+        <label
+          class="ui-field__label"
+          for="pos-sale-quantity"
+        >
+          ${
+            mode ===
+              'portion'
+              ? 'Porsiya sayı'
+              : 'Miqdar'
+          }
+        </label>
+
+        <div class="ui-input">
+
+          <input
+            id="pos-sale-quantity"
+            class="ui-input__control"
+            type="number"
+            inputmode="decimal"
+            min="1"
+            step="1"
+            value="1"
+          >
+
+        </div>
+
+        <span
+          id="pos-sale-quantity-error"
+          class="ui-field__error is-hidden"
+        ></span>
+
+      </div>
+
+
+      <div class="ui-field">
+
+        <label
+          class="ui-field__label"
+          for="pos-sale-payment-method"
+        >
+          Ödəniş üsulu
+        </label>
+
+        <select
+          id="pos-sale-payment-method"
+          class="ui-select"
+        >
+          <option value="cash">
+            Nağd
+          </option>
+
+          <option value="card">
+            Kart
+          </option>
+
+          <option value="transfer">
+            Köçürmə
+          </option>
+        </select>
+
+      </div>
+
+    </div>
+
+
+    <div class="ui-field">
+
+      <label
+        class="ui-field__label"
+        for="pos-sale-payment-status"
+      >
+        Ödəniş vəziyyəti
+      </label>
+
+      <select
+        id="pos-sale-payment-status"
+        class="ui-select"
+      >
+        <option value="paid">
+          Ödənilib
+        </option>
+
+        <option value="debt">
+          Borc yaz
+        </option>
+      </select>
+
+    </div>
+
+
+    <div
+      id="pos-sale-member-field"
+      class="ui-field is-hidden"
+    >
+
+      <label
+        class="ui-field__label"
+        for="pos-sale-member"
+      >
+        Borc yazılacaq üzv
+      </label>
+
+      <select
+        id="pos-sale-member"
+        class="ui-select"
+      >
+        <option value="">
+          Üzv seç
+        </option>
+
+        ${memberOptionsMarkup()}
+      </select>
+
+      <span class="ui-field__hint">
+        Borc satışı üçün üzv seçilməsi məcburidir.
+      </span>
 
     </div>
 
@@ -2398,90 +3282,102 @@ function openPosConfirmation(
     <div class="pos-confirm__summary">
 
       <div class="pos-confirm__row">
-        <span>Miqdar</span>
-        <strong>1</strong>
-      </div>
-
-      <div class="pos-confirm__row">
-        <span>Ödəniş</span>
-        <strong>Ödənilib</strong>
-      </div>
-
-      <div class="pos-confirm__row pos-confirm__row--total">
-        <span>Cəmi</span>
+        <span>Vahid qiymət</span>
 
         <strong>
           ${escapeHtml(
-            money(
-              productPrice(
-                product
-              )
-            )
+            money(price)
           )}
         </strong>
       </div>
 
+      <div class="pos-confirm__row">
+        <span>Miqdar</span>
+
+        <strong
+          id="pos-sale-summary-quantity"
+        >
+          1
+        </strong>
+      </div>
+
+      ${
+        mode ===
+          'portion'
+          ? `
+            <div class="pos-confirm__row">
+              <span>Stokdan çıxacaq</span>
+
+              <strong
+                id="pos-sale-stock-deduction"
+              >
+                ${escapeHtml(
+                  String(
+                    number(
+                      product
+                        .portion_size,
+                      0
+                    )
+                  )
+                )}
+                ${escapeHtml(
+                  productStockUnit(
+                    product
+                  )
+                )}
+              </strong>
+            </div>
+          `
+          : ''
+      }
+
+      <div class="pos-confirm__row pos-confirm__row--total">
+
+        <span>Cəmi</span>
+
+        <strong
+          id="pos-sale-total"
+        >
+          ${escapeHtml(
+            money(price)
+          )}
+        </strong>
+
+      </div>
+
+    </div>
+
+
+    <div class="modal-form__actions">
+
+      <button
+        id="pos-sale-cancel"
+        class="ui-button ui-button--glass"
+        type="button"
+      >
+        <span class="ui-button__label">
+          Ləğv et
+        </span>
+      </button>
+
+
+      <button
+        id="pos-sale-submit"
+        class="ui-button ui-button--primary"
+        type="submit"
+      >
+        <span class="ui-button__label">
+          Sat
+        </span>
+
+        <span
+          class="ui-button__spinner is-hidden"
+          aria-hidden="true"
+        ></span>
+      </button>
+
     </div>
   `;
-
-
-  const footer =
-    createElement(
-      'div',
-      {
-        className:
-          'modal-form__actions',
-      }
-    );
-
-
-  const cancelButton =
-    createElement(
-      'button',
-      {
-        className:
-          'ui-button ui-button--glass',
-
-        text:
-          'Ləğv et',
-
-        attrs: {
-          type: 'button',
-        },
-      }
-    );
-
-
-  const sellButton =
-    createElement(
-      'button',
-      {
-        className:
-          'ui-button ui-button--primary',
-
-        attrs: {
-          type: 'button',
-        },
-      }
-    );
-
-
-  sellButton.innerHTML = `
-    <span class="ui-button__label">
-      Sat
-    </span>
-
-    <span
-      class="ui-button__spinner is-hidden"
-      aria-hidden="true"
-    ></span>
-  `;
-
-
-  footer.append(
-    cancelButton,
-    sellButton
-  );
 
 
   openModal({
@@ -2493,54 +3389,324 @@ function openPosConfirmation(
 
     content,
 
-    footer,
-
     trigger,
 
-    closeOnBackdrop:
-      true,
-
-    onOpen: () => {
-      cancelButton.addEventListener(
-        'click',
-        closeModal
-      );
-
-
-      sellButton.addEventListener(
-        'click',
-        () => {
-          executePosSale(
-            product,
-            sellButton
-          );
-        }
-      );
-    },
+    onOpen:
+      () => {
+        bindPosSaleForm(
+          content,
+          product
+        );
+      },
   });
 }
 
 
 // ============================================================
-// 33. PROCESS SALE RPC
-//
-// process_sale() artıq backenddə mövcuddur.
-// RPC parametr adlarını backenddəki funksiya müəyyən edir.
-// Burada hazırkı qurduğumuz SQL sxeminə uyğun payload istifadə
-// edirik. Test zamanı RPC signature fərqlidirsə yalnız payload
-// uyğunlaşdırılacaq.
+// 43. POS FORM
 // ============================================================
 
-async function executePosSale(
-  product,
-  button
+function bindPosSaleForm(
+  form,
+  product
 ) {
-  if (state.busy) {
+  const quantityInput =
+    $(
+      '#pos-sale-quantity',
+      form
+    );
+
+
+  const paymentMethodInput =
+    $(
+      '#pos-sale-payment-method',
+      form
+    );
+
+
+  const paymentStatusInput =
+    $(
+      '#pos-sale-payment-status',
+      form
+    );
+
+
+  const memberField =
+    $(
+      '#pos-sale-member-field',
+      form
+    );
+
+
+  const memberInput =
+    $(
+      '#pos-sale-member',
+      form
+    );
+
+
+  const quantityError =
+    $(
+      '#pos-sale-quantity-error',
+      form
+    );
+
+
+  const submit =
+    $(
+      '#pos-sale-submit',
+      form
+    );
+
+
+  const cancel =
+    $(
+      '#pos-sale-cancel',
+      form
+    );
+
+
+  function syncSummary() {
+    const quantity =
+      Math.max(
+        0,
+        number(
+          quantityInput
+            ?.value
+        )
+      );
+
+
+    const total =
+      quantity *
+      productPrice(
+        product
+      );
+
+
+    setText(
+      $(
+        '#pos-sale-summary-quantity',
+        form
+      ),
+      quantity
+    );
+
+
+    setText(
+      $(
+        '#pos-sale-total',
+        form
+      ),
+      money(total)
+    );
+
+
+    const deduction =
+      $(
+        '#pos-sale-stock-deduction',
+        form
+      );
+
+
+    if (deduction) {
+      const stockDeduction =
+        quantity *
+        number(
+          product.portion_size
+        );
+
+
+      setText(
+        deduction,
+        `${stockDeduction} ${
+          productStockUnit(
+            product
+          )
+        }`
+      );
+    }
+  }
+
+
+  function syncPaymentStatus() {
+    const debt =
+      paymentStatusInput
+        ?.value ===
+      'debt';
+
+
+    debt
+      ? showElement(
+          memberField
+        )
+      : hideElement(
+          memberField
+        );
+  }
+
+
+  quantityInput
+    ?.addEventListener(
+      'input',
+      syncSummary
+    );
+
+
+  paymentStatusInput
+    ?.addEventListener(
+      'change',
+      syncPaymentStatus
+    );
+
+
+  cancel
+    ?.addEventListener(
+      'click',
+      closeModal
+    );
+
+
+  syncSummary();
+
+  syncPaymentStatus();
+
+
+  form.addEventListener(
+    'submit',
+    async event => {
+      event.preventDefault();
+
+
+      const quantity =
+        number(
+          quantityInput
+            ?.value
+        );
+
+
+      const paymentMethod =
+        normalizeString(
+          paymentMethodInput
+            ?.value,
+          'cash'
+        );
+
+
+      const paymentStatus =
+        normalizeString(
+          paymentStatusInput
+            ?.value,
+          'paid'
+        );
+
+
+      const memberId =
+        normalizeString(
+          memberInput
+            ?.value
+        );
+
+
+      if (
+        quantity <= 0
+      ) {
+        setFieldError(
+          quantityInput,
+          quantityError,
+          'Miqdar sıfırdan böyük olmalıdır.'
+        );
+
+
+        return;
+      }
+
+
+      // Unit məhsulda yalnız tam ədəd satılır.
+      if (
+        productSaleMode(
+          product
+        ) ===
+          'unit' &&
+        !Number.isInteger(
+          quantity
+        )
+      ) {
+        setFieldError(
+          quantityInput,
+          quantityError,
+          'Ədəd məhsul üçün tam rəqəm daxil et.'
+        );
+
+
+        return;
+      }
+
+
+      if (
+        paymentStatus ===
+          'debt' &&
+        !memberId
+      ) {
+        notify.warning(
+          'Borc satışı üçün üzv seçilməlidir.'
+        );
+
+
+        memberInput
+          ?.focus();
+
+
+        return;
+      }
+
+
+      await executePosSale({
+        product,
+
+        quantity,
+
+        paymentMethod,
+
+        paymentStatus,
+
+        memberId:
+          paymentStatus ===
+            'debt'
+            ? memberId
+            : null,
+
+        button:
+          submit,
+      });
+    }
+  );
+}
+
+
+// ============================================================
+// 44. EXECUTE POS SALE
+//
+// Real backend RPC.
+// ============================================================
+
+async function executePosSale({
+  product,
+  quantity,
+  paymentMethod,
+  paymentStatus,
+  memberId,
+  button,
+}) {
+  if (
+    state.busy
+  ) {
     return;
   }
 
 
-  state.busy = true;
+  state.busy =
+    true;
 
 
   setButtonLoading(
@@ -2554,29 +3720,37 @@ async function executePosSale(
 
 
   try {
-    const payload = {
-      p_items: [
-        {
-          product_id:
-            product.id,
+    const items = [
+      {
+        product_id:
+          product.id,
 
-          quantity:
-            1,
-        },
-      ],
-
-      p_payment_status:
-        'paid',
-    };
+        quantity,
+      },
+    ];
 
 
     const {
-      data,
+      data:
+        saleId,
       error,
     } =
       await supabase.rpc(
-        RPC.processSale,
-        payload
+        'process_sale',
+        {
+          p_member_id:
+            memberId ||
+            null,
+
+          p_payment_method:
+            paymentMethod,
+
+          p_payment_status:
+            paymentStatus,
+
+          p_items:
+            items,
+        }
       );
 
 
@@ -2596,17 +3770,35 @@ async function executePosSale(
     );
 
 
+    // Backend özü:
+    // sales
+    // sale_items
+    // products.stock_quantity
+    // stock_movements
+    // ledger və ya debt
+    // audit_log
+    // yazır.
     await Promise.all([
       loadProducts(),
-
-      state.activeTab ===
-        'dashboard'
-        ? loadDashboard()
-        : Promise.resolve(),
+      loadSales(),
+      loadLedger(),
+      loadDebts(),
+      loadHistory({
+        limit:
+          50,
+      }),
     ]);
 
 
     renderPosProducts();
+
+
+    if (
+      state.activeTab ===
+      'dashboard'
+    ) {
+      renderDashboard();
+    }
 
 
     window.dispatchEvent(
@@ -2617,23 +3809,21 @@ async function executePosSale(
             type:
               'sale',
 
+            saleId,
+
             productId:
               product.id,
 
             operatorId:
               state.identity
-                ?.profile
-                ?.id,
-
-            result:
-              data,
+                ?.profileId,
           },
         }
       )
     );
   } catch (error) {
     console.error(
-      'process_sale error:',
+      '[SKy Fit POS] process_sale:',
       error
     );
 
@@ -2645,7 +3835,9 @@ async function executePosSale(
       )
     );
   } finally {
-    state.busy = false;
+    state.busy =
+      false;
+
 
     setButtonLoading(
       button,
@@ -2656,26 +3848,25 @@ async function executePosSale(
 
 
 // ============================================================
-// 34. ADMIN PRODUCT FILTER
+// 45. ADMIN PRODUCT FILTER
 // ============================================================
 
 function filteredAdminProducts() {
   const search =
-    normalizeString(
+    normalizeSearch(
       byId(
         'products-admin-search'
       )?.value
-    )
-      .toLocaleLowerCase(
-        'az-AZ'
-      );
+    );
 
 
   const status =
-    byId(
-      'products-admin-status'
-    )?.value ||
-    'all';
+    normalizeString(
+      byId(
+        'products-admin-status'
+      )?.value,
+      'all'
+    );
 
 
   return state.products
@@ -2685,32 +3876,60 @@ function filteredAdminProducts() {
           return true;
         }
 
-        return productName(
-          product
-        )
-          .toLocaleLowerCase(
-            'az-AZ'
-          )
-          .includes(search);
+
+        const text =
+          [
+            product.name,
+            product.sku,
+            product.category,
+            product.description,
+          ]
+            .filter(Boolean)
+            .join(' ')
+            .toLocaleLowerCase(
+              'az-AZ'
+            );
+
+
+        return text.includes(
+          search
+        );
       }
     )
     .filter(
       product => {
         if (
-          status === 'active'
+          status ===
+          'active'
         ) {
-          return productActive(
-            product
+          return (
+            product.is_active !==
+            false
           );
         }
 
+
         if (
-          status === 'inactive'
+          status ===
+          'inactive'
         ) {
-          return !productActive(
-            product
+          return (
+            product.is_active ===
+            false
           );
         }
+
+
+        if (
+          status ===
+          'public'
+        ) {
+          return (
+            product.show_public !==
+            false
+          );
+        }
+
 
         return true;
       }
@@ -2719,19 +3938,20 @@ function filteredAdminProducts() {
 
 
 // ============================================================
-// 35. ADMIN PRODUCT CARD
+// 46. ADMIN PRODUCT CARD
 // ============================================================
 
 function createAdminProductCard(
   product
 ) {
-  const stock =
-    productStock(
+  const image =
+    productImage(
       product
     );
 
-  const image =
-    productImage(
+
+  const stockState =
+    productStockState(
       product
     );
 
@@ -2752,69 +3972,198 @@ function createAdminProductCard(
 
 
   card.innerHTML = `
-    <div class="admin-product-card__media">
+    <button
+      type="button"
+      class="admin-product-card__main"
+      aria-label="${escapeHtml(
+        productName(
+          product
+        )
+      )} məhsulunu redaktə et"
+    >
 
-      ${
-        image
-          ? `
-            <img
-              src="${escapeHtml(image)}"
-              alt="${escapeHtml(
-                productName(product)
-              )}"
-              loading="lazy"
-            >
-          `
-          : `
-            <span
-              style="
-                color:var(--brand);
-                font-size:11px;
-                font-weight:800;
-              "
-            >
-              SK
-            </span>
-          `
-      }
+      <div class="admin-product-card__media">
 
-    </div>
-
-
-    <div class="admin-product-card__body">
-
-      <strong class="admin-product-card__name">
-        ${escapeHtml(
-          productName(product)
-        )}
-      </strong>
-
-      <div class="admin-product-card__row">
-
-        <span class="admin-product-card__price">
-          ${escapeHtml(
-            money(
-              productPrice(
-                product
-              )
-            )
-          )}
-        </span>
-
-        <span class="admin-product-card__stock">
-          ${number(stock)} stok
-        </span>
+        ${
+          image
+            ? `
+              <img
+                src="${escapeHtml(
+                  image
+                )}"
+                alt="${escapeHtml(
+                  productName(
+                    product
+                  )
+                )}"
+                loading="lazy"
+                decoding="async"
+              >
+            `
+            : `
+              <span class="product-card__image-fallback">
+                SK
+              </span>
+            `
+        }
 
       </div>
+
+
+      <div class="admin-product-card__body">
+
+        <div class="admin-product-card__badges">
+
+          <span class="${stockState.className}">
+            ${escapeHtml(
+              stockState.label
+            )}
+          </span>
+
+          ${
+            product.is_active ===
+              false
+              ? `
+                <span class="ui-badge ui-badge--danger">
+                  Deaktiv
+                </span>
+              `
+              : ''
+          }
+
+          ${
+            product.show_public ===
+              false
+              ? `
+                <span class="ui-badge ui-badge--neutral">
+                  Saytda gizli
+                </span>
+              `
+              : ''
+          }
+
+        </div>
+
+
+        <strong class="admin-product-card__name">
+          ${escapeHtml(
+            productName(
+              product
+            )
+          )}
+        </strong>
+
+
+        <span class="admin-product-card__meta">
+          ${
+            product.sku
+              ? `SKU: ${escapeHtml(
+                  product.sku
+                )}`
+              : 'SKU yoxdur'
+          }
+        </span>
+
+
+        <div class="admin-product-card__row">
+
+          <span class="admin-product-card__price">
+            ${escapeHtml(
+              money(
+                productPrice(
+                  product
+                )
+              )
+            )}
+          </span>
+
+          <span class="admin-product-card__stock">
+            ${escapeHtml(
+              String(
+                productStock(
+                  product
+                )
+              )
+            )}
+            ${escapeHtml(
+              productStockUnit(
+                product
+              )
+            )}
+          </span>
+
+        </div>
+
+      </div>
+
+    </button>
+
+
+    <div class="admin-product-card__actions">
+
+      <button
+        type="button"
+        class="ui-button ui-button--glass"
+        data-product-stock="${escapeHtml(
+          product.id
+        )}"
+      >
+        <span class="ui-button__label">
+          + Stok
+        </span>
+      </button>
+
+      <button
+        type="button"
+        class="ui-button ui-button--glass"
+        data-product-adjust="${escapeHtml(
+          product.id
+        )}"
+      >
+        <span class="ui-button__label">
+          Düzəlt
+        </span>
+      </button>
 
     </div>
   `;
 
 
-  card.addEventListener(
+  $(
+    '.admin-product-card__main',
+    card
+  )?.addEventListener(
     'click',
     () => {
       openProductEditor(
+        product,
+        card
+      );
+    }
+  );
+
+
+  $(
+    '[data-product-stock]',
+    card
+  )?.addEventListener(
+    'click',
+    () => {
+      openStockAddModal(
+        product,
+        card
+      );
+    }
+  );
+
+
+  $(
+    '[data-product-adjust]',
+    card
+  )?.addEventListener(
+    'click',
+    () => {
+      openStockAdjustModal(
         product,
         card
       );
@@ -2827,7 +4176,7 @@ function createAdminProductCard(
 
 
 // ============================================================
-// 36. ADMIN PRODUCT RENDER
+// 47. ADMIN PRODUCTS RENDER
 // ============================================================
 
 function renderAdminProducts() {
@@ -2836,30 +4185,50 @@ function renderAdminProducts() {
       'admin-products-grid'
     );
 
-  if (!root) return;
+
+  if (!root) {
+    return;
+  }
 
 
-  clearElement(root);
+  clearElement(
+    root
+  );
 
 
-  filteredAdminProducts()
-    .forEach(
-      product => {
-        root.append(
-          createAdminProductCard(
-            product
-          )
-        );
-      }
+  const products =
+    filteredAdminProducts();
+
+
+  products.forEach(
+    product => {
+      root.append(
+        createAdminProductCard(
+          product
+        )
+      );
+    }
+  );
+
+
+  if (
+    products.length ===
+    0
+  ) {
+    root.append(
+      createDashboardEmpty(
+        'Məhsul tapılmadı.'
+      )
     );
+  }
 }
 
 
 // ============================================================
-// 37. PRODUCT EVENTS
+// 48. PRODUCT EVENTS
 // ============================================================
 
-function bindProductAdminEvents() {
+function bindProductEvents() {
   byId(
     'product-create-button'
   )?.addEventListener(
@@ -2875,7 +4244,8 @@ function bindProductAdminEvents() {
   )?.addEventListener(
     'input',
     debounce(
-      renderAdminProducts
+      renderAdminProducts,
+      180
     )
   );
 
@@ -2890,7 +4260,7 @@ function bindProductAdminEvents() {
 
 
 // ============================================================
-// 38. PRODUCT EDITOR
+// 49. PRODUCT EDITOR
 // ============================================================
 
 function openProductEditor(
@@ -2899,6 +4269,12 @@ function openProductEditor(
 ) {
   const editing =
     Boolean(product);
+
+
+  const mode =
+    product
+      ?.sale_mode ||
+    'unit';
 
 
   const content =
@@ -2912,7 +4288,8 @@ function openProductEditor(
           id:
             'admin-product-form',
 
-          novalidate: '',
+          novalidate:
+            '',
         },
       }
     );
@@ -2934,16 +4311,10 @@ function openProductEditor(
           id="admin-product-name"
           class="ui-input__control"
           type="text"
-          maxlength="150"
+          maxlength="160"
           value="${escapeHtml(
-            productName(
-              product
-            ) === 'Məhsul' &&
-            !editing
-              ? ''
-              : productName(
-                  product
-                )
+            product?.name ||
+            ''
           )}"
           placeholder="Məhsul adı"
         >
@@ -2964,24 +4335,182 @@ function openProductEditor(
 
         <label
           class="ui-field__label"
-          for="admin-product-price"
+          for="admin-product-sku"
         >
-          Qiymət
+          SKU / kod
         </label>
 
         <div class="ui-input">
 
           <input
-            id="admin-product-price"
+            id="admin-product-sku"
+            class="ui-input__control"
+            type="text"
+            maxlength="100"
+            value="${escapeHtml(
+              product?.sku ||
+              ''
+            )}"
+            placeholder="Məs: SU-001"
+          >
+
+        </div>
+
+      </div>
+
+
+      <div class="ui-field">
+
+        <label
+          class="ui-field__label"
+          for="admin-product-category"
+        >
+          Kateqoriya
+        </label>
+
+        <div class="ui-input">
+
+          <input
+            id="admin-product-category"
+            class="ui-input__control"
+            type="text"
+            maxlength="120"
+            value="${escapeHtml(
+              product?.category ||
+              ''
+            )}"
+            placeholder="İçkilər"
+          >
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <div class="ui-field">
+
+      <label
+        class="ui-field__label"
+        for="admin-product-description"
+      >
+        Açıqlama
+      </label>
+
+      <textarea
+        id="admin-product-description"
+        class="ui-textarea"
+        maxlength="1000"
+        rows="3"
+        placeholder="Məhsul haqqında qısa məlumat"
+      >${escapeHtml(
+        product?.description ||
+        ''
+      )}</textarea>
+
+    </div>
+
+
+    <div class="modal-form__grid">
+
+      <div class="ui-field">
+
+        <label
+          class="ui-field__label"
+          for="admin-product-sale-mode"
+        >
+          Satış forması
+        </label>
+
+        <select
+          id="admin-product-sale-mode"
+          class="ui-select"
+        >
+          <option
+            value="unit"
+            ${
+              mode ===
+                'unit'
+                ? 'selected'
+                : ''
+            }
+          >
+            Ədəd / vahid
+          </option>
+
+          <option
+            value="portion"
+            ${
+              mode ===
+                'portion'
+                ? 'selected'
+                : ''
+            }
+          >
+            Porsiya
+          </option>
+        </select>
+
+      </div>
+
+
+      <div class="ui-field">
+
+        <label
+          class="ui-field__label"
+          for="admin-product-stock-unit"
+        >
+          Stok vahidi
+        </label>
+
+        <div class="ui-input">
+
+          <input
+            id="admin-product-stock-unit"
+            class="ui-input__control"
+            type="text"
+            maxlength="30"
+            value="${escapeHtml(
+              product
+                ?.stock_unit ||
+              'ədəd'
+            )}"
+            placeholder="ədəd / kq / litr"
+          >
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <div class="modal-form__grid">
+
+      <div class="ui-field">
+
+        <label
+          class="ui-field__label"
+          for="admin-product-retail-price"
+        >
+          Pərakəndə qiymət
+        </label>
+
+        <div class="ui-input">
+
+          <input
+            id="admin-product-retail-price"
             class="ui-input__control"
             type="number"
             inputmode="decimal"
             min="0"
             step="0.01"
             value="${
-              editing
-                ? productPrice(
+              product
+                ? number(
                     product
+                      .retail_price
                   )
                 : ''
             }"
@@ -2998,32 +4527,41 @@ function openProductEditor(
       </div>
 
 
-      <div class="ui-field">
+      <div
+        id="admin-product-portion-price-field"
+        class="ui-field ${
+          mode ===
+            'portion'
+            ? ''
+            : 'is-hidden'
+        }"
+      >
 
         <label
           class="ui-field__label"
-          for="admin-product-unit"
+          for="admin-product-portion-price"
         >
-          Ölçü vahidi
+          Porsiya qiyməti
         </label>
 
         <div class="ui-input">
 
           <input
-            id="admin-product-unit"
+            id="admin-product-portion-price"
             class="ui-input__control"
-            type="text"
-            maxlength="30"
-            value="${escapeHtml(
-              normalizeString(
-                productValue(
-                  product,
-                  ['unit'],
-                  ''
-                )
-              )
-            )}"
-            placeholder="ədəd"
+            type="number"
+            inputmode="decimal"
+            min="0"
+            step="0.01"
+            value="${
+              product
+                ? number(
+                    product
+                      .portion_price
+                  )
+                : ''
+            }"
+            placeholder="0.00"
           >
 
         </div>
@@ -3033,42 +4571,173 @@ function openProductEditor(
     </div>
 
 
-    ${
-      productHasColumn(
-        'description'
-      ) ||
-      !editing
-        ? `
-          <div class="ui-field">
+    <div class="modal-form__grid">
 
-            <label
-              class="ui-field__label"
-              for="admin-product-description"
-            >
-              Açıqlama
-            </label>
+      <div class="ui-field">
 
-            <div class="ui-input">
+        <label
+          class="ui-field__label"
+          for="admin-product-cost-price"
+        >
+          Maya qiyməti
+        </label>
 
-              <input
-                id="admin-product-description"
-                class="ui-input__control"
-                type="text"
-                maxlength="500"
-                value="${escapeHtml(
-                  normalizeString(
-                    product?.description
+        <div class="ui-input">
+
+          <input
+            id="admin-product-cost-price"
+            class="ui-input__control"
+            type="number"
+            inputmode="decimal"
+            min="0"
+            step="0.01"
+            value="${
+              product
+                ? number(
+                    product
+                      .cost_price
                   )
-                )}"
-                placeholder="Qısa açıqlama"
-              >
+                : ''
+            }"
+            placeholder="0.00"
+          >
 
-            </div>
+        </div>
 
-          </div>
-        `
-        : ''
-    }
+      </div>
+
+
+      <div
+        id="admin-product-portion-size-field"
+        class="ui-field ${
+          mode ===
+            'portion'
+            ? ''
+            : 'is-hidden'
+        }"
+      >
+
+        <label
+          class="ui-field__label"
+          for="admin-product-portion-size"
+        >
+          1 porsiyanın stok miqdarı
+        </label>
+
+        <div class="ui-input">
+
+          <input
+            id="admin-product-portion-size"
+            class="ui-input__control"
+            type="number"
+            inputmode="decimal"
+            min="0.001"
+            step="0.001"
+            value="${
+              product
+                ? number(
+                    product
+                      .portion_size
+                  )
+                : ''
+            }"
+            placeholder="0.250"
+          >
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <div class="modal-form__grid">
+
+      <div class="ui-field">
+
+        <label
+          class="ui-field__label"
+          for="admin-product-low-stock"
+        >
+          Az stok xəbərdarlığı
+        </label>
+
+        <div class="ui-input">
+
+          <input
+            id="admin-product-low-stock"
+            class="ui-input__control"
+            type="number"
+            inputmode="decimal"
+            min="0"
+            step="0.001"
+            value="${
+              product
+                ? number(
+                    product
+                      .low_stock_threshold
+                  )
+                : 0
+            }"
+          >
+
+        </div>
+
+      </div>
+
+
+      <div class="ui-field">
+
+        <label class="ui-field__label">
+          Görünüş
+        </label>
+
+        <div class="ui-check-list">
+
+          <label class="ui-check">
+
+            <input
+              id="admin-product-active"
+              type="checkbox"
+              ${
+                product?.is_active !==
+                  false
+                  ? 'checked'
+                  : ''
+              }
+            >
+
+            <span>
+              Aktivdir
+            </span>
+
+          </label>
+
+
+          <label class="ui-check">
+
+            <input
+              id="admin-product-public"
+              type="checkbox"
+              ${
+                product?.show_public !==
+                  false
+                  ? 'checked'
+                  : ''
+              }
+            >
+
+            <span>
+              Saytda göstər
+            </span>
+
+          </label>
+
+        </div>
+
+      </div>
+
+    </div>
 
 
     <label class="ui-upload">
@@ -3081,20 +4750,16 @@ function openProductEditor(
 
       <span>
 
-        <span class="ui-upload__icon">
-          SK
-        </span>
-
         <strong class="ui-upload__title">
           ${
             editing
-              ? 'Şəkli dəyiş'
+              ? 'Məhsul şəklini dəyiş'
               : 'Məhsul şəkli'
           }
         </strong>
 
         <span class="ui-upload__meta">
-          PNG, JPG və ya WEBP
+          PNG, JPG və ya WEBP · maksimum 5 MB
         </span>
 
       </span>
@@ -3127,7 +4792,7 @@ function openProductEditor(
 
   openModal({
     eyebrow:
-      'Kataloq',
+      'Məhsullar',
 
     title:
       editing
@@ -3138,88 +4803,19 @@ function openProductEditor(
 
     trigger,
 
-    onOpen: () => {
-      bindProductForm(
-        content,
-        product
-      );
-    },
+    onOpen:
+      () => {
+        bindProductForm(
+          content,
+          product
+        );
+      },
   });
 }
 
 
 // ============================================================
-// 39. PRODUCT UPDATE PAYLOAD
-// ============================================================
-
-function buildProductPayload({
-  product,
-  name,
-  price,
-  unit,
-  description,
-}) {
-  const payload = {};
-
-
-  // Yeni məhsul üçün bu əsas sütunların
-  // mövcud backenddə olduğu artıq homepage testindən təsdiqlənib.
-  payload.name =
-    name;
-
-  payload.price =
-    price;
-
-
-  if (
-    !product ||
-    productHasColumn(
-      'unit'
-    )
-  ) {
-    payload.unit =
-      unit || null;
-  }
-
-
-  if (
-    (
-      !product &&
-      productHasColumn(
-        'description'
-      )
-    ) ||
-    (
-      product &&
-      Object.prototype
-        .hasOwnProperty.call(
-          product,
-          'description'
-        )
-    )
-  ) {
-    payload.description =
-      description || null;
-  }
-
-
-  if (
-    !product &&
-    productHasColumn(
-      'is_active'
-    )
-  ) {
-    payload.is_active =
-      true;
-  }
-
-
-  return payload;
-}
-
-
-// ============================================================
-// 40. PRODUCT FORM
+// 50. PRODUCT FORM
 // ============================================================
 
 function bindProductForm(
@@ -3227,13 +4823,25 @@ function bindProductForm(
   product
 ) {
   const nameInput =
-    $('#admin-product-name', form);
+    $(
+      '#admin-product-name',
+      form
+    );
 
-  const priceInput =
-    $('#admin-product-price', form);
 
-  const unitInput =
-    $('#admin-product-unit', form);
+  const skuInput =
+    $(
+      '#admin-product-sku',
+      form
+    );
+
+
+  const categoryInput =
+    $(
+      '#admin-product-category',
+      form
+    );
+
 
   const descriptionInput =
     $(
@@ -3241,17 +4849,145 @@ function bindProductForm(
       form
     );
 
+
+  const modeInput =
+    $(
+      '#admin-product-sale-mode',
+      form
+    );
+
+
+  const unitInput =
+    $(
+      '#admin-product-stock-unit',
+      form
+    );
+
+
+  const retailPriceInput =
+    $(
+      '#admin-product-retail-price',
+      form
+    );
+
+
+  const portionPriceInput =
+    $(
+      '#admin-product-portion-price',
+      form
+    );
+
+
+  const costPriceInput =
+    $(
+      '#admin-product-cost-price',
+      form
+    );
+
+
+  const portionSizeInput =
+    $(
+      '#admin-product-portion-size',
+      form
+    );
+
+
+  const lowStockInput =
+    $(
+      '#admin-product-low-stock',
+      form
+    );
+
+
+  const activeInput =
+    $(
+      '#admin-product-active',
+      form
+    );
+
+
+  const publicInput =
+    $(
+      '#admin-product-public',
+      form
+    );
+
+
   const imageInput =
-    $('#admin-product-image', form);
+    $(
+      '#admin-product-image',
+      form
+    );
+
 
   const nameError =
-    $('#admin-product-name-error', form);
+    $(
+      '#admin-product-name-error',
+      form
+    );
+
 
   const priceError =
-    $('#admin-product-price-error', form);
+    $(
+      '#admin-product-price-error',
+      form
+    );
+
 
   const submit =
-    $('#admin-product-submit', form);
+    $(
+      '#admin-product-submit',
+      form
+    );
+
+
+  function syncSaleMode() {
+    const portion =
+      modeInput?.value ===
+      'portion';
+
+
+    const priceField =
+      $(
+        '#admin-product-portion-price-field',
+        form
+      );
+
+
+    const sizeField =
+      $(
+        '#admin-product-portion-size-field',
+        form
+      );
+
+
+    portion
+      ? showElement(
+          priceField
+        )
+      : hideElement(
+          priceField
+        );
+
+
+    portion
+      ? showElement(
+          sizeField
+        )
+      : hideElement(
+          sizeField
+        );
+  }
+
+
+  modeInput
+    ?.addEventListener(
+      'change',
+      syncSaleMode
+    );
+
+
+  syncSaleMode();
 
 
   form.addEventListener(
@@ -3259,32 +4995,39 @@ function bindProductForm(
     async event => {
       event.preventDefault();
 
-      clearFormErrors(form);
-
 
       const name =
         normalizeString(
           nameInput?.value
         );
 
-      const price =
-        normalizeNumber(
-          priceInput?.value,
-          -1
-        );
 
-      const unit =
+      const mode =
         normalizeString(
-          unitInput?.value
-        );
-
-      const description =
-        normalizeString(
-          descriptionInput?.value
+          modeInput?.value,
+          'unit'
         );
 
 
-      let valid = true;
+      const retailPrice =
+        number(
+          retailPriceInput
+            ?.value
+        );
+
+
+      const portionPrice =
+        number(
+          portionPriceInput
+            ?.value
+        );
+
+
+      const portionSize =
+        number(
+          portionSizeInput
+            ?.value
+        );
 
 
       if (
@@ -3296,24 +5039,118 @@ function bindProductForm(
           'Məhsul adı minimum 2 simvol olmalıdır.'
         );
 
-        valid = false;
+
+        return;
       }
 
 
-      if (price < 0) {
+      if (
+        mode ===
+          'unit' &&
+        retailPrice < 0
+      ) {
         setFieldError(
-          priceInput,
+          retailPriceInput,
           priceError,
           'Qiymət düzgün deyil.'
         );
 
-        valid = false;
-      }
 
-
-      if (!valid) {
         return;
       }
+
+
+      if (
+        mode ===
+          'portion' &&
+        (
+          portionPrice <= 0 ||
+          portionSize <= 0
+        )
+      ) {
+        notify.warning(
+          'Porsiya məhsulu üçün porsiya qiyməti və porsiya ölçüsü daxil edilməlidir.'
+        );
+
+
+        return;
+      }
+
+
+      const payload = {
+
+        name,
+
+        sku:
+          normalizeString(
+            skuInput?.value
+          ) ||
+          null,
+
+        category:
+          normalizeString(
+            categoryInput?.value
+          ) ||
+          null,
+
+        description:
+          normalizeString(
+            descriptionInput
+              ?.value
+          ) ||
+          null,
+
+        sale_mode:
+          mode,
+
+        stock_unit:
+          normalizeString(
+            unitInput?.value,
+            'ədəd'
+          ),
+
+        retail_price:
+          retailPrice,
+
+        portion_price:
+          mode ===
+            'portion'
+            ? portionPrice
+            : 0,
+
+        cost_price:
+          number(
+            costPriceInput
+              ?.value
+          ),
+
+        portion_size:
+          mode ===
+            'portion'
+            ? portionSize
+            : 0,
+
+        low_stock_threshold:
+          Math.max(
+            0,
+            number(
+              lowStockInput
+                ?.value
+            )
+          ),
+
+        is_active:
+          Boolean(
+            activeInput
+              ?.checked
+          ),
+
+        show_public:
+          Boolean(
+            publicInput
+              ?.checked
+          ),
+      };
 
 
       setButtonLoading(
@@ -3329,16 +5166,6 @@ function bindProductForm(
 
 
       try {
-        const payload =
-          buildProductPayload({
-            product,
-            name,
-            price,
-            unit,
-            description,
-          });
-
-
         let savedProduct;
 
 
@@ -3351,7 +5178,9 @@ function bindProductForm(
               .from(
                 TABLES.products
               )
-              .update(payload)
+              .update(
+                payload
+              )
               .eq(
                 'id',
                 product.id
@@ -3376,7 +5205,9 @@ function bindProductForm(
               .from(
                 TABLES.products
               )
-              .insert(payload)
+              .insert(
+                payload
+              )
               .select('*')
               .single();
 
@@ -3398,8 +5229,7 @@ function bindProductForm(
 
 
         if (
-          imageFile &&
-          savedProduct?.id
+          imageFile
         ) {
           savedProduct =
             await uploadProductImage(
@@ -3409,6 +5239,9 @@ function bindProductForm(
         }
 
 
+        closeModal();
+
+
         notify.success(
           product
             ? 'Məhsul yeniləndi.'
@@ -3416,10 +5249,13 @@ function bindProductForm(
         );
 
 
-        closeModal();
-
-
-        await loadProducts();
+        await Promise.all([
+          loadProducts(),
+          loadHistory({
+            limit:
+              50,
+          }),
+        ]);
 
 
         renderAdminProducts();
@@ -3427,7 +5263,7 @@ function bindProductForm(
         renderPosProducts();
       } catch (error) {
         console.error(
-          'Product save error:',
+          '[SKy Fit Admin] Product save:',
           error
         );
 
@@ -3450,39 +5286,10 @@ function bindProductForm(
 
 
 // ============================================================
-// 41. PRODUCT IMAGE COLUMN
+// 51. PRODUCT IMAGE VALIDATION
 // ============================================================
 
-function productImageColumn(
-  product
-) {
-  const candidates = [
-    'image_url',
-    'image_path',
-    'image',
-  ];
-
-
-  return (
-    candidates.find(
-      key =>
-        Object.prototype
-          .hasOwnProperty.call(
-            product,
-            key
-          )
-    ) ||
-    null
-  );
-}
-
-
-// ============================================================
-// 42. PRODUCT IMAGE UPLOAD
-// ============================================================
-
-async function uploadProductImage(
-  product,
+function validateProductImage(
   file
 ) {
   const allowed =
@@ -3495,7 +5302,7 @@ async function uploadProductImage(
 
   if (
     !allowed.has(
-      file.type
+      file?.type
     )
   ) {
     throw new Error(
@@ -3504,57 +5311,170 @@ async function uploadProductImage(
   }
 
 
-  const column =
-    productImageColumn(
-      product
+  if (
+    file.size >
+    5 * 1024 * 1024
+  ) {
+    throw new Error(
+      'Məhsul şəkli maksimum 5 MB ola bilər.'
     );
+  }
+}
 
 
-  if (!column) {
-    notify.warning(
-      'products cədvəlində şəkil üçün uyğun sütun tapılmadı.'
-    );
+// ============================================================
+// 52. PRODUCT IMAGE EXTENSION
+// ============================================================
 
-    return product;
+function productImageExtension(
+  file
+) {
+  if (
+    file.type ===
+    'image/png'
+  ) {
+    return 'png';
   }
 
 
-  const extension =
+  if (
     file.type ===
-      'image/png'
-      ? 'png'
-      : file.type ===
-          'image/webp'
-        ? 'webp'
-        : 'jpg';
+    'image/webp'
+  ) {
+    return 'webp';
+  }
+
+
+  return 'jpg';
+}
+
+
+// ============================================================
+// 53. PRODUCT STORAGE PATH
+// ============================================================
+
+function extractProductStoragePath(
+  value
+) {
+  const source =
+    normalizeString(
+      value
+    );
+
+
+  if (!source) {
+    return '';
+  }
+
+
+  if (
+    !source.startsWith(
+      'http://'
+    ) &&
+    !source.startsWith(
+      'https://'
+    )
+  ) {
+    return source.replace(
+      /^\/+/,
+      ''
+    );
+  }
+
+
+  try {
+    const url =
+      new URL(source);
+
+
+    const marker =
+      '/storage/v1/object/public/product-images/';
+
+
+    const index =
+      url.pathname.indexOf(
+        marker
+      );
+
+
+    if (
+      index === -1
+    ) {
+      return '';
+    }
+
+
+    return decodeURIComponent(
+      url.pathname.slice(
+        index +
+        marker.length
+      )
+    );
+  } catch {
+    return '';
+  }
+}
+
+
+// ============================================================
+// 54. PRODUCT IMAGE UPLOAD
+// ============================================================
+
+async function uploadProductImage(
+  product,
+  file
+) {
+  validateProductImage(
+    file
+  );
+
+
+  const oldPath =
+    extractProductStoragePath(
+      product.image_url
+    );
+
+
+  const extension =
+    productImageExtension(
+      file
+    );
 
 
   const path =
-    `${product.id}/${Date.now()}.${extension}`;
+    `${product.id}/product-${Date.now()}.${extension}`;
 
 
   const {
-    error: uploadError,
+    error:
+      uploadError,
   } =
-    await supabase.storage
+    await supabase
+      .storage
       .from(
-        APP_CONFIG.storage
+        APP_CONFIG
+          .storage
           .productImages
       )
       .upload(
         path,
         file,
         {
-          upsert: true,
-          contentType:
-            file.type,
+          upsert:
+            false,
+
           cacheControl:
             '3600',
+
+          contentType:
+            file.type,
         }
       );
 
 
-  if (uploadError) {
+  if (
+    uploadError
+  ) {
     throw uploadError;
   }
 
@@ -3568,7 +5488,7 @@ async function uploadProductImage(
         TABLES.products
       )
       .update({
-        [column]:
+        image_url:
           path,
       })
       .eq(
@@ -3580,7 +5500,52 @@ async function uploadProductImage(
 
 
   if (error) {
+    await supabase
+      .storage
+      .from(
+        APP_CONFIG
+          .storage
+          .productImages
+      )
+      .remove([
+        path,
+      ]);
+
+
     throw error;
+  }
+
+
+  if (
+    oldPath &&
+    oldPath !==
+      path
+  ) {
+    supabase
+      .storage
+      .from(
+        APP_CONFIG
+          .storage
+          .productImages
+      )
+      .remove([
+        oldPath,
+      ])
+      .then(
+        ({
+          error:
+            removeError,
+        }) => {
+          if (
+            removeError
+          ) {
+            console.warn(
+              '[SKy Fit] Old product image cleanup:',
+              removeError
+            );
+          }
+        }
+      );
   }
 
 
@@ -3589,26 +5554,25 @@ async function uploadProductImage(
 
 
 // ============================================================
-// 43. STOCK FILTER
+// 55. STOCK PRODUCTS FILTER
 // ============================================================
 
 function filteredStockProducts() {
   const search =
-    normalizeString(
+    normalizeSearch(
       byId(
         'stock-search'
       )?.value
-    )
-      .toLocaleLowerCase(
-        'az-AZ'
-      );
+    );
 
 
   const filter =
-    byId(
-      'stock-filter'
-    )?.value ||
-    'all';
+    normalizeString(
+      byId(
+        'stock-filter'
+      )?.value,
+      'all'
+    );
 
 
   return state.products
@@ -3618,36 +5582,49 @@ function filteredStockProducts() {
           return true;
         }
 
-        return productName(
-          product
-        )
+
+        return [
+          product.name,
+          product.sku,
+          product.category,
+        ]
+          .filter(Boolean)
+          .join(' ')
           .toLocaleLowerCase(
             'az-AZ'
           )
-          .includes(search);
+          .includes(
+            search
+          );
       }
     )
     .filter(
       product => {
-        const stock =
-          productStock(
+        const meta =
+          productStockState(
             product
           );
 
+
         if (
-          filter === 'low'
+          filter ===
+          'low'
         ) {
           return (
-            stock > 0 &&
-            stock <= 5
+            meta.key ===
+            'low'
           );
         }
 
 
         if (
-          filter === 'empty'
+          filter ===
+          'empty'
         ) {
-          return stock <= 0;
+          return (
+            meta.key ===
+            'out'
+          );
         }
 
 
@@ -3658,7 +5635,7 @@ function filteredStockProducts() {
 
 
 // ============================================================
-// 44. STOCK RENDER
+// 56. STOCK RENDER
 // ============================================================
 
 function renderStock() {
@@ -3668,6 +5645,10 @@ function renderStock() {
 }
 
 
+// ============================================================
+// 57. STOCK PRODUCT LIST
+// ============================================================
+
 function renderStockProducts() {
   const root =
     byId(
@@ -3675,20 +5656,18 @@ function renderStockProducts() {
     );
 
 
-  if (!root) return;
+  if (!root) {
+    return;
+  }
 
 
-  clearElement(root);
+  clearElement(
+    root
+  );
 
 
-  const list =
-    createElement(
-      'div',
-      {
-        className:
-          'admin-mobile-list',
-      }
-    );
+  const products =
+    filteredStockProducts();
 
 
   const table =
@@ -3705,9 +5684,10 @@ function renderStockProducts() {
     <thead>
       <tr>
         <th>Məhsul</th>
+        <th>Satış</th>
         <th>Stok</th>
         <th>Vəziyyət</th>
-        <th></th>
+        <th>Əməliyyat</th>
       </tr>
     </thead>
 
@@ -3716,149 +5696,128 @@ function renderStockProducts() {
 
 
   const tbody =
-    $('tbody', table);
+    $(
+      'tbody',
+      table
+    );
 
 
-  filteredStockProducts()
-    .forEach(
-      product => {
-        const stock =
-          productStock(
-            product
-          );
-
-        const meta =
-          stockStatusMeta(
-            stock
-          );
+  products.forEach(
+    product => {
+      const meta =
+        productStockState(
+          product
+        );
 
 
-        const row =
-          createElement(
-            'tr'
-          );
+      const row =
+        createElement(
+          'tr'
+        );
 
 
-        row.innerHTML = `
-          <td>
-            <strong class="admin-table__primary">
-              ${escapeHtml(
-                productName(
+      row.innerHTML = `
+        <td>
+
+          <strong class="admin-table__primary">
+            ${escapeHtml(
+              productName(
+                product
+              )
+            )}
+          </strong>
+
+          <span class="admin-table__secondary">
+            ${escapeHtml(
+              product.sku ||
+              product.category ||
+              '—'
+            )}
+          </span>
+
+        </td>
+
+
+        <td>
+          ${escapeHtml(
+            money(
+              productPrice(
+                product
+              )
+            )
+          )}
+        </td>
+
+
+        <td>
+          <strong>
+            ${escapeHtml(
+              String(
+                productStock(
                   product
                 )
-              )}
-            </strong>
-          </td>
+              )
+            )}
+          </strong>
 
-          <td>
-            ${number(stock)}
-          </td>
-
-          <td>
-            <span class="${meta.className}">
-              ${meta.label}
-            </span>
-          </td>
-
-          <td>
-            <div class="admin-table__actions">
-
-              <button
-                class="admin-row-action"
-                type="button"
-                data-stock-add="${escapeHtml(
-                  product.id
-                )}"
-                aria-label="Stok artır"
-              >
-                +
-              </button>
-
-            </div>
-          </td>
-        `;
+          ${escapeHtml(
+            productStockUnit(
+              product
+            )
+          )}
+        </td>
 
 
-        tbody?.append(row);
+        <td>
+          <span class="${meta.className}">
+            ${escapeHtml(
+              meta.label
+            )}
+          </span>
+        </td>
 
 
-        const mobile =
-          createElement(
-            'article',
-            {
-              className:
-                'admin-mobile-row',
-            }
-          );
+        <td>
 
-
-        mobile.innerHTML = `
-          <div class="admin-mobile-row__top">
-
-            <div class="admin-mobile-row__identity">
-
-              <strong class="admin-mobile-row__title">
-                ${escapeHtml(
-                  productName(
-                    product
-                  )
-                )}
-              </strong>
-
-              <span class="admin-mobile-row__meta">
-                ${meta.label}
-              </span>
-
-            </div>
-
+          <div class="admin-table__actions">
 
             <button
-              class="ui-button ui-button--glass"
               type="button"
+              class="admin-row-action"
               data-stock-add="${escapeHtml(
                 product.id
               )}"
+              title="Stok artır"
             >
-              <span class="ui-button__label">
-                + Stok
-              </span>
+              +
+            </button>
+
+            <button
+              type="button"
+              class="admin-row-action"
+              data-stock-adjust="${escapeHtml(
+                product.id
+              )}"
+              title="Stoku düzəlt"
+            >
+              ✎
             </button>
 
           </div>
 
-
-          <div class="admin-mobile-row__details">
-
-            <div class="admin-mobile-row__detail">
-              <span>Stok</span>
-              <strong>${number(stock)}</strong>
-            </div>
-
-            <div class="admin-mobile-row__detail">
-              <span>Qiymət</span>
-              <strong>
-                ${escapeHtml(
-                  money(
-                    productPrice(
-                      product
-                    )
-                  )
-                )}
-              </strong>
-            </div>
-
-          </div>
-        `;
+        </td>
+      `;
 
 
-        list.append(mobile);
-      }
-    );
+      tbody.append(
+        row
+      );
+    }
+  );
 
 
   root.append(
-    table,
-    list
+    table
   );
 
 
@@ -3873,7 +5832,9 @@ function renderStockProducts() {
           const product =
             state.products.find(
               item =>
-                String(item.id) ===
+                String(
+                  item.id
+                ) ===
                 String(
                   button.dataset
                     .stockAdd
@@ -3882,7 +5843,40 @@ function renderStockProducts() {
 
 
           if (product) {
-            openStockModal(
+            openStockAddModal(
+              product,
+              button
+            );
+          }
+        }
+      );
+    }
+  );
+
+
+  $$(
+    '[data-stock-adjust]',
+    root
+  ).forEach(
+    button => {
+      button.addEventListener(
+        'click',
+        () => {
+          const product =
+            state.products.find(
+              item =>
+                String(
+                  item.id
+                ) ===
+                String(
+                  button.dataset
+                    .stockAdjust
+                )
+            );
+
+
+          if (product) {
+            openStockAdjustModal(
               product,
               button
             );
@@ -3895,7 +5889,7 @@ function renderStockProducts() {
 
 
 // ============================================================
-// 45. STOCK MOVEMENTS RENDER
+// 58. STOCK MOVEMENTS
 // ============================================================
 
 function renderStockMovements() {
@@ -3905,10 +5899,14 @@ function renderStockMovements() {
     );
 
 
-  if (!root) return;
+  if (!root) {
+    return;
+  }
 
 
-  clearElement(root);
+  clearElement(
+    root
+  );
 
 
   const table =
@@ -3925,8 +5923,10 @@ function renderStockMovements() {
     <thead>
       <tr>
         <th>Məhsul</th>
+        <th>Hərəkət</th>
         <th>Miqdar</th>
-        <th>Növ</th>
+        <th>Qalıq</th>
+        <th>Qeyd</th>
         <th>Tarix</th>
       </tr>
     </thead>
@@ -3936,30 +5936,19 @@ function renderStockMovements() {
 
 
   const tbody =
-    $('tbody', table);
+    $(
+      'tbody',
+      table
+    );
 
 
   state.stockMovements
-    .slice(0, 100)
+    .slice(
+      0,
+      200
+    )
     .forEach(
       movement => {
-        const quantity =
-          normalizeNumber(
-            movement.quantity ??
-            movement.amount ??
-            movement.qty
-          );
-
-
-        const type =
-          normalizeString(
-            movement.type ??
-            movement.movement_type ??
-            movement.reason,
-            '—'
-          );
-
-
         const row =
           createElement(
             'tr'
@@ -3970,18 +5959,56 @@ function renderStockMovements() {
           <td>
             <strong class="admin-table__primary">
               ${escapeHtml(
-                movement.products?.name ||
+                movement
+                  .product
+                  ?.name ||
                 'Məhsul'
               )}
             </strong>
           </td>
 
           <td>
-            ${number(quantity)}
+            <span class="${
+              stockMovementClass(
+                movement
+                  .movement_type
+              )
+            }">
+              ${escapeHtml(
+                stockMovementLabel(
+                  movement
+                    .movement_type
+                )
+              )}
+            </span>
           </td>
 
           <td>
-            ${escapeHtml(type)}
+            ${escapeHtml(
+              String(
+                number(
+                  movement.quantity
+                )
+              )
+            )}
+          </td>
+
+          <td>
+            ${escapeHtml(
+              String(
+                number(
+                  movement
+                    .balance_after
+                )
+              )
+            )}
+          </td>
+
+          <td>
+            ${escapeHtml(
+              movement.note ||
+              '—'
+            )}
           </td>
 
           <td>
@@ -3992,20 +6019,89 @@ function renderStockMovements() {
         `;
 
 
-        tbody?.append(row);
+        tbody.append(
+          row
+        );
       }
     );
 
 
-  root.append(table);
+  root.append(
+    table
+  );
 }
 
 
 // ============================================================
-// 46. STOCK MODAL
+// 59. STOCK MOVEMENT LABEL
 // ============================================================
 
-function openStockModal(
+function stockMovementLabel(
+  type
+) {
+  switch (
+    normalizeString(
+      type
+    )
+  ) {
+    case 'purchase':
+      return 'Alış';
+
+    case 'sale':
+      return 'Satış';
+
+    case 'adjustment':
+      return 'Düzəliş';
+
+    default:
+      return normalizeString(
+        type,
+        'Hərəkət'
+      );
+  }
+}
+
+
+// ============================================================
+// 60. STOCK MOVEMENT CLASS
+// ============================================================
+
+function stockMovementClass(
+  type
+) {
+  switch (
+    normalizeString(
+      type
+    )
+  ) {
+    case 'purchase':
+      return (
+        'ui-badge ui-badge--success'
+      );
+
+    case 'sale':
+      return (
+        'ui-badge ui-badge--warning'
+      );
+
+    case 'adjustment':
+      return (
+        'ui-badge ui-badge--neutral'
+      );
+
+    default:
+      return (
+        'ui-badge'
+      );
+  }
+}
+
+
+// ============================================================
+// 61. ADD STOCK MODAL
+// ============================================================
+
+function openStockAddModal(
   product,
   trigger = null
 ) {
@@ -4020,16 +6116,15 @@ function openStockModal(
           id:
             'stock-add-form',
 
-          novalidate: '',
+          novalidate:
+            '',
         },
       }
     );
 
 
   content.innerHTML = `
-    <div
-      class="pos-confirm__summary"
-    >
+    <div class="pos-confirm__summary">
 
       <div class="pos-confirm__row">
         <span>Məhsul</span>
@@ -4047,8 +6142,15 @@ function openStockModal(
         <span>Cari stok</span>
 
         <strong>
-          ${number(
-            productStock(
+          ${escapeHtml(
+            String(
+              productStock(
+                product
+              )
+            )
+          )}
+          ${escapeHtml(
+            productStockUnit(
               product
             )
           )}
@@ -4058,63 +6160,83 @@ function openStockModal(
     </div>
 
 
-    <div class="modal-form__grid">
+    <div class="ui-field">
 
-      <div class="ui-field">
+      <label
+        class="ui-field__label"
+        for="stock-add-quantity"
+      >
+        Əlavə ediləcək stok
+      </label>
 
-        <label
-          class="ui-field__label"
-          for="stock-add-quantity"
+      <div class="ui-input">
+
+        <input
+          id="stock-add-quantity"
+          class="ui-input__control"
+          type="number"
+          inputmode="decimal"
+          min="0.001"
+          step="0.001"
+          placeholder="0"
         >
-          Əlavə ediləcək miqdar
-        </label>
-
-        <div class="ui-input">
-
-          <input
-            id="stock-add-quantity"
-            class="ui-input__control"
-            type="number"
-            inputmode="decimal"
-            min="0.01"
-            step="0.01"
-            placeholder="0"
-          >
-
-        </div>
-
-        <span
-          id="stock-add-quantity-error"
-          class="ui-field__error is-hidden"
-        ></span>
 
       </div>
 
+      <span
+        id="stock-add-quantity-error"
+        class="ui-field__error is-hidden"
+      ></span>
 
-      <div class="ui-field">
+    </div>
 
-        <label
-          class="ui-field__label"
-          for="stock-add-cost"
+
+    <div class="ui-field">
+
+      <label
+        class="ui-field__label"
+        for="stock-add-total-cost"
+      >
+        Bu alışın ümumi maya dəyəri
+      </label>
+
+      <div class="ui-input">
+
+        <input
+          id="stock-add-total-cost"
+          class="ui-input__control"
+          type="number"
+          inputmode="decimal"
+          min="0"
+          step="0.01"
+          placeholder="0.00"
         >
-          Alış məbləği
-        </label>
-
-        <div class="ui-input">
-
-          <input
-            id="stock-add-cost"
-            class="ui-input__control"
-            type="number"
-            inputmode="decimal"
-            min="0"
-            step="0.01"
-            placeholder="0.00"
-          >
-
-        </div>
 
       </div>
+
+      <span class="ui-field__hint">
+        0 yazsan maliyyədə xərc yaradılmayacaq.
+      </span>
+
+    </div>
+
+
+    <div class="ui-field">
+
+      <label
+        class="ui-field__label"
+        for="stock-add-note"
+      >
+        Qeyd
+      </label>
+
+      <textarea
+        id="stock-add-note"
+        class="ui-textarea"
+        rows="3"
+        maxlength="500"
+        placeholder="Məs: Yeni partiya alışı"
+      ></textarea>
 
     </div>
 
@@ -4149,35 +6271,65 @@ function openStockModal(
 
     trigger,
 
-    onOpen: () => {
-      bindStockForm(
-        content,
-        product
-      );
-    },
+    onOpen:
+      () => {
+        bindStockAddForm(
+          content,
+          product
+        );
+      },
   });
 }
 
 
 // ============================================================
-// 47. ADD STOCK RPC
+// 62. ADD STOCK FORM
+//
+// add_stock(
+//   p_product_id,
+//   p_quantity,
+//   p_total_cost,
+//   p_note
+// )
 // ============================================================
 
-function bindStockForm(
+function bindStockAddForm(
   form,
   product
 ) {
   const quantityInput =
-    $('#stock-add-quantity', form);
+    $(
+      '#stock-add-quantity',
+      form
+    );
+
 
   const costInput =
-    $('#stock-add-cost', form);
+    $(
+      '#stock-add-total-cost',
+      form
+    );
+
+
+  const noteInput =
+    $(
+      '#stock-add-note',
+      form
+    );
+
 
   const quantityError =
-    $('#stock-add-quantity-error', form);
+    $(
+      '#stock-add-quantity-error',
+      form
+    );
+
 
   const submit =
-    $('#stock-add-submit', form);
+    $(
+      '#stock-add-submit',
+      form
+    );
 
 
   form.addEventListener(
@@ -4185,28 +6337,41 @@ function bindStockForm(
     async event => {
       event.preventDefault();
 
-      clearFormErrors(form);
-
 
       const quantity =
-        normalizeNumber(
-          quantityInput?.value,
-          0
-        );
-
-      const cost =
-        normalizeNumber(
-          costInput?.value,
-          0
+        number(
+          quantityInput
+            ?.value
         );
 
 
-      if (quantity <= 0) {
+      const totalCost =
+        Math.max(
+          0,
+          number(
+            costInput
+              ?.value
+          )
+        );
+
+
+      const note =
+        normalizeString(
+          noteInput
+            ?.value,
+          'Stok alışı'
+        );
+
+
+      if (
+        quantity <= 0
+      ) {
         setFieldError(
           quantityInput,
           quantityError,
-          'Miqdar 0-dan böyük olmalıdır.'
+          'Miqdar sıfırdan böyük olmalıdır.'
         );
+
 
         return;
       }
@@ -4227,7 +6392,7 @@ function bindStockForm(
           error,
         } =
           await supabase.rpc(
-            RPC.addStock,
+            'add_stock',
             {
               p_product_id:
                 product.id,
@@ -4235,8 +6400,11 @@ function bindStockForm(
               p_quantity:
                 quantity,
 
-              p_cost:
-                cost,
+              p_total_cost:
+                totalCost,
+
+              p_note:
+                note,
             }
           );
 
@@ -4250,22 +6418,29 @@ function bindStockForm(
 
 
         notify.success(
-          'Stok uğurla artırıldı.'
+          'Stok artırıldı.'
         );
 
 
         await Promise.all([
           loadProducts(),
           loadStockMovements(),
+          loadLedger(),
+          loadHistory({
+            limit:
+              50,
+          }),
         ]);
 
 
         renderStock();
 
+        renderAdminProducts();
+
         renderPosProducts();
       } catch (error) {
         console.error(
-          'add_stock error:',
+          '[SKy Fit Admin] add_stock:',
           error
         );
 
@@ -4288,53 +6463,366 @@ function bindStockForm(
 
 
 // ============================================================
-// 48. STOCK EVENTS
+// 63. STOCK ADJUST MODAL
+//
+// Bu "stok artır" deyil.
+// Inventar sayımı və ya səhv düzəlişi üçündür.
+// Səbəb məcburidir.
 // ============================================================
 
-function bindStockEvents() {
-  byId(
-    'stock-add-button'
-  )?.addEventListener(
-    'click',
-    () => {
+function openStockAdjustModal(
+  product,
+  trigger = null
+) {
+  const content =
+    createElement(
+      'form',
+      {
+        className:
+          'modal-form',
+
+        attrs: {
+          id:
+            'stock-adjust-form',
+
+          novalidate:
+            '',
+        },
+      }
+    );
+
+
+  content.innerHTML = `
+    <div class="pos-confirm__summary">
+
+      <div class="pos-confirm__row">
+        <span>Məhsul</span>
+
+        <strong>
+          ${escapeHtml(
+            productName(
+              product
+            )
+          )}
+        </strong>
+      </div>
+
+      <div class="pos-confirm__row">
+        <span>Cari stok</span>
+
+        <strong>
+          ${escapeHtml(
+            String(
+              productStock(
+                product
+              )
+            )
+          )}
+          ${escapeHtml(
+            productStockUnit(
+              product
+            )
+          )}
+        </strong>
+      </div>
+
+    </div>
+
+
+    <div class="ui-field">
+
+      <label
+        class="ui-field__label"
+        for="stock-adjust-quantity"
+      >
+        Yeni real stok
+      </label>
+
+      <div class="ui-input">
+
+        <input
+          id="stock-adjust-quantity"
+          class="ui-input__control"
+          type="number"
+          inputmode="decimal"
+          min="0"
+          step="0.001"
+          value="${escapeHtml(
+            String(
+              productStock(
+                product
+              )
+            )
+          )}"
+        >
+
+      </div>
+
+    </div>
+
+
+    <div class="ui-field">
+
+      <label
+        class="ui-field__label"
+        for="stock-adjust-note"
+      >
+        Düzəliş səbəbi
+      </label>
+
+      <textarea
+        id="stock-adjust-note"
+        class="ui-textarea"
+        rows="3"
+        maxlength="500"
+        placeholder="Məs: Fiziki sayım zamanı fərq aşkarlandı"
+      ></textarea>
+
+      <span
+        id="stock-adjust-note-error"
+        class="ui-field__error is-hidden"
+      ></span>
+
+    </div>
+
+
+    <button
+      id="stock-adjust-submit"
+      class="ui-button ui-button--primary ui-button--full"
+      type="submit"
+    >
+
+      <span class="ui-button__label">
+        Stoku düzəlt
+      </span>
+
+      <span
+        class="ui-button__spinner is-hidden"
+        aria-hidden="true"
+      ></span>
+
+    </button>
+  `;
+
+
+  openModal({
+    eyebrow:
+      'Inventar',
+
+    title:
+      'Stok düzəlişi',
+
+    content,
+
+    trigger,
+
+    onOpen:
+      () => {
+        bindStockAdjustForm(
+          content,
+          product
+        );
+      },
+  });
+}
+
+
+// ============================================================
+// 64. STOCK ADJUST FORM
+// ============================================================
+
+function bindStockAdjustForm(
+  form,
+  product
+) {
+  const quantityInput =
+    $(
+      '#stock-adjust-quantity',
+      form
+    );
+
+
+  const noteInput =
+    $(
+      '#stock-adjust-note',
+      form
+    );
+
+
+  const noteError =
+    $(
+      '#stock-adjust-note-error',
+      form
+    );
+
+
+  const submit =
+    $(
+      '#stock-adjust-submit',
+      form
+    );
+
+
+  form.addEventListener(
+    'submit',
+    async event => {
+      event.preventDefault();
+
+
+      const newQuantity =
+        number(
+          quantityInput
+            ?.value,
+          -1
+        );
+
+
+      const note =
+        normalizeString(
+          noteInput
+            ?.value
+        );
+
+
       if (
-        state.products.length ===
-        0
+        newQuantity < 0
       ) {
         notify.warning(
-          'Əvvəlcə məhsul əlavə et.'
+          'Stok mənfi ola bilməz.'
         );
+
 
         return;
       }
 
 
-      openStockProductPicker();
+      if (
+        !note
+      ) {
+        setFieldError(
+          noteInput,
+          noteError,
+          'Stok düzəliş səbəbini yaz.'
+        );
+
+
+        return;
+      }
+
+
+      const confirmed =
+        await confirmDialog({
+          eyebrow:
+            'Inventar',
+
+          title:
+            'Stok dəyişdirilsin?',
+
+          message:
+            `${productName(
+              product
+            )}: ${productStock(
+              product
+            )} → ${newQuantity} ${productStockUnit(
+              product
+            )}`,
+
+          confirmText:
+            'Düzəlt',
+
+          cancelText:
+            'Ləğv et',
+        });
+
+
+      if (!confirmed) {
+        return;
+      }
+
+
+      setButtonLoading(
+        submit,
+        true,
+        {
+          loadingText:
+            'Düzəldilir...',
+        }
+      );
+
+
+      try {
+        const {
+          error,
+        } =
+          await supabase.rpc(
+            'adjust_stock',
+            {
+              p_product_id:
+                product.id,
+
+              p_new_quantity:
+                newQuantity,
+
+              p_note:
+                note,
+            }
+          );
+
+
+        if (error) {
+          throw error;
+        }
+
+
+        closeModal();
+
+
+        notify.success(
+          'Stok düzəlişi qeydə alındı.'
+        );
+
+
+        await Promise.all([
+          loadProducts(),
+          loadStockMovements(),
+          loadHistory({
+            limit:
+              50,
+          }),
+        ]);
+
+
+        renderStock();
+
+        renderAdminProducts();
+
+        renderPosProducts();
+      } catch (error) {
+        console.error(
+          '[SKy Fit Admin] adjust_stock:',
+          error
+        );
+
+
+        notify.error(
+          getErrorMessage(
+            error,
+            'Stok düzəlişi alınmadı.'
+          )
+        );
+      } finally {
+        setButtonLoading(
+          submit,
+          false
+        );
+      }
     }
-  );
-
-
-  byId(
-    'stock-search'
-  )?.addEventListener(
-    'input',
-    debounce(
-      renderStockProducts
-    )
-  );
-
-
-  byId(
-    'stock-filter'
-  )?.addEventListener(
-    'change',
-    renderStockProducts
   );
 }
 
 
 // ============================================================
-// 49. STOCK PRODUCT PICKER
+// 65. STOCK PRODUCT PICKER
 // ============================================================
 
 function openStockProductPicker() {
@@ -4349,7 +6837,11 @@ function openStockProductPicker() {
 
 
   state.products
-    .slice(0, 200)
+    .filter(
+      product =>
+        product.is_active !==
+        false
+    )
     .forEach(
       product => {
         const button =
@@ -4360,7 +6852,8 @@ function openStockProductPicker() {
                 'compact-list-item',
 
               attrs: {
-                type: 'button',
+                type:
+                  'button',
               },
             }
           );
@@ -4382,10 +6875,24 @@ function openStockProductPicker() {
             </strong>
 
             <span class="compact-list-item__meta">
-              Stok:
-              ${number(
-                productStock(
+              ${escapeHtml(
+                String(
+                  productStock(
+                    product
+                  )
+                )
+              )}
+              ${escapeHtml(
+                productStockUnit(
                   product
+                )
+              )}
+              ·
+              ${escapeHtml(
+                money(
+                  productPrice(
+                    product
+                  )
                 )
               )}
             </span>
@@ -4399,13 +6906,14 @@ function openStockProductPicker() {
           () => {
             closeModal();
 
+
             setTimeout(
               () => {
-                openStockModal(
+                openStockAddModal(
                   product
                 );
               },
-              380
+              240
             );
           }
         );
@@ -4431,7 +6939,63 @@ function openStockProductPicker() {
 
 
 // ============================================================
-// 50. QUICK ACTION
+// 66. STOCK EVENTS
+// ============================================================
+
+function bindStockEvents() {
+  byId(
+    'stock-add-button'
+  )?.addEventListener(
+    'click',
+    async () => {
+      if (
+        state.products.length ===
+        0
+      ) {
+        await loadProducts();
+      }
+
+
+      if (
+        state.products.length ===
+        0
+      ) {
+        notify.warning(
+          'Stok əlavə etmək üçün məhsul yoxdur.'
+        );
+
+
+        return;
+      }
+
+
+      openStockProductPicker();
+    }
+  );
+
+
+  byId(
+    'stock-search'
+  )?.addEventListener(
+    'input',
+    debounce(
+      renderStockProducts,
+      180
+    )
+  );
+
+
+  byId(
+    'stock-filter'
+  )?.addEventListener(
+    'change',
+    renderStockProducts
+  );
+}
+
+
+// ============================================================
+// 67. QUICK POS BUTTON
 // ============================================================
 
 function bindQuickAction() {
@@ -4449,369 +7013,36 @@ function bindQuickAction() {
 
 
 // ============================================================
-// 51. GLOBAL SEARCH
-// ============================================================
-
-function bindGlobalSearch() {
-  byId(
-    'admin-global-search-button'
-  )?.addEventListener(
-    'click',
-    () => {
-      openGlobalSearch();
-    }
-  );
-}
-
-
-function openGlobalSearch() {
-  const content =
-    createElement(
-      'div',
-      {
-        className:
-          'modal-form',
-      }
-    );
-
-
-  content.innerHTML = `
-    <label
-      class="ui-search"
-      for="admin-global-search-input"
-    >
-
-      <span class="ui-search__icon">
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-        >
-          <circle
-            cx="11"
-            cy="11"
-            r="6"
-            stroke="currentColor"
-            stroke-width="1.8"
-          />
-
-          <path
-            d="m16 16 4 4"
-            stroke="currentColor"
-            stroke-width="1.8"
-            stroke-linecap="round"
-          />
-        </svg>
-      </span>
-
-      <input
-        id="admin-global-search-input"
-        class="ui-search__input"
-        type="search"
-        placeholder="Məhsul və ya üzv axtar"
-        autocomplete="off"
-      >
-
-    </label>
-
-    <div
-      id="admin-global-search-results"
-      class="compact-list"
-    ></div>
-  `;
-
-
-  openModal({
-    eyebrow:
-      'SKy Fit Pro',
-
-    title:
-      'Sürətli axtarış',
-
-    content,
-
-    onOpen: () => {
-      bindGlobalSearchInput(
-        content
-      );
-    },
-  });
-}
-
-
-function bindGlobalSearchInput(
-  root
-) {
-  const input =
-    $('#admin-global-search-input', root);
-
-  const results =
-    $('#admin-global-search-results', root);
-
-
-  const render =
-    debounce(
-      async () => {
-        const search =
-          normalizeString(
-            input?.value
-          )
-            .toLocaleLowerCase(
-              'az-AZ'
-            );
-
-
-        clearElement(
-          results
-        );
-
-
-        if (
-          search.length < 2
-        ) {
-          return;
-        }
-
-
-        if (
-          state.products.length ===
-          0
-        ) {
-          await loadProducts();
-        }
-
-
-        if (
-          state.members.length ===
-          0
-        ) {
-          await loadMembers();
-        }
-
-
-        const products =
-          state.products
-            .filter(
-              product =>
-                productName(
-                  product
-                )
-                  .toLocaleLowerCase(
-                    'az-AZ'
-                  )
-                  .includes(
-                    search
-                  )
-            )
-            .slice(0, 5);
-
-
-        const members =
-          state.members
-            .filter(
-              member => {
-                const text =
-                  [
-                    member.first_name,
-                    member.last_name,
-                    member.name,
-                    member.phone,
-                    member.email,
-                  ]
-                    .filter(Boolean)
-                    .join(' ')
-                    .toLocaleLowerCase(
-                      'az-AZ'
-                    );
-
-
-                return text.includes(
-                  search
-                );
-              }
-            )
-            .slice(0, 5);
-
-
-        products.forEach(
-          product => {
-            const item =
-              createElement(
-                'button',
-                {
-                  className:
-                    'compact-list-item',
-
-                  attrs: {
-                    type:
-                      'button',
-                  },
-                }
-              );
-
-
-            item.innerHTML = `
-              <span class="compact-list-item__icon">
-                SK
-              </span>
-
-              <span class="compact-list-item__content">
-
-                <strong class="compact-list-item__title">
-                  ${escapeHtml(
-                    productName(
-                      product
-                    )
-                  )}
-                </strong>
-
-                <span class="compact-list-item__meta">
-                  Məhsul ·
-                  ${escapeHtml(
-                    money(
-                      productPrice(
-                        product
-                      )
-                    )
-                  )}
-                </span>
-
-              </span>
-            `;
-
-
-            item.addEventListener(
-              'click',
-              () => {
-                closeModal();
-
-                setActiveTab(
-                  'products'
-                );
-
-
-                setTimeout(
-                  () => {
-                    openProductEditor(
-                      product
-                    );
-                  },
-                  380
-                );
-              }
-            );
-
-
-            results.append(
-              item
-            );
-          }
-        );
-
-
-        members.forEach(
-          member => {
-            const item =
-              createElement(
-                'button',
-                {
-                  className:
-                    'compact-list-item',
-
-                  attrs: {
-                    type:
-                      'button',
-                  },
-                }
-              );
-
-
-            item.innerHTML = `
-              <span class="compact-list-item__icon">
-                ${escapeHtml(
-                  getInitials(
-                    member.first_name ||
-                    member.name ||
-                    '',
-                    member.last_name ||
-                    ''
-                  )
-                )}
-              </span>
-
-              <span class="compact-list-item__content">
-
-                <strong class="compact-list-item__title">
-                  ${escapeHtml(
-                    getProfileName(
-                      member
-                    )
-                  )}
-                </strong>
-
-                <span class="compact-list-item__meta">
-                  Üzv
-                </span>
-
-              </span>
-            `;
-
-
-            item.addEventListener(
-              'click',
-              () => {
-                closeModal();
-
-                setActiveTab(
-                  'members'
-                );
-              }
-            );
-
-
-            results.append(
-              item
-            );
-          }
-        );
-      }
-    );
-
-
-  input?.addEventListener(
-    'input',
-    render
-  );
-
-
-  input?.focus();
-}
-
 
 // ============================================================
-// ADMIN.JS — HISSƏ 2/4 SONU
-// ============================================================
-
-// ============================================================
-// 52. MEMBERS FILTER
+// 68. MEMBER FILTER
 // ============================================================
 
 function filteredMembers() {
   const search =
-    normalizeString(
+    normalizeSearch(
       byId(
         'members-search'
       )?.value
-    )
-      .toLocaleLowerCase(
-        'az-AZ'
-      );
+    );
 
 
   const role =
-    byId(
-      'members-role-filter'
-    )?.value ||
-    'all';
+    normalizeString(
+      byId(
+        'members-role-filter'
+      )?.value,
+      'all'
+    );
+
+
+  const status =
+    normalizeString(
+      byId(
+        'members-status-filter'
+      )?.value,
+      'all'
+    );
 
 
   return state.members
@@ -4821,19 +7052,20 @@ function filteredMembers() {
           return true;
         }
 
+
         const text =
           [
-            member.first_name,
-            member.last_name,
-            member.name,
+            member.full_name,
             member.email,
             member.phone,
+            member.address,
           ]
             .filter(Boolean)
             .join(' ')
             .toLocaleLowerCase(
               'az-AZ'
             );
+
 
         return text.includes(
           search
@@ -4842,22 +7074,83 @@ function filteredMembers() {
     )
     .filter(
       member => {
-        if (role === 'all') {
+        if (
+          role ===
+          'all'
+        ) {
           return true;
         }
 
+
         return (
-          normalizeString(
-            member.role
-          ) === role
+          member.role ===
+          role
         );
+      }
+    )
+    .filter(
+      member => {
+        if (
+          status ===
+          'active'
+        ) {
+          return (
+            member.is_active !==
+            false
+          );
+        }
+
+
+        if (
+          status ===
+          'inactive'
+        ) {
+          return (
+            member.is_active ===
+            false
+          );
+        }
+
+
+        return true;
       }
     );
 }
 
 
 // ============================================================
-// 53. MEMBERS RENDER
+// 69. MEMBER STATUS
+// ============================================================
+
+function memberStatusMeta(
+  member
+) {
+  if (
+    member.is_active ===
+    false
+  ) {
+    return {
+      label:
+        'Deaktiv',
+
+      className:
+        'ui-badge ui-badge--danger',
+    };
+  }
+
+
+  return {
+    label:
+      'Aktiv',
+
+    className:
+      'ui-badge ui-badge--success',
+  };
+}
+
+
+// ============================================================
+// 70. MEMBERS RENDER
 // ============================================================
 
 function renderMembers() {
@@ -4866,10 +7159,19 @@ function renderMembers() {
       'members-list'
     );
 
-  if (!root) return;
+
+  if (!root) {
+    return;
+  }
 
 
-  clearElement(root);
+  clearElement(
+    root
+  );
+
+
+  const members =
+    filteredMembers();
 
 
   const table =
@@ -4888,7 +7190,8 @@ function renderMembers() {
         <th>İstifadəçi</th>
         <th>Telefon</th>
         <th>Rol</th>
-        <th>Tarix</th>
+        <th>Status</th>
+        <th>Qeydiyyat</th>
       </tr>
     </thead>
 
@@ -4897,141 +7200,135 @@ function renderMembers() {
 
 
   const tbody =
-    $('tbody', table);
-
-
-  const mobile =
-    createElement(
-      'div',
-      {
-        className:
-          'admin-mobile-list',
-      }
+    $(
+      'tbody',
+      table
     );
 
 
-  filteredMembers()
-    .forEach(
-      member => {
-        const name =
-          getProfileName(
-            member
-          );
-
-        const role =
-          roleLabel(
-            member.role
-          );
-
-        const phone =
-          normalizeString(
-            member.phone,
-            '—'
-          );
+  members.forEach(
+    member => {
+      const status =
+        memberStatusMeta(
+          member
+        );
 
 
-        const row =
-          createElement(
-            'tr'
-          );
+      const row =
+        createElement(
+          'tr'
+        );
 
 
-        row.innerHTML = `
-          <td>
-            <strong class="admin-table__primary">
-              ${escapeHtml(name)}
-            </strong>
+      row.innerHTML = `
+        <td>
 
-            <span class="admin-table__secondary">
+          <div class="admin-user-cell">
+
+            <span class="admin-user-cell__avatar">
               ${escapeHtml(
-                member.email ||
-                ''
+                getProfileInitials(
+                  member
+                )
               )}
             </span>
-          </td>
-
-          <td>
-            ${escapeHtml(phone)}
-          </td>
-
-          <td>
-            ${escapeHtml(role)}
-          </td>
-
-          <td>
-            ${formatDate(
-              member.created_at
-            )}
-          </td>
-        `;
 
 
-        tbody?.append(row);
+            <span class="admin-user-cell__identity">
 
-
-        const card =
-          createElement(
-            'article',
-            {
-              className:
-                'admin-mobile-row',
-            }
-          );
-
-
-        card.innerHTML = `
-          <div class="admin-mobile-row__top">
-
-            <div class="admin-mobile-row__identity">
-
-              <strong class="admin-mobile-row__title">
-                ${escapeHtml(name)}
-              </strong>
-
-              <span class="admin-mobile-row__meta">
-                ${escapeHtml(role)}
-              </span>
-
-            </div>
-
-          </div>
-
-
-          <div class="admin-mobile-row__details">
-
-            <div class="admin-mobile-row__detail">
-              <span>Telefon</span>
-              <strong>${escapeHtml(phone)}</strong>
-            </div>
-
-            <div class="admin-mobile-row__detail">
-              <span>E-poçt</span>
-              <strong>
+              <strong class="admin-table__primary">
                 ${escapeHtml(
-                  member.email ||
-                  '—'
+                  getProfileName(
+                    member
+                  )
                 )}
               </strong>
-            </div>
+
+              <span class="admin-table__secondary">
+                ${escapeHtml(
+                  member.email ||
+                  'E-poçt yoxdur'
+                )}
+              </span>
+
+            </span>
 
           </div>
-        `;
+
+        </td>
 
 
-        mobile.append(card);
-      }
-    );
+        <td>
+          ${escapeHtml(
+            member.phone ||
+            '—'
+          )}
+        </td>
+
+
+        <td>
+          <span class="${
+            member.role ===
+              'admin'
+              ? 'ui-badge ui-badge--danger'
+              : member.role ===
+                  'staff'
+                ? 'ui-badge ui-badge--warning'
+                : 'ui-badge ui-badge--neutral'
+          }">
+            ${escapeHtml(
+              roleLabel(
+                member.role
+              )
+            )}
+          </span>
+        </td>
+
+
+        <td>
+          <span class="${status.className}">
+            ${escapeHtml(
+              status.label
+            )}
+          </span>
+        </td>
+
+
+        <td>
+          ${formatDate(
+            member.created_at
+          )}
+        </td>
+      `;
+
+
+      tbody.append(
+        row
+      );
+    }
+  );
 
 
   root.append(
-    table,
-    mobile
+    table
   );
+
+
+  if (
+    members.length ===
+    0
+  ) {
+    root.append(
+      createDashboardEmpty(
+        'İstifadəçi tapılmadı.'
+      )
+    );
+  }
 }
 
 
 // ============================================================
-// 54. MEMBER EVENTS
+// 71. MEMBERS EVENTS
 // ============================================================
 
 function bindMemberEvents() {
@@ -5040,7 +7337,8 @@ function bindMemberEvents() {
   )?.addEventListener(
     'input',
     debounce(
-      renderMembers
+      renderMembers,
+      180
     )
   );
 
@@ -5051,30 +7349,37 @@ function bindMemberEvents() {
     'change',
     renderMembers
   );
+
+
+  byId(
+    'members-status-filter'
+  )?.addEventListener(
+    'change',
+    renderMembers
+  );
 }
 
 
 // ============================================================
-// 55. MEMBERSHIP FILTER
+// 72. MEMBERSHIP FILTER
 // ============================================================
 
 function filteredMemberships() {
   const search =
-    normalizeString(
+    normalizeSearch(
       byId(
         'memberships-search'
       )?.value
-    )
-      .toLocaleLowerCase(
-        'az-AZ'
-      );
+    );
 
 
-  const statusFilter =
-    byId(
-      'memberships-status-filter'
-    )?.value ||
-    'all';
+  const status =
+    normalizeString(
+      byId(
+        'memberships-status-filter'
+      )?.value,
+      'all'
+    );
 
 
   return state.memberships
@@ -5084,41 +7389,60 @@ function filteredMemberships() {
           return true;
         }
 
-        const profile =
-          membership.profiles;
 
-        return getProfileName(
-          profile
-        )
-          .toLocaleLowerCase(
-            'az-AZ'
-          )
-          .includes(search);
+        const text =
+          [
+            membership
+              .member
+              ?.full_name,
+
+            membership
+              .member
+              ?.email,
+
+            membership
+              .member
+              ?.phone,
+
+            membership
+              .membership_plan
+              ?.name,
+          ]
+            .filter(Boolean)
+            .join(' ')
+            .toLocaleLowerCase(
+              'az-AZ'
+            );
+
+
+        return text.includes(
+          search
+        );
       }
     )
     .filter(
       membership => {
         if (
-          statusFilter ===
+          status ===
           'all'
         ) {
           return true;
         }
 
-        const meta =
-          membershipStatus({
-            status:
-              membership.status,
 
-            endDate:
-              membershipEndDate(
-                membership
-              ),
-          });
+        if (
+          status ===
+          'active'
+        ) {
+          return membershipIsActive(
+            membership
+          );
+        }
+
 
         return (
-          meta.value ===
-          statusFilter
+          membership.status ===
+          status
         );
       }
     );
@@ -5126,7 +7450,41 @@ function filteredMemberships() {
 
 
 // ============================================================
-// 56. MEMBERSHIPS RENDER
+// 73. MEMBERSHIP STATUS CLASS
+// ============================================================
+
+function membershipBadgeClass(
+  membership
+) {
+  if (
+    membershipIsActive(
+      membership
+    )
+  ) {
+    return (
+      'ui-badge ui-badge--success'
+    );
+  }
+
+
+  if (
+    membership.status ===
+    'cancelled'
+  ) {
+    return (
+      'ui-badge ui-badge--danger'
+    );
+  }
+
+
+  return (
+    'ui-badge ui-badge--warning'
+  );
+}
+
+
+// ============================================================
+// 74. MEMBERSHIP RENDER
 // ============================================================
 
 function renderMemberships() {
@@ -5135,10 +7493,19 @@ function renderMemberships() {
       'memberships-list'
     );
 
-  if (!root) return;
+
+  if (!root) {
+    return;
+  }
 
 
-  clearElement(root);
+  clearElement(
+    root
+  );
+
+
+  const memberships =
+    filteredMemberships();
 
 
   const table =
@@ -5156,9 +7523,12 @@ function renderMemberships() {
       <tr>
         <th>Üzv</th>
         <th>Plan</th>
+        <th>Qiymət</th>
         <th>Başlanğıc</th>
         <th>Bitmə</th>
+        <th>Ödəniş</th>
         <th>Status</th>
+        <th>Operator</th>
       </tr>
     </thead>
 
@@ -5167,122 +7537,172 @@ function renderMemberships() {
 
 
   const tbody =
-    $('tbody', table);
-
-
-  filteredMemberships()
-    .forEach(
-      membership => {
-        const profile =
-          membership.profiles;
-
-        const plan =
-          membership
-            .membership_plans;
-
-        const meta =
-          membershipStatus({
-            status:
-              membership.status,
-
-            endDate:
-              membershipEndDate(
-                membership
-              ),
-          });
-
-
-        const row =
-          createElement(
-            'tr'
-          );
-
-
-        row.innerHTML = `
-          <td>
-            <strong class="admin-table__primary">
-              ${escapeHtml(
-                getProfileName(
-                  profile
-                )
-              )}
-            </strong>
-          </td>
-
-          <td>
-            ${escapeHtml(
-              plan?.name ||
-              'Üzvlük'
-            )}
-          </td>
-
-          <td>
-            ${formatDate(
-              membership.start_date
-            )}
-          </td>
-
-          <td>
-            ${formatDate(
-              membershipEndDate(
-                membership
-              )
-            )}
-          </td>
-
-          <td>
-            <span class="${meta.className}">
-              ${meta.label}
-            </span>
-          </td>
-        `;
-
-
-        tbody?.append(row);
-      }
+    $(
+      'tbody',
+      table
     );
 
 
-  root.append(table);
-}
+  memberships.forEach(
+    membership => {
+      const row =
+        createElement(
+          'tr'
+        );
 
 
-// ============================================================
-// 57. MEMBERSHIP EVENTS
-// ============================================================
+      row.innerHTML = `
+        <td>
 
-function bindMembershipEvents() {
-  byId(
-    'memberships-search'
-  )?.addEventListener(
-    'input',
-    debounce(
-      renderMemberships
-    )
-  );
+          <strong class="admin-table__primary">
+            ${escapeHtml(
+              getProfileName(
+                membership.member
+              )
+            )}
+          </strong>
+
+          <span class="admin-table__secondary">
+            ${escapeHtml(
+              membership
+                .member
+                ?.phone ||
+              membership
+                .member
+                ?.email ||
+              '—'
+            )}
+          </span>
+
+        </td>
 
 
-  byId(
-    'memberships-status-filter'
-  )?.addEventListener(
-    'change',
-    renderMemberships
-  );
+        <td>
+          ${escapeHtml(
+            membership
+              .membership_plan
+              ?.name ||
+            'Üzvlük'
+          )}
+        </td>
 
 
-  byId(
-    'membership-create-button'
-  )?.addEventListener(
-    'click',
-    () => {
-      openMembershipCreateModal();
+        <td>
+          <strong>
+            ${escapeHtml(
+              money(
+                membership.price
+              )
+            )}
+          </strong>
+        </td>
+
+
+        <td>
+          ${formatDate(
+            membership.start_date
+          )}
+        </td>
+
+
+        <td>
+          ${formatDate(
+            membership.end_date
+          )}
+        </td>
+
+
+        <td>
+          <span class="${
+            paymentStatusClass(
+              membership
+                .payment_status
+            )
+          }">
+            ${escapeHtml(
+              paymentStatusLabel(
+                membership
+                  .payment_status
+              )
+            )}
+          </span>
+        </td>
+
+
+        <td>
+          <span class="${
+            membershipBadgeClass(
+              membership
+            )
+          }">
+            ${escapeHtml(
+              membershipStatusLabel(
+                membership
+              )
+            )}
+          </span>
+        </td>
+
+
+        <td>
+
+          <strong class="admin-table__primary">
+            ${escapeHtml(
+              membership
+                .created_by_profile
+                ?.full_name ||
+              'Sistem'
+            )}
+          </strong>
+
+          ${
+            membership
+              .updated_by_profile
+              ?.full_name
+              ? `
+                <span class="admin-table__secondary">
+                  Son dəyişiklik:
+                  ${escapeHtml(
+                    membership
+                      .updated_by_profile
+                      .full_name
+                  )}
+                </span>
+              `
+              : ''
+          }
+
+        </td>
+      `;
+
+
+      tbody.append(
+        row
+      );
     }
   );
+
+
+  root.append(
+    table
+  );
+
+
+  if (
+    memberships.length ===
+    0
+  ) {
+    root.append(
+      createDashboardEmpty(
+        'Üzvlük tapılmadı.'
+      )
+    );
+  }
 }
 
 
 // ============================================================
-// 58. MEMBERSHIP PLAN RENDER
+// 75. MEMBERSHIP PLAN RENDER
 // ============================================================
 
 function renderMembershipPlans() {
@@ -5291,54 +7711,90 @@ function renderMembershipPlans() {
       'membership-plans-grid'
     );
 
-  if (!root) return;
+
+  if (!root) {
+    return;
+  }
 
 
-  clearElement(root);
+  clearElement(
+    root
+  );
 
 
-  membershipPlans.forEach(
-    plan => {
-      const card =
-        createElement(
-          'article',
-          {
-            className:
-              'admin-setting-card',
-          }
-        );
+  state.membershipPlans
+    .forEach(
+      plan => {
+        const card =
+          createElement(
+            'article',
+            {
+              className:
+                'admin-setting-card',
+            }
+          );
 
 
-      card.innerHTML = `
-        <strong class="admin-setting-card__title">
-          ${escapeHtml(
-            plan.name ||
-            'Plan'
-          )}
-        </strong>
+        card.innerHTML = `
+          <div class="admin-setting-card__header">
 
-        <span class="admin-setting-card__meta">
-          ${
-            normalizeNumber(
-              plan.duration_days
-            )
-          } gün
-        </span>
+            <span class="${
+              plan.is_daily
+                ? 'ui-badge ui-badge--warning'
+                : 'ui-badge ui-badge--success'
+            }">
+              ${
+                plan.is_daily
+                  ? 'Günlük giriş'
+                  : 'Üzvlük'
+              }
+            </span>
 
-        <strong class="admin-setting-card__price">
-          ${escapeHtml(
-            money(
-              plan.price
-            )
-          )}
-        </strong>
+            <span class="${
+              plan.is_active
+                ? 'ui-badge ui-badge--success'
+                : 'ui-badge ui-badge--danger'
+            }">
+              ${
+                plan.is_active
+                  ? 'Aktiv'
+                  : 'Deaktiv'
+              }
+            </span>
 
-        <div class="admin-setting-card__actions">
+          </div>
+
+
+          <strong class="admin-setting-card__title">
+            ${escapeHtml(
+              plan.name
+            )}
+          </strong>
+
+
+          <span class="admin-setting-card__meta">
+            ${escapeHtml(
+              String(
+                plan.duration_days
+              )
+            )}
+            gün
+          </span>
+
+
+          <strong class="admin-setting-card__price">
+            ${escapeHtml(
+              money(
+                plan.price
+              )
+            )}
+          </strong>
+
 
           <button
-            class="ui-button ui-button--glass"
             type="button"
-            data-membership-plan-edit="${escapeHtml(
+            class="ui-button ui-button--glass ui-button--full"
+            data-plan-edit="${escapeHtml(
               plan.id
             )}"
           >
@@ -5346,18 +7802,18 @@ function renderMembershipPlans() {
               Redaktə et
             </span>
           </button>
-
-        </div>
-      `;
+        `;
 
 
-      root.append(card);
-    }
-  );
+        root.append(
+          card
+        );
+      }
+    );
 
 
   $$(
-    '[data-membership-plan-edit]',
+    '[data-plan-edit]',
     root
   ).forEach(
     button => {
@@ -5365,14 +7821,17 @@ function renderMembershipPlans() {
         'click',
         () => {
           const plan =
-            membershipPlans.find(
-              item =>
-                String(item.id) ===
-                String(
-                  button.dataset
-                    .membershipPlanEdit
-                )
-            );
+            state.membershipPlans
+              .find(
+                item =>
+                  String(
+                    item.id
+                  ) ===
+                  String(
+                    button.dataset
+                      .planEdit
+                  )
+              );
 
 
           if (plan) {
@@ -5389,12 +7848,16 @@ function renderMembershipPlans() {
 
 
 // ============================================================
-// 59. MEMBERSHIP PLAN EDITOR
+// 76. MEMBERSHIP PLAN EDITOR
+//
+// is_daily semantikasını burada dəyişmirik.
+// Bu planın biznes tipidir.
+// Admin qiymət, ad, müddət və aktivliyi dəyişə bilər.
 // ============================================================
 
 function openMembershipPlanEditor(
   plan,
-  trigger
+  trigger = null
 ) {
   const content =
     createElement(
@@ -5407,7 +7870,8 @@ function openMembershipPlanEditor(
           id:
             'membership-plan-form',
 
-          novalidate: '',
+          novalidate:
+            '',
         },
       }
     );
@@ -5429,6 +7893,7 @@ function openMembershipPlanEditor(
           id="membership-plan-name"
           class="ui-input__control"
           type="text"
+          maxlength="120"
           value="${escapeHtml(
             plan.name ||
             ''
@@ -5457,9 +7922,10 @@ function openMembershipPlanEditor(
             id="membership-plan-price"
             class="ui-input__control"
             type="number"
+            inputmode="decimal"
             min="0"
             step="0.01"
-            value="${normalizeNumber(
+            value="${number(
               plan.price
             )}"
           >
@@ -5484,9 +7950,10 @@ function openMembershipPlanEditor(
             id="membership-plan-duration"
             class="ui-input__control"
             type="number"
+            inputmode="numeric"
             min="1"
             step="1"
-            value="${normalizeNumber(
+            value="${number(
               plan.duration_days
             )}"
           >
@@ -5494,6 +7961,42 @@ function openMembershipPlanEditor(
         </div>
 
       </div>
+
+    </div>
+
+
+    <label class="ui-check">
+
+      <input
+        id="membership-plan-active"
+        type="checkbox"
+        ${
+          plan.is_active
+            ? 'checked'
+            : ''
+        }
+      >
+
+      <span>
+        Plan aktivdir
+      </span>
+
+    </label>
+
+
+    <div class="ui-info-card">
+
+      <span class="ui-info-card__label">
+        Plan tipi
+      </span>
+
+      <strong>
+        ${
+          plan.is_daily
+            ? 'Günlük giriş'
+            : 'Üzvlük'
+        }
+      </strong>
 
     </div>
 
@@ -5510,6 +8013,7 @@ function openMembershipPlanEditor(
 
       <span
         class="ui-button__spinner is-hidden"
+        aria-hidden="true"
       ></span>
 
     </button>
@@ -5521,25 +8025,25 @@ function openMembershipPlanEditor(
       'Üzvlük planı',
 
     title:
-      plan.name ||
-      'Plan',
+      plan.name,
 
     content,
 
     trigger,
 
-    onOpen: () => {
-      bindMembershipPlanForm(
-        content,
-        plan
-      );
-    },
+    onOpen:
+      () => {
+        bindMembershipPlanForm(
+          content,
+          plan
+        );
+      },
   });
 }
 
 
 // ============================================================
-// 60. MEMBERSHIP PLAN UPDATE
+// 77. MEMBERSHIP PLAN UPDATE
 // ============================================================
 
 function bindMembershipPlanForm(
@@ -5547,16 +8051,38 @@ function bindMembershipPlanForm(
   plan
 ) {
   const nameInput =
-    $('#membership-plan-name', form);
+    $(
+      '#membership-plan-name',
+      form
+    );
+
 
   const priceInput =
-    $('#membership-plan-price', form);
+    $(
+      '#membership-plan-price',
+      form
+    );
+
 
   const durationInput =
-    $('#membership-plan-duration', form);
+    $(
+      '#membership-plan-duration',
+      form
+    );
+
+
+  const activeInput =
+    $(
+      '#membership-plan-active',
+      form
+    );
+
 
   const submit =
-    $('#membership-plan-submit', form);
+    $(
+      '#membership-plan-submit',
+      form
+    );
 
 
   form.addEventListener(
@@ -5570,27 +8096,55 @@ function bindMembershipPlanForm(
           nameInput?.value
         );
 
+
       const price =
-        normalizeNumber(
+        number(
           priceInput?.value,
           -1
         );
 
+
       const duration =
-        normalizeNumber(
+        number(
           durationInput?.value,
           0
         );
 
 
       if (
-        name.length < 2 ||
-        price < 0 ||
-        duration <= 0
+        name.length < 2
       ) {
         notify.warning(
-          'Plan məlumatlarını düzgün daxil et.'
+          'Plan adını düzgün daxil et.'
         );
+
+
+        return;
+      }
+
+
+      if (
+        price < 0
+      ) {
+        notify.warning(
+          'Plan qiyməti düzgün deyil.'
+        );
+
+
+        return;
+      }
+
+
+      if (
+        !Number.isInteger(
+          duration
+        ) ||
+        duration < 1
+      ) {
+        notify.warning(
+          'Plan müddəti minimum 1 gün olmalıdır.'
+        );
+
 
         return;
       }
@@ -5616,9 +8170,17 @@ function bindMembershipPlanForm(
             )
             .update({
               name,
+
               price,
+
               duration_days:
                 duration,
+
+              is_active:
+                Boolean(
+                  activeInput
+                    ?.checked
+                ),
             })
             .eq(
               'id',
@@ -5639,10 +8201,29 @@ function bindMembershipPlanForm(
         );
 
 
-        await loadMembershipPlans();
+        await Promise.all([
+          loadMembershipPlans(),
+
+          loadHistory({
+            limit:
+              50,
+          }),
+        ]);
+
+
+        renderMembershipPlans();
       } catch (error) {
+        console.error(
+          '[SKy Fit Admin] Plan update:',
+          error
+        );
+
+
         notify.error(
-          getErrorMessage(error)
+          getErrorMessage(
+            error,
+            'Plan yenilənmədi.'
+          )
         );
       } finally {
         setButtonLoading(
@@ -5656,10 +8237,12 @@ function bindMembershipPlanForm(
 
 
 // ============================================================
-// 61. MEMBERSHIP CREATE MODAL
+// 78. MEMBERSHIP CREATE MODAL
 // ============================================================
 
-async function openMembershipCreateModal() {
+async function openMembershipCreateModal(
+  trigger = null
+) {
   if (
     state.members.length ===
     0
@@ -5669,61 +8252,33 @@ async function openMembershipCreateModal() {
 
 
   if (
-    membershipPlans.length ===
+    state.membershipPlans.length ===
     0
   ) {
     await loadMembershipPlans();
   }
 
 
-  const memberOptions =
-    state.members
+  const plans =
+    state.membershipPlans
       .filter(
-        member =>
-          normalizeString(
-            member.role
-          ) ===
-          USER_ROLES.MEMBER
-      )
-      .map(
-        member => `
-          <option
-            value="${escapeHtml(
-              member.id
-            )}"
-          >
-            ${escapeHtml(
-              getProfileName(
-                member
-              )
-            )}
-          </option>
-        `
-      )
-      .join('');
+        plan =>
+          plan.is_active &&
+          !plan.is_daily
+      );
 
 
-  const planOptions =
-    membershipPlans
-      .map(
-        plan => `
-          <option
-            value="${escapeHtml(
-              plan.id
-            )}"
-          >
-            ${escapeHtml(
-              plan.name
-            )} —
-            ${escapeHtml(
-              money(
-                plan.price
-              )
-            )}
-          </option>
-        `
-      )
-      .join('');
+  if (
+    plans.length ===
+    0
+  ) {
+    notify.warning(
+      'Aktiv üzvlük planı yoxdur.'
+    );
+
+
+    return;
+  }
 
 
   const content =
@@ -5737,7 +8292,8 @@ async function openMembershipCreateModal() {
           id:
             'membership-create-form',
 
-          novalidate: '',
+          novalidate:
+            '',
         },
       }
     );
@@ -5746,19 +8302,22 @@ async function openMembershipCreateModal() {
   content.innerHTML = `
     <div class="ui-field">
 
-      <label class="ui-field__label">
+      <label
+        class="ui-field__label"
+        for="membership-create-member"
+      >
         Üzv
       </label>
 
       <select
-        id="membership-member"
+        id="membership-create-member"
         class="ui-select"
       >
         <option value="">
           Üzv seç
         </option>
 
-        ${memberOptions}
+        ${memberOptionsMarkup()}
       </select>
 
     </div>
@@ -5766,19 +8325,47 @@ async function openMembershipCreateModal() {
 
     <div class="ui-field">
 
-      <label class="ui-field__label">
-        Plan
+      <label
+        class="ui-field__label"
+        for="membership-create-plan"
+      >
+        Üzvlük planı
       </label>
 
       <select
-        id="membership-plan"
+        id="membership-create-plan"
         class="ui-select"
       >
         <option value="">
           Plan seç
         </option>
 
-        ${planOptions}
+        ${plans
+          .map(
+            plan => `
+              <option value="${escapeHtml(
+                plan.id
+              )}">
+                ${escapeHtml(
+                  plan.name
+                )}
+                —
+                ${escapeHtml(
+                  money(
+                    plan.price
+                  )
+                )}
+                /
+                ${escapeHtml(
+                  String(
+                    plan.duration_days
+                  )
+                )}
+                gün
+              </option>
+            `
+          )
+          .join('')}
       </select>
 
     </div>
@@ -5786,12 +8373,38 @@ async function openMembershipCreateModal() {
 
     <div class="ui-field">
 
-      <label class="ui-field__label">
+      <label
+        class="ui-field__label"
+        for="membership-create-start"
+      >
+        Başlanğıc tarixi
+      </label>
+
+      <div class="ui-input">
+
+        <input
+          id="membership-create-start"
+          class="ui-input__control"
+          type="date"
+          value="${todayIso()}"
+        >
+
+      </div>
+
+    </div>
+
+
+    <div class="ui-field">
+
+      <label
+        class="ui-field__label"
+        for="membership-create-payment"
+      >
         Ödəniş
       </label>
 
       <select
-        id="membership-payment-status"
+        id="membership-create-payment"
         class="ui-select"
       >
         <option value="paid">
@@ -5799,11 +8412,17 @@ async function openMembershipCreateModal() {
         </option>
 
         <option value="debt">
-          Borc
+          Borc yaz
         </option>
       </select>
 
     </div>
+
+
+    <div
+      id="membership-create-preview"
+      class="pos-confirm__summary"
+    ></div>
 
 
     <button
@@ -5818,6 +8437,7 @@ async function openMembershipCreateModal() {
 
       <span
         class="ui-button__spinner is-hidden"
+        aria-hidden="true"
       ></span>
 
     </button>
@@ -5833,33 +8453,221 @@ async function openMembershipCreateModal() {
 
     content,
 
-    onOpen: () => {
-      bindMembershipCreateForm(
-        content
-      );
-    },
+    trigger,
+
+    onOpen:
+      () => {
+        bindMembershipCreateForm(
+          content,
+          plans
+        );
+      },
   });
 }
 
 
 // ============================================================
-// 62. CREATE MEMBERSHIP RPC
+// 79. MEMBERSHIP CREATE FORM
 // ============================================================
 
 function bindMembershipCreateForm(
-  form
+  form,
+  plans
 ) {
   const memberInput =
-    $('#membership-member', form);
+    $(
+      '#membership-create-member',
+      form
+    );
+
 
   const planInput =
-    $('#membership-plan', form);
+    $(
+      '#membership-create-plan',
+      form
+    );
+
+
+  const startInput =
+    $(
+      '#membership-create-start',
+      form
+    );
+
 
   const paymentInput =
-    $('#membership-payment-status', form);
+    $(
+      '#membership-create-payment',
+      form
+    );
+
+
+  const preview =
+    $(
+      '#membership-create-preview',
+      form
+    );
+
 
   const submit =
-    $('#membership-create-submit', form);
+    $(
+      '#membership-create-submit',
+      form
+    );
+
+
+  function selectedPlan() {
+    return plans.find(
+      plan =>
+        String(plan.id) ===
+        String(
+          planInput?.value
+        )
+    );
+  }
+
+
+  function renderPreview() {
+    const plan =
+      selectedPlan();
+
+
+    if (
+      !preview
+    ) {
+      return;
+    }
+
+
+    if (!plan) {
+      preview.innerHTML =
+        '';
+
+      return;
+    }
+
+
+    const start =
+      normalizeString(
+        startInput?.value
+      );
+
+
+    const startDate =
+      start
+        ? new Date(
+            `${start}T12:00:00`
+          )
+        : null;
+
+
+    let endText =
+      '—';
+
+
+    if (
+      startDate &&
+      !Number.isNaN(
+        startDate.getTime()
+      )
+    ) {
+      const endDate =
+        new Date(
+          startDate
+        );
+
+
+      endDate.setDate(
+        endDate.getDate() +
+        number(
+          plan.duration_days
+        ) -
+        1
+      );
+
+
+      endText =
+        formatDate(
+          endDate
+        );
+    }
+
+
+    preview.innerHTML = `
+      <div class="pos-confirm__row">
+
+        <span>Plan</span>
+
+        <strong>
+          ${escapeHtml(
+            plan.name
+          )}
+        </strong>
+
+      </div>
+
+
+      <div class="pos-confirm__row">
+
+        <span>Müddət</span>
+
+        <strong>
+          ${escapeHtml(
+            String(
+              plan.duration_days
+            )
+          )}
+          gün
+        </strong>
+
+      </div>
+
+
+      <div class="pos-confirm__row">
+
+        <span>Bitmə tarixi</span>
+
+        <strong>
+          ${escapeHtml(
+            endText
+          )}
+        </strong>
+
+      </div>
+
+
+      <div class="pos-confirm__row pos-confirm__row--total">
+
+        <span>Məbləğ</span>
+
+        <strong>
+          ${escapeHtml(
+            money(
+              plan.price
+            )
+          )}
+        </strong>
+
+      </div>
+    `;
+  }
+
+
+  planInput
+    ?.addEventListener(
+      'change',
+      renderPreview
+    );
+
+
+  startInput
+    ?.addEventListener(
+      'change',
+      renderPreview
+    );
+
+
+  renderPreview();
 
 
   form.addEventListener(
@@ -5868,24 +8676,60 @@ function bindMembershipCreateForm(
       event.preventDefault();
 
 
-      const profileId =
-        memberInput?.value;
+      const memberId =
+        normalizeString(
+          memberInput
+            ?.value
+        );
+
 
       const planId =
-        planInput?.value;
+        normalizeString(
+          planInput
+            ?.value
+        );
+
+
+      const startDate =
+        normalizeString(
+          startInput
+            ?.value
+        );
+
 
       const paymentStatus =
-        paymentInput?.value ||
-        'paid';
-
-
-      if (
-        !profileId ||
-        !planId
-      ) {
-        notify.warning(
-          'Üzv və plan seç.'
+        normalizeString(
+          paymentInput
+            ?.value,
+          'paid'
         );
+
+
+      if (!memberId) {
+        notify.warning(
+          'Üzv seç.'
+        );
+
+
+        return;
+      }
+
+
+      if (!planId) {
+        notify.warning(
+          'Üzvlük planı seç.'
+        );
+
+
+        return;
+      }
+
+
+      if (!startDate) {
+        notify.warning(
+          'Başlanğıc tarixini seç.'
+        );
+
 
         return;
       }
@@ -5903,16 +8747,22 @@ function bindMembershipCreateForm(
 
       try {
         const {
+          data:
+            membershipId,
+
           error,
         } =
           await supabase.rpc(
-            RPC.createMembership,
+            'create_membership',
             {
-              p_profile_id:
-                profileId,
+              p_member_id:
+                memberId,
 
               p_plan_id:
                 planId,
+
+              p_start_date:
+                startDate,
 
               p_payment_status:
                 paymentStatus,
@@ -5929,16 +8779,48 @@ function bindMembershipCreateForm(
 
 
         notify.success(
-          'Üzvlük yaradıldı.'
+          paymentStatus ===
+            'debt'
+            ? 'Üzvlük yaradıldı və borc hesaba yazıldı.'
+            : 'Üzvlük yaradıldı.'
         );
 
 
-        await loadMemberships();
+        await Promise.all([
+          loadMemberships(),
+          loadDebts(),
+          loadDebtTransactions(),
+          loadLedger(),
+          loadHistory({
+            limit:
+              50,
+          }),
+        ]);
 
-        await loadDashboard();
+
+        renderMemberships();
+
+        renderDashboard();
+
+
+        window.dispatchEvent(
+          new CustomEvent(
+            'skyfit:admin-operation',
+            {
+              detail: {
+                type:
+                  'membership',
+
+                membershipId,
+
+                memberId,
+              },
+            }
+          )
+        );
       } catch (error) {
         console.error(
-          'create_membership error:',
+          '[SKy Fit Admin] create_membership:',
           error
         );
 
@@ -5961,7 +8843,120 @@ function bindMembershipCreateForm(
 
 
 // ============================================================
-// 63. ATTENDANCE RENDER
+// 80. MEMBERSHIP EVENTS
+// ============================================================
+
+function bindMembershipEvents() {
+  byId(
+    'membership-create-button'
+  )?.addEventListener(
+    'click',
+    event => {
+      openMembershipCreateModal(
+        event.currentTarget
+      );
+    }
+  );
+
+
+  byId(
+    'memberships-search'
+  )?.addEventListener(
+    'input',
+    debounce(
+      renderMemberships,
+      180
+    )
+  );
+
+
+  byId(
+    'memberships-status-filter'
+  )?.addEventListener(
+    'change',
+    renderMemberships
+  );
+}
+
+
+// ============================================================
+// 81. ATTENDANCE FILTER
+// ============================================================
+
+function filteredAttendance() {
+  const search =
+    normalizeSearch(
+      byId(
+        'attendance-search'
+      )?.value
+    );
+
+
+  const type =
+    normalizeString(
+      byId(
+        'attendance-type-filter'
+      )?.value,
+      'all'
+    );
+
+
+  return state.attendance
+    .filter(
+      attendance => {
+        if (!search) {
+          return true;
+        }
+
+
+        const text =
+          [
+            attendance
+              .member
+              ?.full_name,
+
+            attendance
+              .member
+              ?.phone,
+
+            attendance
+              .operator
+              ?.full_name,
+          ]
+            .filter(Boolean)
+            .join(' ')
+            .toLocaleLowerCase(
+              'az-AZ'
+            );
+
+
+        return text.includes(
+          search
+        );
+      }
+    )
+    .filter(
+      attendance => {
+        if (
+          type ===
+          'all'
+        ) {
+          return true;
+        }
+
+
+        return (
+          attendance
+            .attendance_type ===
+          type
+        );
+      }
+    );
+}
+
+
+// ============================================================
+// 82. ATTENDANCE RENDER
 // ============================================================
 
 function renderAttendanceAdmin() {
@@ -5970,40 +8965,39 @@ function renderAttendanceAdmin() {
       'attendance-list'
     );
 
-  if (!root) return;
+
+  if (!root) {
+    return;
+  }
 
 
-  clearElement(root);
+  clearElement(
+    root
+  );
 
 
-  const today =
-    state.attendance.filter(
-      item => {
-        const date =
-          new Date(
-            item.created_at
-          );
+  const items =
+    filteredAttendance();
 
-        const now =
-          new Date();
 
-        return (
-          date.getFullYear() ===
-            now.getFullYear() &&
-          date.getMonth() ===
-            now.getMonth() &&
-          date.getDate() ===
-            now.getDate()
-        );
-      }
-    );
+  const todayCount =
+    state.attendance
+      .filter(
+        item =>
+          isToday(
+            attendanceDate(
+              item
+            )
+          )
+      )
+      .length;
 
 
   setText(
     byId(
       'attendance-today-count'
     ),
-    today.length
+    todayCount
   );
 
 
@@ -6021,6 +9015,9 @@ function renderAttendanceAdmin() {
     <thead>
       <tr>
         <th>Üzv</th>
+        <th>Giriş növü</th>
+        <th>Məbləğ</th>
+        <th>Operator</th>
         <th>Tarix</th>
         <th>Saat</th>
       </tr>
@@ -6031,110 +9028,142 @@ function renderAttendanceAdmin() {
 
 
   const tbody =
-    $('tbody', table);
-
-
-  state.attendance
-    .filter(
-      item => {
-        const search =
-          normalizeString(
-            byId(
-              'attendance-search'
-            )?.value
-          )
-            .toLocaleLowerCase(
-              'az-AZ'
-            );
-
-
-        if (!search) {
-          return true;
-        }
-
-
-        return getProfileName(
-          item.profiles
-        )
-          .toLocaleLowerCase(
-            'az-AZ'
-          )
-          .includes(search);
-      }
-    )
-    .forEach(
-      item => {
-        const row =
-          createElement(
-            'tr'
-          );
-
-
-        row.innerHTML = `
-          <td>
-            <strong class="admin-table__primary">
-              ${escapeHtml(
-                getProfileName(
-                  item.profiles
-                )
-              )}
-            </strong>
-          </td>
-
-          <td>
-            ${formatDate(
-              item.created_at
-            )}
-          </td>
-
-          <td>
-            ${formatTime(
-              item.created_at
-            )}
-          </td>
-        `;
-
-
-        tbody?.append(row);
-      }
+    $(
+      'tbody',
+      table
     );
 
 
-  root.append(table);
-}
+  items.forEach(
+    attendance => {
+      const row =
+        createElement(
+          'tr'
+        );
 
 
-// ============================================================
-// 64. ATTENDANCE EVENTS
-// ============================================================
+      row.innerHTML = `
+        <td>
 
-function bindAttendanceAdminEvents() {
-  byId(
-    'attendance-create-button'
-  )?.addEventListener(
-    'click',
-    async () => {
-      await openAttendanceModal();
+          <strong class="admin-table__primary">
+            ${escapeHtml(
+              getProfileName(
+                attendance.member
+              )
+            )}
+          </strong>
+
+          <span class="admin-table__secondary">
+            ${escapeHtml(
+              attendance
+                .member
+                ?.phone ||
+              '—'
+            )}
+          </span>
+
+        </td>
+
+
+        <td>
+
+          <span class="${
+            attendance
+              .attendance_type ===
+              'daily'
+              ? 'ui-badge ui-badge--warning'
+              : 'ui-badge ui-badge--success'
+          }">
+            ${escapeHtml(
+              attendanceTypeLabel(
+                attendance
+              )
+            )}
+          </span>
+
+        </td>
+
+
+        <td>
+          ${
+            number(
+              attendance.amount
+            ) > 0
+              ? `
+                <strong class="finance-amount finance-amount--income">
+                  ${escapeHtml(
+                    money(
+                      attendance.amount
+                    )
+                  )}
+                </strong>
+              `
+              : '—'
+          }
+        </td>
+
+
+        <td>
+          ${escapeHtml(
+            attendance
+              .operator
+              ?.full_name ||
+            'Sistem'
+          )}
+        </td>
+
+
+        <td>
+          ${formatDate(
+            attendanceDate(
+              attendance
+            )
+          )}
+        </td>
+
+
+        <td>
+          ${formatTime(
+            attendanceDate(
+              attendance
+            )
+          )}
+        </td>
+      `;
+
+
+      tbody.append(
+        row
+      );
     }
   );
 
 
-  byId(
-    'attendance-search'
-  )?.addEventListener(
-    'input',
-    debounce(
-      renderAttendanceAdmin
-    )
+  root.append(
+    table
   );
+
+
+  if (
+    items.length ===
+    0
+  ) {
+    root.append(
+      createDashboardEmpty(
+        'Giriş qeydiyyatı tapılmadı.'
+      )
+    );
+  }
 }
 
 
 // ============================================================
-// 65. ATTENDANCE MODAL
+// 83. ATTENDANCE MODAL
 // ============================================================
 
-async function openAttendanceModal() {
+async function openAttendanceModal(
+  trigger = null
+) {
   if (
     state.members.length ===
     0
@@ -6143,29 +9172,21 @@ async function openAttendanceModal() {
   }
 
 
-  const options =
-    state.members
-      .filter(
-        member =>
-          normalizeString(
-            member.role
-          ) ===
-          USER_ROLES.MEMBER
-      )
-      .map(
-        member => `
-          <option value="${escapeHtml(
-            member.id
-          )}">
-            ${escapeHtml(
-              getProfileName(
-                member
-              )
-            )}
-          </option>
-        `
-      )
-      .join('');
+  if (
+    state.membershipPlans.length ===
+    0
+  ) {
+    await loadMembershipPlans();
+  }
+
+
+  const dailyPlan =
+    state.membershipPlans
+      .find(
+        plan =>
+          plan.is_daily &&
+          plan.is_active
+      );
 
 
   const content =
@@ -6178,6 +9199,9 @@ async function openAttendanceModal() {
         attrs: {
           id:
             'attendance-create-form',
+
+          novalidate:
+            '',
         },
       }
     );
@@ -6186,20 +9210,78 @@ async function openAttendanceModal() {
   content.innerHTML = `
     <div class="ui-field">
 
-      <label class="ui-field__label">
+      <label
+        class="ui-field__label"
+        for="attendance-create-member"
+      >
         Üzv
       </label>
 
       <select
-        id="attendance-member"
+        id="attendance-create-member"
         class="ui-select"
       >
         <option value="">
           Üzv seç
         </option>
 
-        ${options}
+        ${memberOptionsMarkup()}
       </select>
+
+    </div>
+
+
+    <div class="ui-field">
+
+      <label
+        class="ui-field__label"
+        for="attendance-payment-method"
+      >
+        Günlük giriş lazım olarsa ödəniş üsulu
+      </label>
+
+      <select
+        id="attendance-payment-method"
+        class="ui-select"
+      >
+        <option value="cash">
+          Nağd
+        </option>
+
+        <option value="card">
+          Kart
+        </option>
+
+        <option value="transfer">
+          Köçürmə
+        </option>
+      </select>
+
+    </div>
+
+
+    <div class="ui-info-card">
+
+      <span class="ui-info-card__label">
+        Sistem avtomatik yoxlayacaq
+      </span>
+
+      <strong>
+        Aktiv üzvlük varsa ödənişsiz giriş
+      </strong>
+
+      <span>
+        Aktiv üzvlük yoxdursa günlük giriş
+        ${
+          dailyPlan
+            ? ` — ${escapeHtml(
+                money(
+                  dailyPlan.price
+                )
+              )}`
+            : ''
+        }
+      </span>
 
     </div>
 
@@ -6211,11 +9293,12 @@ async function openAttendanceModal() {
     >
 
       <span class="ui-button__label">
-        Giriş qeyd et
+        Girişi qeyd et
       </span>
 
       <span
         class="ui-button__spinner is-hidden"
+        aria-hidden="true"
       ></span>
 
     </button>
@@ -6227,31 +9310,48 @@ async function openAttendanceModal() {
       'Giriş',
 
     title:
-      'Giriş qeydiyyatı',
+      'Zala giriş qeydiyyatı',
 
     content,
 
-    onOpen: () => {
-      bindAttendanceCreateForm(
-        content
-      );
-    },
+    trigger,
+
+    onOpen:
+      () => {
+        bindAttendanceCreateForm(
+          content
+        );
+      },
   });
 }
 
 
 // ============================================================
-// 66. RECORD ATTENDANCE RPC
+// 84. RECORD ATTENDANCE
 // ============================================================
 
 function bindAttendanceCreateForm(
   form
 ) {
   const memberInput =
-    $('#attendance-member', form);
+    $(
+      '#attendance-create-member',
+      form
+    );
+
+
+  const paymentInput =
+    $(
+      '#attendance-payment-method',
+      form
+    );
+
 
   const submit =
-    $('#attendance-create-submit', form);
+    $(
+      '#attendance-create-submit',
+      form
+    );
 
 
   form.addEventListener(
@@ -6260,14 +9360,26 @@ function bindAttendanceCreateForm(
       event.preventDefault();
 
 
-      const profileId =
-        memberInput?.value;
+      const memberId =
+        normalizeString(
+          memberInput
+            ?.value
+        );
 
 
-      if (!profileId) {
+      const paymentMethod =
+        normalizeString(
+          paymentInput
+            ?.value,
+          'cash'
+        );
+
+
+      if (!memberId) {
         notify.warning(
           'Üzv seç.'
         );
+
 
         return;
       }
@@ -6285,13 +9397,19 @@ function bindAttendanceCreateForm(
 
       try {
         const {
+          data:
+            attendanceId,
+
           error,
         } =
           await supabase.rpc(
-            RPC.recordAttendance,
+            'record_attendance',
             {
-              p_profile_id:
-                profileId,
+              p_member_id:
+                memberId,
+
+              p_payment_method:
+                paymentMethod,
             }
           );
 
@@ -6309,12 +9427,39 @@ function bindAttendanceCreateForm(
         );
 
 
-        await loadAttendance();
+        await Promise.all([
+          loadAttendance(),
+          loadLedger(),
+          loadHistory({
+            limit:
+              50,
+          }),
+        ]);
 
-        await loadDashboard();
+
+        renderAttendanceAdmin();
+
+        renderDashboard();
+
+
+        window.dispatchEvent(
+          new CustomEvent(
+            'skyfit:admin-operation',
+            {
+              detail: {
+                type:
+                  'attendance',
+
+                attendanceId,
+
+                memberId,
+              },
+            }
+          )
+        );
       } catch (error) {
         console.error(
-          'record_attendance error:',
+          '[SKy Fit Admin] record_attendance:',
           error
         );
 
@@ -6337,59 +9482,156 @@ function bindAttendanceCreateForm(
 
 
 // ============================================================
-// 67. DEBTS RENDER
+// 85. ATTENDANCE EVENTS
 // ============================================================
 
-function renderDebts() {
-  const root =
-    byId(
-      'debt-accounts-list'
+function bindAttendanceAdminEvents() {
+  byId(
+    'attendance-create-button'
+  )?.addEventListener(
+    'click',
+    event => {
+      openAttendanceModal(
+        event.currentTarget
+      );
+    }
+  );
+
+
+  byId(
+    'attendance-search'
+  )?.addEventListener(
+    'input',
+    debounce(
+      renderAttendanceAdmin,
+      180
+    )
+  );
+
+
+  byId(
+    'attendance-type-filter'
+  )?.addEventListener(
+    'change',
+    renderAttendanceAdmin
+  );
+}
+
+
+// ============================================================
+// 86. DEBT FILTER
+// ============================================================
+
+function filteredDebts() {
+  const search =
+    normalizeSearch(
+      byId(
+        'debt-search'
+      )?.value
     );
 
-  if (!root) return;
+
+  const status =
+    normalizeString(
+      byId(
+        'debt-status-filter'
+      )?.value,
+      'open'
+    );
 
 
-  clearElement(root);
-
-
-  const filtered =
-    state.debts.filter(
+  return state.debts
+    .filter(
       account => {
-        const search =
-          normalizeString(
-            byId(
-              'debt-search'
-            )?.value
-          )
-            .toLocaleLowerCase(
-              'az-AZ'
-            );
-
-
         if (!search) {
           return true;
         }
 
 
-        return getProfileName(
-          account.profiles
-        )
-          .toLocaleLowerCase(
-            'az-AZ'
-          )
-          .includes(search);
+        const text =
+          [
+            account
+              .member
+              ?.full_name,
+
+            account
+              .member
+              ?.phone,
+
+            account
+              .member
+              ?.email,
+          ]
+            .filter(Boolean)
+            .join(' ')
+            .toLocaleLowerCase(
+              'az-AZ'
+            );
+
+
+        return text.includes(
+          search
+        );
       }
+    )
+    .filter(
+      account => {
+        if (
+          status ===
+          'all'
+        ) {
+          return true;
+        }
+
+
+        if (
+          status ===
+          'closed'
+        ) {
+          return (
+            debtBalance(
+              account
+            ) <= 0
+          );
+        }
+
+
+        return (
+          debtBalance(
+            account
+          ) > 0
+        );
+      }
+    );
+}
+
+
+// ============================================================
+// 87. DEBT TOTALS
+// ============================================================
+
+function renderDebtTotals(
+  accounts
+) {
+  const open =
+    accounts.filter(
+      account =>
+        debtBalance(
+          account
+        ) > 0
     );
 
 
   const total =
-    filtered.reduce(
+    open.reduce(
       (
         sum,
         account
       ) =>
         sum +
-        debtBalance(account),
+        debtBalance(
+          account
+        ),
       0
     );
 
@@ -6398,7 +9640,7 @@ function renderDebts() {
     byId(
       'debt-total-amount'
     ),
-    number(total)
+    money(total)
   );
 
 
@@ -6406,11 +9648,38 @@ function renderDebts() {
     byId(
       'debt-open-count'
     ),
-    filtered.filter(
-      account =>
-        debtBalance(account) >
-        0
-    ).length
+    open.length
+  );
+}
+
+
+// ============================================================
+// 88. DEBTS RENDER
+// ============================================================
+
+function renderDebts() {
+  const root =
+    byId(
+      'debt-accounts-list'
+    );
+
+
+  if (!root) {
+    return;
+  }
+
+
+  clearElement(
+    root
+  );
+
+
+  const accounts =
+    filteredDebts();
+
+
+  renderDebtTotals(
+    state.debts
   );
 
 
@@ -6427,10 +9696,11 @@ function renderDebts() {
   table.innerHTML = `
     <thead>
       <tr>
-        <th>Şəxs</th>
+        <th>Üzv</th>
         <th>Borc</th>
-        <th>Tarix</th>
-        <th></th>
+        <th>Son dəyişiklik</th>
+        <th>Status</th>
+        <th>Əməliyyat</th>
       </tr>
     </thead>
 
@@ -6439,10 +9709,13 @@ function renderDebts() {
 
 
   const tbody =
-    $('tbody', table);
+    $(
+      'tbody',
+      table
+    );
 
 
-  filtered.forEach(
+  accounts.forEach(
     account => {
       const balance =
         debtBalance(
@@ -6458,32 +9731,64 @@ function renderDebts() {
 
       row.innerHTML = `
         <td>
+
           <strong class="admin-table__primary">
             ${escapeHtml(
               getProfileName(
-                account.profiles
+                account.member
               )
             )}
           </strong>
+
+          <span class="admin-table__secondary">
+            ${escapeHtml(
+              account
+                .member
+                ?.phone ||
+              account
+                .member
+                ?.email ||
+              '—'
+            )}
+          </span>
+
         </td>
 
+
         <td>
-          <span class="finance-amount ${
+          <strong class="${
             balance > 0
-              ? 'finance-amount--expense'
-              : ''
+              ? 'finance-amount finance-amount--expense'
+              : 'finance-amount'
           }">
             ${escapeHtml(
               money(balance)
             )}
+          </strong>
+        </td>
+
+
+        <td>
+          ${formatDateTime(
+            account.updated_at
+          )}
+        </td>
+
+
+        <td>
+          <span class="${
+            balance > 0
+              ? 'ui-badge ui-badge--danger'
+              : 'ui-badge ui-badge--success'
+          }">
+            ${
+              balance > 0
+                ? 'Açıq borc'
+                : 'Ödənilib'
+            }
           </span>
         </td>
 
-        <td>
-          ${formatDate(
-            account.created_at
-          )}
-        </td>
 
         <td>
           ${
@@ -6491,28 +9796,32 @@ function renderDebts() {
               ? `
                 <button
                   type="button"
-                  class="ui-button ui-button--glass"
+                  class="ui-button ui-button--primary"
                   data-debt-pay="${escapeHtml(
-                    account.id
+                    account.member_id
                   )}"
                 >
                   <span class="ui-button__label">
-                    Ödə
+                    Ödəniş
                   </span>
                 </button>
               `
-              : ''
+              : '—'
           }
         </td>
       `;
 
 
-      tbody?.append(row);
+      tbody.append(
+        row
+      );
     }
   );
 
 
-  root.append(table);
+  root.append(
+    table
+  );
 
 
   $$(
@@ -6526,7 +9835,9 @@ function renderDebts() {
           const account =
             state.debts.find(
               item =>
-                String(item.id) ===
+                String(
+                  item.member_id
+                ) ===
                 String(
                   button.dataset
                     .debtPay
@@ -6544,32 +9855,177 @@ function renderDebts() {
       );
     }
   );
+
+
+  renderDebtTransactions();
 }
 
 
 // ============================================================
-// 68. DEBT EVENTS
+// 89. DEBT TRANSACTION LABEL
 // ============================================================
 
-function bindDebtEvents() {
-  byId(
-    'debt-search'
-  )?.addEventListener(
-    'input',
-    debounce(
-      renderDebts
+function debtTransactionLabel(
+  transaction
+) {
+  switch (
+    normalizeString(
+      transaction
+        ?.transaction_type
     )
-  );
+  ) {
+    case 'payment':
+      return 'Ödəniş';
+
+    case 'debt':
+      return 'Yeni borc';
+
+    case 'adjustment':
+      return 'Düzəliş';
+
+    default:
+      return normalizeString(
+        transaction
+          ?.transaction_type,
+        'Əməliyyat'
+      );
+  }
 }
 
 
 // ============================================================
-// 69. DEBT PAYMENT MODAL
+// 90. DEBT TRANSACTIONS RENDER
+// ============================================================
+
+function renderDebtTransactions() {
+  const root =
+    byId(
+      'debt-transactions-list'
+    );
+
+
+  if (!root) {
+    return;
+  }
+
+
+  clearElement(
+    root
+  );
+
+
+  state.debtTransactions
+    .slice(
+      0,
+      100
+    )
+    .forEach(
+      transaction => {
+        const member =
+          state.members.find(
+            item =>
+              String(
+                item.id
+              ) ===
+              String(
+                transaction
+                  .member_id
+              )
+          );
+
+
+        const payment =
+          transaction
+            .transaction_type ===
+          'payment';
+
+
+        const item =
+          createElement(
+            'article',
+            {
+              className:
+                'operation-item',
+            }
+          );
+
+
+        item.innerHTML = `
+          <span class="operation-item__icon">
+            ${payment
+              ? '↓'
+              : '↑'}
+          </span>
+
+          <span class="operation-item__content">
+
+            <strong class="operation-item__title">
+              ${escapeHtml(
+                debtTransactionLabel(
+                  transaction
+                )
+              )}
+              ·
+              ${escapeHtml(
+                getProfileName(
+                  member
+                )
+              )}
+            </strong>
+
+            <span class="operation-item__meta">
+              ${escapeHtml(
+                transaction.note ||
+                paymentMethodLabel(
+                  transaction
+                    .payment_method
+                )
+              )}
+            </span>
+
+          </span>
+
+          <span class="operation-item__side">
+
+            <strong class="${
+              payment
+                ? 'finance-amount finance-amount--income'
+                : 'finance-amount finance-amount--expense'
+            }">
+              ${escapeHtml(
+                money(
+                  transaction.amount
+                )
+              )}
+            </strong>
+
+            <span>
+              ${formatDateTime(
+                transaction.created_at
+              )}
+            </span>
+
+          </span>
+        `;
+
+
+        root.append(
+          item
+        );
+      }
+    );
+}
+
+
+// ============================================================
+// 91. DEBT PAYMENT MODAL
+//
+// debt_accounts PK = member_id.
 // ============================================================
 
 function openDebtPaymentModal(
   account,
-  trigger
+  trigger = null
 ) {
   const balance =
     debtBalance(
@@ -6587,6 +10043,9 @@ function openDebtPaymentModal(
         attrs: {
           id:
             'debt-payment-form',
+
+          novalidate:
+            '',
         },
       }
     );
@@ -6597,23 +10056,24 @@ function openDebtPaymentModal(
 
       <div class="pos-confirm__row">
 
-        <span>Şəxs</span>
+        <span>Üzv</span>
 
         <strong>
           ${escapeHtml(
             getProfileName(
-              account.profiles
+              account.member
             )
           )}
         </strong>
 
       </div>
 
+
       <div class="pos-confirm__row pos-confirm__row--total">
 
         <span>Cari borc</span>
 
-        <strong>
+        <strong class="finance-amount finance-amount--expense">
           ${escapeHtml(
             money(balance)
           )}
@@ -6626,7 +10086,10 @@ function openDebtPaymentModal(
 
     <div class="ui-field">
 
-      <label class="ui-field__label">
+      <label
+        class="ui-field__label"
+        for="debt-payment-amount"
+      >
         Ödəniş məbləği
       </label>
 
@@ -6636,6 +10099,7 @@ function openDebtPaymentModal(
           id="debt-payment-amount"
           class="ui-input__control"
           type="number"
+          inputmode="decimal"
           min="0.01"
           max="${balance}"
           step="0.01"
@@ -6647,6 +10111,35 @@ function openDebtPaymentModal(
     </div>
 
 
+    <div class="ui-field">
+
+      <label
+        class="ui-field__label"
+        for="debt-payment-method"
+      >
+        Ödəniş üsulu
+      </label>
+
+      <select
+        id="debt-payment-method"
+        class="ui-select"
+      >
+        <option value="cash">
+          Nağd
+        </option>
+
+        <option value="card">
+          Kart
+        </option>
+
+        <option value="transfer">
+          Köçürmə
+        </option>
+      </select>
+
+    </div>
+
+
     <button
       id="debt-payment-submit"
       class="ui-button ui-button--primary ui-button--full"
@@ -6654,11 +10147,12 @@ function openDebtPaymentModal(
     >
 
       <span class="ui-button__label">
-        Ödənişi qeyd et
+        Ödənişi qəbul et
       </span>
 
       <span
         class="ui-button__spinner is-hidden"
+        aria-hidden="true"
       ></span>
 
     </button>
@@ -6676,18 +10170,27 @@ function openDebtPaymentModal(
 
     trigger,
 
-    onOpen: () => {
-      bindDebtPaymentForm(
-        content,
-        account
-      );
-    },
+    onOpen:
+      () => {
+        bindDebtPaymentForm(
+          content,
+          account
+        );
+      },
   });
 }
 
 
 // ============================================================
-// 70. PAY DEBT RPC
+// 92. PAY DEBT
+//
+// Real RPC:
+//
+// pay_debt(
+//   p_member_id,
+//   p_amount,
+//   p_method
+// )
 // ============================================================
 
 function bindDebtPaymentForm(
@@ -6695,10 +10198,24 @@ function bindDebtPaymentForm(
   account
 ) {
   const amountInput =
-    $('#debt-payment-amount', form);
+    $(
+      '#debt-payment-amount',
+      form
+    );
+
+
+  const methodInput =
+    $(
+      '#debt-payment-method',
+      form
+    );
+
 
   const submit =
-    $('#debt-payment-submit', form);
+    $(
+      '#debt-payment-submit',
+      form
+    );
 
 
   form.addEventListener(
@@ -6708,9 +10225,17 @@ function bindDebtPaymentForm(
 
 
       const amount =
-        normalizeNumber(
-          amountInput?.value,
-          0
+        number(
+          amountInput
+            ?.value
+        );
+
+
+      const method =
+        normalizeString(
+          methodInput
+            ?.value,
+          'cash'
         );
 
 
@@ -6728,6 +10253,7 @@ function bindDebtPaymentForm(
           'Ödəniş məbləği düzgün deyil.'
         );
 
+
         return;
       }
 
@@ -6737,7 +10263,7 @@ function bindDebtPaymentForm(
         true,
         {
           loadingText:
-            'Ödənilir...',
+            'Qəbul edilir...',
         }
       );
 
@@ -6747,13 +10273,16 @@ function bindDebtPaymentForm(
           error,
         } =
           await supabase.rpc(
-            RPC.payDebt,
+            'pay_debt',
             {
-              p_debt_account_id:
-                account.id,
+              p_member_id:
+                account.member_id,
 
               p_amount:
                 amount,
+
+              p_method:
+                method,
             }
           );
 
@@ -6771,12 +10300,23 @@ function bindDebtPaymentForm(
         );
 
 
-        await loadDebts();
+        await Promise.all([
+          loadDebts(),
+          loadDebtTransactions(),
+          loadLedger(),
+          loadHistory({
+            limit:
+              50,
+          }),
+        ]);
 
-        await loadDashboard();
+
+        renderDebts();
+
+        renderDashboard();
       } catch (error) {
         console.error(
-          'pay_debt error:',
+          '[SKy Fit Admin] pay_debt:',
           error
         );
 
@@ -6799,85 +10339,302 @@ function bindDebtPaymentForm(
 
 
 // ============================================================
-// ADMIN.JS — HISSƏ 3/4 SONU
+// 93. DEBT EVENTS
 // ============================================================
 
-// ============================================================
-// 71. FINANCE FILTER
-// ============================================================
-
-function filteredLedger() {
-  const type =
-    byId(
-      'finance-type-filter'
-    )?.value ||
-    'all';
-
-
-  const from =
-    byId(
-      'finance-date-from'
-    )?.value ||
-    '';
+function bindDebtEvents() {
+  byId(
+    'debt-search'
+  )?.addEventListener(
+    'input',
+    debounce(
+      renderDebts,
+      180
+    )
+  );
 
 
-  const to =
-    byId(
-      'finance-date-to'
-    )?.value ||
-    '';
-
-
-  return state.ledger.filter(
-    entry => {
-      const entryType =
-        ledgerType(entry);
-
-
-      if (
-        type !== 'all' &&
-        entryType !== type
-      ) {
-        return false;
-      }
-
-
-      const date =
-        new Date(
-          entry.created_at
-        );
-
-
-      if (
-        from &&
-        date <
-          new Date(
-            `${from}T00:00:00`
-          )
-      ) {
-        return false;
-      }
-
-
-      if (
-        to &&
-        date >
-          new Date(
-            `${to}T23:59:59`
-          )
-      ) {
-        return false;
-      }
-
-
-      return true;
-    }
+  byId(
+    'debt-status-filter'
+  )?.addEventListener(
+    'change',
+    renderDebts
   );
 }
 
 
 // ============================================================
-// 72. FINANCE RENDER
+
+// ============================================================
+// 94. FINANCE FILTER
+// ============================================================
+
+function filteredLedger() {
+  const type =
+    normalizeString(
+      byId(
+        'finance-type-filter'
+      )?.value,
+      'all'
+    );
+
+
+  const from =
+    normalizeString(
+      byId(
+        'finance-date-from'
+      )?.value
+    );
+
+
+  const to =
+    normalizeString(
+      byId(
+        'finance-date-to'
+      )?.value
+    );
+
+
+  const search =
+    normalizeSearch(
+      byId(
+        'finance-search'
+      )?.value
+    );
+
+
+  return state.ledger
+    .filter(
+      entry => {
+        if (
+          type ===
+          'all'
+        ) {
+          return true;
+        }
+
+
+        return (
+          ledgerType(
+            entry
+          ) ===
+          type
+        );
+      }
+    )
+    .filter(
+      entry => {
+        const date =
+          normalizeString(
+            entry.entry_date
+          );
+
+
+        if (
+          from &&
+          date < from
+        ) {
+          return false;
+        }
+
+
+        if (
+          to &&
+          date > to
+        ) {
+          return false;
+        }
+
+
+        return true;
+      }
+    )
+    .filter(
+      entry => {
+        if (!search) {
+          return true;
+        }
+
+
+        const text =
+          [
+            entry.category,
+            entry.description,
+            entry.reference_type,
+          ]
+            .filter(Boolean)
+            .join(' ')
+            .toLocaleLowerCase(
+              'az-AZ'
+            );
+
+
+        return text.includes(
+          search
+        );
+      }
+    );
+}
+
+
+// ============================================================
+// 95. FINANCE TOTALS
+// ============================================================
+
+function calculateFinanceTotals(
+  entries
+) {
+  const income =
+    entries
+      .filter(
+        entry =>
+          ledgerType(
+            entry
+          ) ===
+          'income'
+      )
+      .reduce(
+        (
+          total,
+          entry
+        ) =>
+          total +
+          ledgerAmount(
+            entry
+          ),
+        0
+      );
+
+
+  const expense =
+    entries
+      .filter(
+        entry =>
+          ledgerType(
+            entry
+          ) ===
+          'expense'
+      )
+      .reduce(
+        (
+          total,
+          entry
+        ) =>
+          total +
+          ledgerAmount(
+            entry
+          ),
+        0
+      );
+
+
+  return {
+    income,
+
+    expense,
+
+    balance:
+      income -
+      expense,
+  };
+}
+
+
+// ============================================================
+// 96. FINANCE KPI RENDER
+// ============================================================
+
+function renderFinanceKpis(
+  totals
+) {
+  const income =
+    byId(
+      'finance-income'
+    );
+
+
+  const expense =
+    byId(
+      'finance-expense'
+    );
+
+
+  const balance =
+    byId(
+      'finance-balance'
+    );
+
+
+  setText(
+    income,
+    money(
+      totals.income
+    )
+  );
+
+
+  setText(
+    expense,
+    money(
+      totals.expense
+    )
+  );
+
+
+  setText(
+    balance,
+    money(
+      totals.balance
+    )
+  );
+
+
+  income?.classList.add(
+    'finance-value',
+    'finance-value--income'
+  );
+
+
+  expense?.classList.add(
+    'finance-value',
+    'finance-value--expense'
+  );
+
+
+  balance?.classList.remove(
+    'finance-value--income',
+    'finance-value--expense',
+    'finance-value--neutral'
+  );
+
+
+  balance?.classList.add(
+    'finance-value'
+  );
+
+
+  if (
+    totals.balance > 0
+  ) {
+    balance?.classList.add(
+      'finance-value--income'
+    );
+  } else if (
+    totals.balance < 0
+  ) {
+    balance?.classList.add(
+      'finance-value--expense'
+    );
+  } else {
+    balance?.classList.add(
+      'finance-value--neutral'
+    );
+  }
+}
+
+
+// ============================================================
+// 97. FINANCE RENDER
 // ============================================================
 
 function renderFinance() {
@@ -6886,76 +10643,30 @@ function renderFinance() {
       'finance-ledger-list'
     );
 
-  if (!root) return;
+
+  if (!root) {
+    return;
+  }
 
 
   const entries =
     filteredLedger();
 
 
-  const income =
-    entries
-      .filter(
-        item =>
-          ledgerType(item) ===
-          'income'
-      )
-      .reduce(
-        (
-          total,
-          item
-        ) =>
-          total +
-          ledgerAmount(item),
-        0
-      );
+  const totals =
+    calculateFinanceTotals(
+      entries
+    );
 
 
-  const expense =
-    entries
-      .filter(
-        item =>
-          ledgerType(item) ===
-          'expense'
-      )
-      .reduce(
-        (
-          total,
-          item
-        ) =>
-          total +
-          ledgerAmount(item),
-        0
-      );
-
-
-  setText(
-    byId(
-      'finance-income'
-    ),
-    number(income)
+  renderFinanceKpis(
+    totals
   );
 
 
-  setText(
-    byId(
-      'finance-expense'
-    ),
-    number(expense)
+  clearElement(
+    root
   );
-
-
-  setText(
-    byId(
-      'finance-balance'
-    ),
-    number(
-      income - expense
-    )
-  );
-
-
-  clearElement(root);
 
 
   const table =
@@ -6963,7 +10674,7 @@ function renderFinance() {
       'table',
       {
         className:
-          'admin-table',
+          'admin-table finance-table',
       }
     );
 
@@ -6971,10 +10682,12 @@ function renderFinance() {
   table.innerHTML = `
     <thead>
       <tr>
-        <th>Növ</th>
-        <th>Məbləğ</th>
-        <th>Açıqlama</th>
         <th>Tarix</th>
+        <th>Növ</th>
+        <th>Kateqoriya</th>
+        <th>Açıqlama</th>
+        <th>Mənbə</th>
+        <th>Məbləğ</th>
       </tr>
     </thead>
 
@@ -6983,13 +10696,19 @@ function renderFinance() {
 
 
   const tbody =
-    $('tbody', table);
+    $(
+      'tbody',
+      table
+    );
 
 
   entries.forEach(
     entry => {
       const type =
-        ledgerType(entry);
+        ledgerType(
+          entry
+        );
+
 
       const row =
         createElement(
@@ -6997,27 +10716,93 @@ function renderFinance() {
         );
 
 
+      row.classList.add(
+        type ===
+          'income'
+          ? 'finance-row--income'
+          : 'finance-row--expense'
+      );
+
+
       row.innerHTML = `
         <td>
+          <strong class="admin-table__primary">
+            ${formatDate(
+              entry.entry_date
+            )}
+          </strong>
+
+          <span class="admin-table__secondary">
+            ${
+              entry.created_at
+                ? formatTime(
+                    entry.created_at
+                  )
+                : ''
+            }
+          </span>
+        </td>
+
+
+        <td>
           <span class="${
-            type === 'income'
+            type ===
+              'income'
               ? 'ui-badge ui-badge--success'
               : 'ui-badge ui-badge--danger'
           }">
             ${
-              type === 'income'
+              type ===
+                'income'
                 ? 'Gəlir'
                 : 'Xərc'
             }
           </span>
         </td>
 
+
         <td>
-          <strong class="finance-amount ${
-            type === 'income'
-              ? 'finance-amount--income'
-              : 'finance-amount--expense'
+          ${escapeHtml(
+            entry.category ||
+            '—'
+          )}
+        </td>
+
+
+        <td>
+          ${escapeHtml(
+            entry.description ||
+            '—'
+          )}
+        </td>
+
+
+        <td>
+
+          <span class="ui-badge ui-badge--neutral">
+            ${escapeHtml(
+              financeReferenceLabel(
+                entry.reference_type
+              )
+            )}
+          </span>
+
+        </td>
+
+
+        <td>
+          <strong class="${
+            type ===
+              'income'
+              ? 'finance-amount finance-amount--income'
+              : 'finance-amount finance-amount--expense'
           }">
+            ${
+              type ===
+                'income'
+                ? '+'
+                : '−'
+            }
             ${escapeHtml(
               money(
                 ledgerAmount(
@@ -7027,37 +10812,75 @@ function renderFinance() {
             )}
           </strong>
         </td>
-
-        <td>
-          ${escapeHtml(
-            normalizeString(
-              entry.description ||
-              entry.note ||
-              entry.reason,
-              '—'
-            )
-          )}
-        </td>
-
-        <td>
-          ${formatDateTime(
-            entry.created_at
-          )}
-        </td>
       `;
 
 
-      tbody?.append(row);
+      tbody.append(
+        row
+      );
     }
   );
 
 
-  root.append(table);
+  root.append(
+    table
+  );
+
+
+  if (
+    entries.length ===
+    0
+  ) {
+    root.append(
+      createDashboardEmpty(
+        'Seçilmiş filtrə uyğun maliyyə əməliyyatı yoxdur.'
+      )
+    );
+  }
 }
 
 
 // ============================================================
-// 73. FINANCE EVENTS
+// 98. FINANCE REFERENCE LABEL
+// ============================================================
+
+function financeReferenceLabel(
+  value
+) {
+  switch (
+    normalizeString(
+      value
+    )
+  ) {
+    case 'sale':
+      return 'POS satış';
+
+    case 'membership':
+      return 'Üzvlük';
+
+    case 'attendance':
+      return 'Günlük giriş';
+
+    case 'stock':
+      return 'Stok';
+
+    case 'debt_payment':
+      return 'Borc ödənişi';
+
+    case 'staff_cash_repayment':
+      return 'Avans ödənişi';
+
+    default:
+      return normalizeString(
+        value,
+        'Digər'
+      );
+  }
+}
+
+
+// ============================================================
+// 99. FINANCE EVENTS
 // ============================================================
 
 function bindFinanceEvents() {
@@ -7083,140 +10906,361 @@ function bindFinanceEvents() {
     'change',
     renderFinance
   );
-}
 
 
-// ============================================================
-// 74. TRAINER FIELD HELPERS
-// ============================================================
-
-function trainerName(
-  trainer
-) {
-  return normalizeString(
-    trainer?.name ||
-    trainer?.full_name,
-    'Məşqçi'
-  );
-}
-
-
-function trainerSpecialty(
-  trainer
-) {
-  return normalizeString(
-    trainer?.specialty ||
-    trainer?.speciality ||
-    trainer?.title,
-    ''
-  );
-}
-
-
-function trainerImageColumn(
-  trainer
-) {
-  const candidates = [
-    'image_url',
-    'image_path',
-    'image',
-  ];
-
-
-  return (
-    candidates.find(
-      key =>
-        Object.prototype
-          .hasOwnProperty.call(
-            trainer,
-            key
-          )
-    ) ||
-    null
-  );
-}
-
-
-function trainerImage(
-  trainer
-) {
-  const value =
-    normalizeString(
-      trainer?.image_url ||
-      trainer?.image_path ||
-      trainer?.image
-    );
-
-
-  if (!value) {
-    return '';
-  }
-
-
-  if (
-    value.startsWith(
-      'http://'
-    ) ||
-    value.startsWith(
-      'https://'
+  byId(
+    'finance-search'
+  )?.addEventListener(
+    'input',
+    debounce(
+      renderFinance,
+      180
     )
-  ) {
-    return value;
-  }
-
-
-  return getPublicStorageUrl(
-    APP_CONFIG.storage
-      .trainerImages,
-    value
   );
-}
 
 
-// ============================================================
-// 75. TRAINER FILTER
-// ============================================================
-
-function filteredTrainers() {
-  const search =
-    normalizeString(
-      byId(
-        'trainers-admin-search'
-      )?.value
-    )
-      .toLocaleLowerCase(
-        'az-AZ'
-      );
+  byId(
+    'finance-reset-filter'
+  )?.addEventListener(
+    'click',
+    () => {
+      const type =
+        byId(
+          'finance-type-filter'
+        );
 
 
-  return state.trainers.filter(
-    trainer => {
-      if (!search) {
-        return true;
+      const from =
+        byId(
+          'finance-date-from'
+        );
+
+
+      const to =
+        byId(
+          'finance-date-to'
+        );
+
+
+      const search =
+        byId(
+          'finance-search'
+        );
+
+
+      if (type) {
+        type.value =
+          'all';
       }
 
 
-      return [
-        trainerName(
-          trainer
-        ),
+      if (from) {
+        from.value =
+          '';
+      }
 
-        trainerSpecialty(
-          trainer
-        ),
-      ]
-        .join(' ')
-        .toLocaleLowerCase(
-          'az-AZ'
-        )
-        .includes(search);
+
+      if (to) {
+        to.value =
+          '';
+      }
+
+
+      if (search) {
+        search.value =
+          '';
+      }
+
+
+      renderFinance();
     }
   );
 }
 
 
 // ============================================================
-// 76. TRAINER RENDER
+// 100. TRAINER FILTER
+// ============================================================
+
+function filteredTrainers() {
+  const search =
+    normalizeSearch(
+      byId(
+        'trainers-admin-search'
+      )?.value
+    );
+
+
+  const status =
+    normalizeString(
+      byId(
+        'trainers-status-filter'
+      )?.value,
+      'all'
+    );
+
+
+  return state.trainers
+    .filter(
+      trainer => {
+        if (!search) {
+          return true;
+        }
+
+
+        const text =
+          [
+            trainer.full_name,
+            trainer.specialty,
+            trainer.bio,
+            trainer.phone,
+          ]
+            .filter(Boolean)
+            .join(' ')
+            .toLocaleLowerCase(
+              'az-AZ'
+            );
+
+
+        return text.includes(
+          search
+        );
+      }
+    )
+    .filter(
+      trainer => {
+        if (
+          status ===
+          'active'
+        ) {
+          return (
+            trainer.is_active !==
+            false
+          );
+        }
+
+
+        if (
+          status ===
+          'inactive'
+        ) {
+          return (
+            trainer.is_active ===
+            false
+          );
+        }
+
+
+        return true;
+      }
+    );
+}
+
+
+// ============================================================
+// 101. TRAINER ADMIN CARD
+// ============================================================
+
+function createAdminTrainerCard(
+  trainer
+) {
+  const image =
+    trainerImage(
+      trainer
+    );
+
+
+  const card =
+    createElement(
+      'article',
+      {
+        className:
+          'trainer-card admin-trainer-card',
+
+        dataset: {
+          trainerId:
+            trainer.id,
+        },
+      }
+    );
+
+
+  card.innerHTML = `
+    <button
+      type="button"
+      class="trainer-card__media admin-trainer-card__main"
+    >
+
+      ${
+        image
+          ? `
+            <img
+              class="trainer-card__image"
+              src="${escapeHtml(
+                image
+              )}"
+              alt="${escapeHtml(
+                trainerName(
+                  trainer
+                )
+              )}"
+              loading="lazy"
+              decoding="async"
+            >
+          `
+          : `
+            <span class="trainer-card__image-fallback">
+              ${escapeHtml(
+                getTrainerInitials(
+                  trainer
+                )
+              )}
+            </span>
+          `
+      }
+
+
+      <div class="trainer-card__content">
+
+        <div class="admin-trainer-card__badges">
+
+          <span class="${
+            trainer.is_active !==
+              false
+              ? 'ui-badge ui-badge--success'
+              : 'ui-badge ui-badge--danger'
+          }">
+            ${
+              trainer.is_active !==
+                false
+                ? 'Aktiv'
+                : 'Deaktiv'
+            }
+          </span>
+
+        </div>
+
+
+        <strong class="trainer-card__name">
+          ${escapeHtml(
+            trainerName(
+              trainer
+            )
+          )}
+        </strong>
+
+
+        ${
+          trainerSpecialty(
+            trainer
+          )
+            ? `
+              <span class="trainer-card__specialty">
+                ${escapeHtml(
+                  trainerSpecialty(
+                    trainer
+                  )
+                )}
+              </span>
+            `
+            : ''
+        }
+
+
+        ${
+          trainer.phone
+            ? `
+              <span class="trainer-card__specialty">
+                ${escapeHtml(
+                  trainer.phone
+                )}
+              </span>
+            `
+            : ''
+        }
+
+
+        <span class="trainer-card__action">
+          Redaktə et
+        </span>
+
+      </div>
+
+    </button>
+  `;
+
+
+  $(
+    '.admin-trainer-card__main',
+    card
+  )?.addEventListener(
+    'click',
+    () => {
+      openTrainerEditor(
+        trainer,
+        card
+      );
+    }
+  );
+
+
+  return card;
+}
+
+
+// ============================================================
+// 102. TRAINER INITIALS
+// ============================================================
+
+function getTrainerInitials(
+  trainer
+) {
+  const name =
+    trainerName(
+      trainer
+    );
+
+
+  const parts =
+    name
+      .split(' ')
+      .filter(Boolean);
+
+
+  if (
+    parts.length === 0
+  ) {
+    return 'SK';
+  }
+
+
+  if (
+    parts.length === 1
+  ) {
+    return parts[0]
+      .slice(
+        0,
+        2
+      )
+      .toLocaleUpperCase(
+        'az-AZ'
+      );
+  }
+
+
+  return (
+    parts[0][0] +
+    parts[
+      parts.length - 1
+    ][0]
+  ).toLocaleUpperCase(
+    'az-AZ'
+  );
+}
+
+
+// ============================================================
+// 103. TRAINERS RENDER
 // ============================================================
 
 function renderAdminTrainers() {
@@ -7225,132 +11269,47 @@ function renderAdminTrainers() {
       'admin-trainers-grid'
     );
 
-  if (!root) return;
+
+  if (!root) {
+    return;
+  }
 
 
-  clearElement(root);
+  clearElement(
+    root
+  );
 
 
-  filteredTrainers()
-    .forEach(
-      trainer => {
-        const card =
-          createElement(
-            'article',
-            {
-              className:
-                'trainer-card',
-            }
-          );
+  const trainers =
+    filteredTrainers();
 
 
-        const image =
-          trainerImage(
-            trainer
-          );
-
-
-        card.innerHTML = `
-          <div class="trainer-card__media">
-
-            ${
-              image
-                ? `
-                  <img
-                    class="trainer-card__image"
-                    src="${escapeHtml(image)}"
-                    alt="${escapeHtml(
-                      trainerName(
-                        trainer
-                      )
-                    )}"
-                    loading="lazy"
-                  >
-                `
-                : ''
-            }
-
-            <div class="trainer-card__content">
-
-              <strong class="trainer-card__name">
-                ${escapeHtml(
-                  trainerName(
-                    trainer
-                  )
-                )}
-              </strong>
-
-              ${
-                trainerSpecialty(
-                  trainer
-                )
-                  ? `
-                    <span class="trainer-card__specialty">
-                      ${escapeHtml(
-                        trainerSpecialty(
-                          trainer
-                        )
-                      )}
-                    </span>
-                  `
-                  : ''
-              }
-
-              <span class="trainer-card__action">
-                Redaktə et
-              </span>
-
-            </div>
-
-          </div>
-        `;
-
-
-        card.addEventListener(
-          'click',
-          () => {
-            openTrainerEditor(
-              trainer,
-              card
-            );
-          }
-        );
-
-
-        root.append(card);
-      }
-    );
-}
-
-
-// ============================================================
-// 77. TRAINER EVENTS
-// ============================================================
-
-function bindTrainerAdminEvents() {
-  byId(
-    'trainer-create-button'
-  )?.addEventListener(
-    'click',
-    () => {
-      openTrainerEditor();
+  trainers.forEach(
+    trainer => {
+      root.append(
+        createAdminTrainerCard(
+          trainer
+        )
+      );
     }
   );
 
 
-  byId(
-    'trainers-admin-search'
-  )?.addEventListener(
-    'input',
-    debounce(
-      renderAdminTrainers
-    )
-  );
+  if (
+    trainers.length ===
+    0
+  ) {
+    root.append(
+      createDashboardEmpty(
+        'Məşqçi tapılmadı.'
+      )
+    );
+  }
 }
 
 
 // ============================================================
-// 78. TRAINER EDITOR
+// 104. TRAINER EDITOR
 // ============================================================
 
 function openTrainerEditor(
@@ -7370,7 +11329,10 @@ function openTrainerEditor(
 
         attrs: {
           id:
-            'trainer-form',
+            'trainer-admin-form',
+
+          novalidate:
+            '',
         },
       }
     );
@@ -7381,55 +11343,118 @@ function openTrainerEditor(
 
       <label
         class="ui-field__label"
-        for="trainer-name"
+        for="trainer-admin-name"
       >
-        Ad
+        Ad və soyad
       </label>
 
       <div class="ui-input">
 
         <input
-          id="trainer-name"
+          id="trainer-admin-name"
           class="ui-input__control"
           type="text"
-          maxlength="150"
+          maxlength="160"
           value="${escapeHtml(
-            editing
-              ? trainerName(
-                  trainer
-                )
-              : ''
+            trainer
+              ?.full_name ||
+            ''
           )}"
-          placeholder="Məşqçi adı"
+          placeholder="Məşqçinin adı və soyadı"
         >
 
       </div>
 
+      <span
+        id="trainer-admin-name-error"
+        class="ui-field__error is-hidden"
+      ></span>
+
     </div>
 
 
-    <div class="ui-field">
+    <div class="modal-form__grid">
 
-      <label
-        class="ui-field__label"
-        for="trainer-specialty"
-      >
-        İxtisas
-      </label>
+      <div class="ui-field">
 
-      <div class="ui-input">
+        <label
+          class="ui-field__label"
+          for="trainer-admin-specialty"
+        >
+          İxtisas
+        </label>
 
-        <input
-          id="trainer-specialty"
-          class="ui-input__control"
-          type="text"
-          maxlength="150"
-          value="${escapeHtml(
-            trainerSpecialty(
+        <div class="ui-input">
+
+          <input
+            id="trainer-admin-specialty"
+            class="ui-input__control"
+            type="text"
+            maxlength="160"
+            value="${escapeHtml(
               trainer
-            )
+                ?.specialty ||
+              ''
+            )}"
+            placeholder="Fitness, CrossFit..."
+          >
+
+        </div>
+
+      </div>
+
+
+      <div class="ui-field">
+
+        <label
+          class="ui-field__label"
+          for="trainer-admin-phone"
+        >
+          Telefon
+        </label>
+
+        <div class="ui-input">
+
+          <input
+            id="trainer-admin-phone"
+            class="ui-input__control"
+            type="tel"
+            value="${escapeHtml(
+              trainer
+                ?.phone ||
+              ''
+            )}"
+            placeholder="+994..."
+          >
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <div class="ui-field">
+
+      <label
+        class="ui-field__label"
+        for="trainer-admin-instagram"
+      >
+        Instagram linki
+      </label>
+
+      <div class="ui-input">
+
+        <input
+          id="trainer-admin-instagram"
+          class="ui-input__control"
+          type="url"
+          value="${escapeHtml(
+            trainer
+              ?.instagram_url ||
+            ''
           )}"
-          placeholder="Fitness, CrossFit..."
+          placeholder="https://instagram.com/..."
         >
 
       </div>
@@ -7441,26 +11466,82 @@ function openTrainerEditor(
 
       <label
         class="ui-field__label"
-        for="trainer-description"
+        for="trainer-admin-bio"
       >
-        Açıqlama
+        Haqqında
       </label>
 
-      <div class="ui-input">
+      <textarea
+        id="trainer-admin-bio"
+        class="ui-textarea"
+        rows="4"
+        maxlength="1500"
+        placeholder="Məşqçi haqqında qısa məlumat"
+      >${escapeHtml(
+        trainer?.bio ||
+        ''
+      )}</textarea>
 
-        <input
-          id="trainer-description"
-          class="ui-input__control"
-          type="text"
-          maxlength="500"
-          value="${escapeHtml(
-            normalizeString(
-              trainer?.description ||
-              trainer?.bio
-            )
-          )}"
-          placeholder="Qısa məlumat"
+    </div>
+
+
+    <div class="modal-form__grid">
+
+      <div class="ui-field">
+
+        <label
+          class="ui-field__label"
+          for="trainer-admin-sort"
         >
+          Sıralama
+        </label>
+
+        <div class="ui-input">
+
+          <input
+            id="trainer-admin-sort"
+            class="ui-input__control"
+            type="number"
+            inputmode="numeric"
+            min="0"
+            step="1"
+            value="${number(
+              trainer
+                ?.sort_order,
+              0
+            )}"
+          >
+
+        </div>
+
+      </div>
+
+
+      <div class="ui-field">
+
+        <label class="ui-field__label">
+          Status
+        </label>
+
+        <label class="ui-check">
+
+          <input
+            id="trainer-admin-active"
+            type="checkbox"
+            ${
+              trainer
+                ?.is_active !==
+                false
+                ? 'checked'
+                : ''
+            }
+          >
+
+          <span>
+            Saytda aktiv göstər
+          </span>
+
+        </label>
 
       </div>
 
@@ -7470,27 +11551,23 @@ function openTrainerEditor(
     <label class="ui-upload">
 
       <input
-        id="trainer-image"
+        id="trainer-admin-image"
         type="file"
         accept="image/png,image/jpeg,image/webp"
       >
 
       <span>
 
-        <span class="ui-upload__icon">
-          SK
-        </span>
-
         <strong class="ui-upload__title">
           ${
             editing
-              ? 'Şəkli dəyiş'
+              ? 'Məşqçi şəklini dəyiş'
               : 'Məşqçi şəkli'
           }
         </strong>
 
         <span class="ui-upload__meta">
-          PNG, JPG və ya WEBP
+          PNG, JPG və ya WEBP · maksimum 5 MB
         </span>
 
       </span>
@@ -7499,7 +11576,7 @@ function openTrainerEditor(
 
 
     <button
-      id="trainer-submit"
+      id="trainer-admin-submit"
       class="ui-button ui-button--primary ui-button--full"
       type="submit"
     >
@@ -7514,6 +11591,7 @@ function openTrainerEditor(
 
       <span
         class="ui-button__spinner is-hidden"
+        aria-hidden="true"
       ></span>
 
     </button>
@@ -7522,7 +11600,7 @@ function openTrainerEditor(
 
   openModal({
     eyebrow:
-      'Komanda',
+      'Məşqçilər',
 
     title:
       editing
@@ -7533,18 +11611,19 @@ function openTrainerEditor(
 
     trigger,
 
-    onOpen: () => {
-      bindTrainerForm(
-        content,
-        trainer
-      );
-    },
+    onOpen:
+      () => {
+        bindTrainerForm(
+          content,
+          trainer
+        );
+      },
   });
 }
 
 
 // ============================================================
-// 79. TRAINER SAVE
+// 105. TRAINER FORM
 // ============================================================
 
 function bindTrainerForm(
@@ -7552,19 +11631,73 @@ function bindTrainerForm(
   trainer
 ) {
   const nameInput =
-    $('#trainer-name', form);
+    $(
+      '#trainer-admin-name',
+      form
+    );
+
 
   const specialtyInput =
-    $('#trainer-specialty', form);
+    $(
+      '#trainer-admin-specialty',
+      form
+    );
 
-  const descriptionInput =
-    $('#trainer-description', form);
+
+  const phoneInput =
+    $(
+      '#trainer-admin-phone',
+      form
+    );
+
+
+  const instagramInput =
+    $(
+      '#trainer-admin-instagram',
+      form
+    );
+
+
+  const bioInput =
+    $(
+      '#trainer-admin-bio',
+      form
+    );
+
+
+  const sortInput =
+    $(
+      '#trainer-admin-sort',
+      form
+    );
+
+
+  const activeInput =
+    $(
+      '#trainer-admin-active',
+      form
+    );
+
 
   const imageInput =
-    $('#trainer-image', form);
+    $(
+      '#trainer-admin-image',
+      form
+    );
+
+
+  const nameError =
+    $(
+      '#trainer-admin-name-error',
+      form
+    );
+
 
   const submit =
-    $('#trainer-submit', form);
+    $(
+      '#trainer-admin-submit',
+      form
+    );
 
 
   form.addEventListener(
@@ -7573,31 +11706,76 @@ function bindTrainerForm(
       event.preventDefault();
 
 
-      const name =
+      const fullName =
         normalizeString(
           nameInput?.value
         );
 
-      const specialty =
-        normalizeString(
-          specialtyInput?.value
-        );
-
-      const description =
-        normalizeString(
-          descriptionInput?.value
-        );
-
 
       if (
-        name.length < 2
+        fullName.length < 2
       ) {
-        notify.warning(
-          'Məşqçi adını daxil et.'
+        setFieldError(
+          nameInput,
+          nameError,
+          'Məşqçinin adını daxil et.'
         );
+
 
         return;
       }
+
+
+      const payload = {
+
+        full_name:
+          fullName,
+
+        specialty:
+          normalizeString(
+            specialtyInput
+              ?.value
+          ) ||
+          null,
+
+        phone:
+          normalizeString(
+            phoneInput
+              ?.value
+          ) ||
+          null,
+
+        instagram_url:
+          normalizeString(
+            instagramInput
+              ?.value
+          ) ||
+          null,
+
+        bio:
+          normalizeString(
+            bioInput?.value
+          ) ||
+          null,
+
+        sort_order:
+          Math.max(
+            0,
+            Math.trunc(
+              number(
+                sortInput
+                  ?.value,
+                0
+              )
+            )
+          ),
+
+        is_active:
+          Boolean(
+            activeInput
+              ?.checked
+          ),
+      };
 
 
       setButtonLoading(
@@ -7613,51 +11791,6 @@ function bindTrainerForm(
 
 
       try {
-        const payload = {
-          name,
-        };
-
-
-        if (
-          !trainer ||
-          Object.prototype
-            .hasOwnProperty.call(
-              trainer,
-              'specialty'
-            )
-        ) {
-          payload.specialty =
-            specialty || null;
-        }
-
-
-        if (
-          !trainer ||
-          Object.prototype
-            .hasOwnProperty.call(
-              trainer,
-              'description'
-            )
-        ) {
-          payload.description =
-            description || null;
-        }
-
-
-        if (
-          !trainer &&
-          state.trainers[0] &&
-          Object.prototype
-            .hasOwnProperty.call(
-              state.trainers[0],
-              'is_active'
-            )
-        ) {
-          payload.is_active =
-            true;
-        }
-
-
         let savedTrainer;
 
 
@@ -7670,7 +11803,9 @@ function bindTrainerForm(
               .from(
                 TABLES.trainers
               )
-              .update(payload)
+              .update(
+                payload
+              )
               .eq(
                 'id',
                 trainer.id
@@ -7695,7 +11830,9 @@ function bindTrainerForm(
               .from(
                 TABLES.trainers
               )
-              .insert(payload)
+              .insert(
+                payload
+              )
               .select('*')
               .single();
 
@@ -7716,10 +11853,7 @@ function bindTrainerForm(
             ?.[0];
 
 
-        if (
-          file &&
-          savedTrainer?.id
-        ) {
+        if (file) {
           savedTrainer =
             await uploadTrainerImage(
               savedTrainer,
@@ -7738,10 +11872,20 @@ function bindTrainerForm(
         );
 
 
-        await loadTrainers();
+        await Promise.all([
+          loadTrainers(),
+
+          loadHistory({
+            limit:
+              50,
+          }),
+        ]);
+
+
+        renderAdminTrainers();
       } catch (error) {
         console.error(
-          'Trainer save error:',
+          '[SKy Fit Admin] Trainer save:',
           error
         );
 
@@ -7764,11 +11908,10 @@ function bindTrainerForm(
 
 
 // ============================================================
-// 80. TRAINER IMAGE UPLOAD
+// 106. TRAINER IMAGE VALIDATION
 // ============================================================
 
-async function uploadTrainerImage(
-  trainer,
+function validateTrainerImage(
   file
 ) {
   const allowed =
@@ -7781,7 +11924,7 @@ async function uploadTrainerImage(
 
   if (
     !allowed.has(
-      file.type
+      file?.type
     )
   ) {
     throw new Error(
@@ -7790,41 +11933,149 @@ async function uploadTrainerImage(
   }
 
 
-  const column =
-    trainerImageColumn(
-      trainer
+  if (
+    file.size >
+    5 * 1024 * 1024
+  ) {
+    throw new Error(
+      'Məşqçi şəkli maksimum 5 MB ola bilər.'
     );
+  }
+}
 
 
-  if (!column) {
-    notify.warning(
-      'trainers cədvəlində şəkil üçün uyğun sütun tapılmadı.'
-    );
+// ============================================================
+// 107. TRAINER IMAGE EXTENSION
+// ============================================================
 
-    return trainer;
+function trainerImageExtension(
+  file
+) {
+  if (
+    file.type ===
+    'image/png'
+  ) {
+    return 'png';
   }
 
 
-  const extension =
+  if (
     file.type ===
-      'image/png'
-      ? 'png'
-      : file.type ===
-          'image/webp'
-        ? 'webp'
-        : 'jpg';
+    'image/webp'
+  ) {
+    return 'webp';
+  }
+
+
+  return 'jpg';
+}
+
+
+// ============================================================
+// 108. TRAINER STORAGE PATH EXTRACTOR
+// ============================================================
+
+function extractTrainerStoragePath(
+  value
+) {
+  const source =
+    normalizeString(
+      value
+    );
+
+
+  if (!source) {
+    return '';
+  }
+
+
+  if (
+    !source.startsWith(
+      'http://'
+    ) &&
+    !source.startsWith(
+      'https://'
+    )
+  ) {
+    return source.replace(
+      /^\/+/,
+      ''
+    );
+  }
+
+
+  try {
+    const url =
+      new URL(source);
+
+
+    const marker =
+      '/storage/v1/object/public/trainer-images/';
+
+
+    const index =
+      url.pathname.indexOf(
+        marker
+      );
+
+
+    if (
+      index === -1
+    ) {
+      return '';
+    }
+
+
+    return decodeURIComponent(
+      url.pathname.slice(
+        index +
+        marker.length
+      )
+    );
+  } catch {
+    return '';
+  }
+}
+
+
+// ============================================================
+// 109. TRAINER IMAGE UPLOAD
+// ============================================================
+
+async function uploadTrainerImage(
+  trainer,
+  file
+) {
+  validateTrainerImage(
+    file
+  );
+
+
+  const oldPath =
+    extractTrainerStoragePath(
+      trainer.image_url
+    );
+
+
+  const extension =
+    trainerImageExtension(
+      file
+    );
 
 
   const path =
-    `${trainer.id}/${Date.now()}.${extension}`;
+    `${trainer.id}/trainer-${Date.now()}.${extension}`;
 
 
   const {
-    error: uploadError,
+    error:
+      uploadError,
   } =
-    await supabase.storage
+    await supabase
+      .storage
       .from(
-        APP_CONFIG.storage
+        APP_CONFIG
+          .storage
           .trainerImages
       )
       .upload(
@@ -7832,13 +12083,13 @@ async function uploadTrainerImage(
         file,
         {
           upsert:
-            true,
-
-          contentType:
-            file.type,
+            false,
 
           cacheControl:
             '3600',
+
+          contentType:
+            file.type,
         }
       );
 
@@ -7857,7 +12108,7 @@ async function uploadTrainerImage(
         TABLES.trainers
       )
       .update({
-        [column]:
+        image_url:
           path,
       })
       .eq(
@@ -7869,7 +12120,51 @@ async function uploadTrainerImage(
 
 
   if (error) {
+    await supabase
+      .storage
+      .from(
+        APP_CONFIG
+          .storage
+          .trainerImages
+      )
+      .remove([
+        path,
+      ]);
+
+
     throw error;
+  }
+
+
+  if (
+    oldPath &&
+    oldPath !== path
+  ) {
+    supabase
+      .storage
+      .from(
+        APP_CONFIG
+          .storage
+          .trainerImages
+      )
+      .remove([
+        oldPath,
+      ])
+      .then(
+        ({
+          error:
+            cleanupError,
+        }) => {
+          if (
+            cleanupError
+          ) {
+            console.warn(
+              '[SKy Fit] Old trainer image cleanup:',
+              cleanupError
+            );
+          }
+        }
+      );
   }
 
 
@@ -7878,434 +12173,429 @@ async function uploadTrainerImage(
 
 
 // ============================================================
-// 81. HISTORY LOAD
-// Mövcud cədvəllərdən audit timeline qurulur.
+// 110. TRAINER EVENTS
 // ============================================================
 
-async function loadHistory() {
-  const [
-    salesResult,
-    stockResult,
-    membershipResult,
-    attendanceResult,
-    debtResult,
-  ] =
-    await Promise.all([
-
-      supabase
-        .from(
-          TABLES.sales
-        )
-        .select('*')
-        .order(
-          'created_at',
-          {
-            ascending: false,
-          }
-        )
-        .limit(300),
-
-      supabase
-        .from(
-          TABLES.stockMovements
-        )
-        .select(`
-          *,
-          products (*)
-        `)
-        .order(
-          'created_at',
-          {
-            ascending: false,
-          }
-        )
-        .limit(300),
-
-      supabase
-        .from(
-          TABLES.memberships
-        )
-        .select(`
-          *,
-          profiles (*),
-          membership_plans (*)
-        `)
-        .order(
-          'created_at',
-          {
-            ascending: false,
-          }
-        )
-        .limit(300),
-
-      supabase
-        .from(
-          TABLES.attendance
-        )
-        .select(`
-          *,
-          profiles (*)
-        `)
-        .order(
-          'created_at',
-          {
-            ascending: false,
-          }
-        )
-        .limit(300),
-
-      supabase
-        .from(
-          TABLES.debtTransactions
-        )
-        .select('*')
-        .order(
-          'created_at',
-          {
-            ascending: false,
-          }
-        )
-        .limit(300),
-    ]);
+function bindTrainerAdminEvents() {
+  byId(
+    'trainer-create-button'
+  )?.addEventListener(
+    'click',
+    event => {
+      openTrainerEditor(
+        null,
+        event.currentTarget
+      );
+    }
+  );
 
 
-  [
-    salesResult,
-    stockResult,
-    membershipResult,
-    attendanceResult,
-    debtResult,
-  ].forEach(
-    result => {
-      if (result.error) {
-        console.error(
-          'History query error:',
-          result.error
-        );
+  byId(
+    'trainers-admin-search'
+  )?.addEventListener(
+    'input',
+    debounce(
+      renderAdminTrainers,
+      180
+    )
+  );
+
+
+  byId(
+    'trainers-status-filter'
+  )?.addEventListener(
+    'change',
+    renderAdminTrainers
+  );
+}
+
+
+// ============================================================
+// 111. HISTORY TABLE LABELS
+// ============================================================
+
+function historyTableLabel(
+  table
+) {
+  const labels = {
+
+    products:
+      'Məhsul',
+
+    trainers:
+      'Məşqçi',
+
+    sales:
+      'Satış',
+
+    sale_items:
+      'Satış məhsulu',
+
+    memberships:
+      'Üzvlük',
+
+    attendance:
+      'Giriş',
+
+    stock_movements:
+      'Stok',
+
+    debt_transactions:
+      'Borc',
+
+    ledger_entries:
+      'Maliyyə',
+
+    staff_shifts:
+      'İş növbəsi',
+
+    staff_cash_transactions:
+      'Əməkdaş kassası',
+  };
+
+
+  return (
+    labels[
+      normalizeString(
+        table
+      )
+    ] ||
+    normalizeString(
+      table,
+      'Əməliyyat'
+    )
+  );
+}
+
+
+// ============================================================
+// 112. HISTORY ACTION LABEL
+// ============================================================
+
+function historyActionLabel(
+  action
+) {
+  switch (
+    normalizeString(
+      action
+    ).toUpperCase()
+  ) {
+    case 'INSERT':
+      return 'Əlavə etdi';
+
+    case 'UPDATE':
+      return 'Dəyişdi';
+
+    case 'DELETE':
+      return 'Sildi';
+
+    default:
+      return normalizeString(
+        action,
+        'Əməliyyat'
+      );
+  }
+}
+
+
+// ============================================================
+// 113. HISTORY ACTION CLASS
+// ============================================================
+
+function historyActionClass(
+  action
+) {
+  switch (
+    normalizeString(
+      action
+    ).toUpperCase()
+  ) {
+    case 'INSERT':
+      return (
+        'ui-badge ui-badge--success'
+      );
+
+    case 'UPDATE':
+      return (
+        'ui-badge ui-badge--warning'
+      );
+
+    case 'DELETE':
+      return (
+        'ui-badge ui-badge--danger'
+      );
+
+    default:
+      return (
+        'ui-badge ui-badge--neutral'
+      );
+  }
+}
+
+
+// ============================================================
+// 114. HISTORY OPERATORS
+// ============================================================
+
+function historyOperators() {
+  const map =
+    new Map();
+
+
+  state.history.forEach(
+    item => {
+      if (
+        !item.actor_profile_id
+      ) {
+        return;
       }
-    }
-  );
 
 
-  state.historyItems =
-    buildHistoryItems({
-      sales:
-        rows(
-          salesResult.data
+      map.set(
+        String(
+          item.actor_profile_id
         ),
+        {
+          id:
+            item.actor_profile_id,
 
-      stock:
-        rows(
-          stockResult.data
-        ),
+          name:
+            item.actor_name ||
+            'Operator',
 
-      memberships:
-        rows(
-          membershipResult.data
-        ),
-
-      attendance:
-        rows(
-          attendanceResult.data
-        ),
-
-      debt:
-        rows(
-          debtResult.data
-        ),
-    });
-
-
-  renderHistory();
-}
-
-
-// ============================================================
-// 82. HISTORY BUILDER
-// ============================================================
-
-function buildHistoryItems({
-  sales,
-  stock,
-  memberships,
-  attendance,
-  debt,
-}) {
-  const items = [];
-
-
-  sales.forEach(
-    sale => {
-      items.push({
-        type: 'sale',
-        title: 'Satış',
-        meta:
-          money(
-            saleAmount(
-              sale
-            )
-          ),
-        operator:
-          readOperatorLabel(
-            sale
-          ),
-        date:
-          sale.created_at,
-      });
+          role:
+            item.actor_role,
+        }
+      );
     }
   );
 
 
-  stock.forEach(
-    movement => {
-      items.push({
-        type: 'stock',
-        title:
-          `Stok · ${
-            movement
-              ?.products
-              ?.name ||
-            'Məhsul'
-          }`,
-        meta:
-          `${number(
-            movement.quantity ??
-            movement.amount ??
-            0
-          )}`,
-        operator:
-          readOperatorLabel(
-            movement
-          ),
-        date:
-          movement.created_at,
-      });
-    }
-  );
-
-
-  memberships.forEach(
-    membership => {
-      items.push({
-        type:
-          'membership',
-        title:
-          'Üzvlük yaradılıb',
-        meta:
-          `${getProfileName(
-            membership.profiles
-          )} · ${
-            membership
-              ?.membership_plans
-              ?.name ||
-            'Plan'
-          }`,
-        operator:
-          readOperatorLabel(
-            membership
-          ),
-        date:
-          membership.created_at,
-      });
-    }
-  );
-
-
-  attendance.forEach(
-    entry => {
-      items.push({
-        type:
-          'attendance',
-        title:
-          'Giriş qeydiyyatı',
-        meta:
-          getProfileName(
-            entry.profiles
-          ),
-        operator:
-          readOperatorLabel(
-            entry
-          ),
-        date:
-          entry.created_at,
-      });
-    }
-  );
-
-
-  debt.forEach(
-    transaction => {
-      items.push({
-        type:
-          'debt',
-        title:
-          debtTransactionTitle(
-            transaction
-          ),
-        meta:
-          money(
-            transaction.amount ??
-            0
-          ),
-        operator:
-          readOperatorLabel(
-            transaction
-          ),
-        date:
-          transaction.created_at,
-      });
-    }
-  );
-
-
-  return items.sort(
-    (a, b) =>
-      new Date(b.date) -
-      new Date(a.date)
+  return Array.from(
+    map.values()
+  ).sort(
+    (
+      a,
+      b
+    ) =>
+      a.name.localeCompare(
+        b.name,
+        'az'
+      )
   );
 }
 
 
 // ============================================================
-// 83. OPERATOR DETECTION
-// Diaqnostikaya qədər mümkün mövcud sütunları oxuyuruq.
+// 115. HISTORY OPERATOR FILTER OPTIONS
 // ============================================================
 
-function readOperatorLabel(
-  row
-) {
-  const direct =
-    normalizeString(
-      row?.operator_name ||
-      row?.created_by_name ||
-      row?.staff_name
+function syncHistoryOperatorFilter() {
+  const select =
+    byId(
+      'history-operator-filter'
     );
 
 
-  if (direct) {
-    return direct;
+  if (!select) {
+    return;
   }
 
 
-  const id =
-    normalizeString(
-      row?.operator_id ||
-      row?.created_by ||
-      row?.staff_id ||
-      row?.profile_id_created_by
-    );
+  const selected =
+    select.value;
 
 
-  if (id) {
-    const member =
-      state.members.find(
-        item =>
-          String(item.id) ===
-          String(id)
-      );
+  const operators =
+    historyOperators();
 
 
-    if (member) {
-      return getProfileName(
-        member
-      );
-    }
+  select.innerHTML = `
+    <option value="">
+      Bütün operatorlar
+    </option>
 
-
-    return `Operator ${id.slice(
-      0,
-      8
-    )}`;
-  }
-
-
-  return 'Operator məlumatı yoxdur';
-}
-
-
-// ============================================================
-// 84. DEBT TRANSACTION LABEL
-// ============================================================
-
-function debtTransactionTitle(
-  row
-) {
-  const type =
-    normalizeString(
-      row?.type ||
-      row?.transaction_type
-    ).toLowerCase();
+    ${operators
+      .map(
+        operator => `
+          <option
+            value="${escapeHtml(
+              operator.id
+            )}"
+          >
+            ${escapeHtml(
+              operator.name
+            )}
+            —
+            ${escapeHtml(
+              roleLabel(
+                operator.role
+              )
+            )}
+          </option>
+        `
+      )
+      .join('')}
+  `;
 
 
   if (
-    type.includes(
-      'payment'
+    operators.some(
+      operator =>
+        String(
+          operator.id
+        ) ===
+        String(
+          selected
+        )
     )
   ) {
-    return 'Borc ödənişi';
+    select.value =
+      selected;
   }
-
-
-  return 'Borc əməliyyatı';
 }
 
 
 // ============================================================
-// 85. HISTORY FILTER
+// 116. HISTORY FILTER
 // ============================================================
 
 function filteredHistory() {
   const search =
-    normalizeString(
+    normalizeSearch(
       byId(
         'history-search'
       )?.value
-    )
-      .toLocaleLowerCase(
-        'az-AZ'
-      );
+    );
 
 
-  const type =
-    byId(
-      'history-type-filter'
-    )?.value ||
-    'all';
+  const table =
+    normalizeString(
+      byId(
+        'history-type-filter'
+      )?.value,
+      'all'
+    );
+
+
+  const operator =
+    normalizeString(
+      byId(
+        'history-operator-filter'
+      )?.value
+    );
 
 
   const from =
-    byId(
-      'history-date-from'
-    )?.value ||
-    '';
+    normalizeString(
+      byId(
+        'history-date-from'
+      )?.value
+    );
 
 
   const to =
-    byId(
-      'history-date-to'
-    )?.value ||
-    '';
+    normalizeString(
+      byId(
+        'history-date-to'
+      )?.value
+    );
 
 
-  return (
-    state.historyItems ||
-    []
-  ).filter(
-    item => {
-      if (
-        type !== 'all' &&
-        item.type !== type
-      ) {
-        return false;
+  return state.history
+    .filter(
+      item => {
+        if (
+          table ===
+          'all'
+        ) {
+          return true;
+        }
+
+
+        return (
+          item.table_name ===
+          table
+        );
       }
+    )
+    .filter(
+      item => {
+        if (!operator) {
+          return true;
+        }
 
 
-      if (search) {
-        const haystack =
+        return (
+          String(
+            item.actor_profile_id
+          ) ===
+          String(
+            operator
+          )
+        );
+      }
+    )
+    .filter(
+      item => {
+        if (
+          !from &&
+          !to
+        ) {
+          return true;
+        }
+
+
+        const date =
+          item.created_at
+            ? item.created_at
+                .slice(
+                  0,
+                  10
+                )
+            : '';
+
+
+        if (
+          from &&
+          date < from
+        ) {
+          return false;
+        }
+
+
+        if (
+          to &&
+          date > to
+        ) {
+          return false;
+        }
+
+
+        return true;
+      }
+    )
+    .filter(
+      item => {
+        if (!search) {
+          return true;
+        }
+
+
+        const text =
           [
-            item.title,
-            item.meta,
-            item.operator,
+            item.actor_name,
+            item.actor_role,
+            item.table_name,
+            item.action,
+            JSON.stringify(
+              item.old_data ||
+              {}
+            ),
+            JSON.stringify(
+              item.new_data ||
+              {}
+            ),
           ]
             .join(' ')
             .toLocaleLowerCase(
@@ -8313,52 +12603,16 @@ function filteredHistory() {
             );
 
 
-        if (
-          !haystack.includes(
-            search
-          )
-        ) {
-          return false;
-        }
-      }
-
-
-      const date =
-        new Date(
-          item.date
+        return text.includes(
+          search
         );
-
-
-      if (
-        from &&
-        date <
-          new Date(
-            `${from}T00:00:00`
-          )
-      ) {
-        return false;
       }
-
-
-      if (
-        to &&
-        date >
-          new Date(
-            `${to}T23:59:59`
-          )
-      ) {
-        return false;
-      }
-
-
-      return true;
-    }
-  );
+    );
 }
 
 
 // ============================================================
-// 86. HISTORY RENDER
+// 117. HISTORY RENDER
 // ============================================================
 
 function renderHistory() {
@@ -8367,82 +12621,144 @@ function renderHistory() {
       'history-list'
     );
 
-  if (!root) return;
+
+  if (!root) {
+    return;
+  }
 
 
-  clearElement(root);
+  syncHistoryOperatorFilter();
 
 
-  filteredHistory()
-    .slice(
-      0,
-      UI_CONFIG.history
-        .adminLimit
-    )
-    .forEach(
-      item => {
-        const row =
-          createElement(
-            'article',
-            {
-              className:
-                'operation-item',
-            }
+  clearElement(
+    root
+  );
+
+
+  const history =
+    filteredHistory();
+
+
+  history.forEach(
+    item => {
+      const row =
+        createElement(
+          'button',
+          {
+            className:
+              'operation-item operation-item--interactive',
+
+            attrs: {
+              type:
+                'button',
+            },
+          }
+        );
+
+
+      row.innerHTML = `
+        <span class="operation-item__icon">
+          ${escapeHtml(
+            getAuditInitials(
+              item.actor_name
+            )
+          )}
+        </span>
+
+
+        <span class="operation-item__content">
+
+          <strong class="operation-item__title">
+
+            ${escapeHtml(
+              item.actor_name ||
+              'Sistem'
+            )}
+
+            <span class="${
+              historyActionClass(
+                item.action
+              )
+            }">
+              ${escapeHtml(
+                historyActionLabel(
+                  item.action
+                )
+              )}
+            </span>
+
+          </strong>
+
+
+          <span class="operation-item__meta">
+            ${escapeHtml(
+              historyTableLabel(
+                item.table_name
+              )
+            )}
+            ·
+            ${escapeHtml(
+              roleLabel(
+                item.actor_role
+              )
+            )}
+          </span>
+
+
+          <span class="operation-item__operator">
+            ID:
+            ${escapeHtml(
+              String(
+                item.record_id ||
+                '—'
+              ).slice(
+                0,
+                18
+              )
+            )}
+          </span>
+
+        </span>
+
+
+        <span class="operation-item__side">
+
+          <strong>
+            ${formatDate(
+              item.created_at
+            )}
+          </strong>
+
+          <span>
+            ${formatTime(
+              item.created_at
+            )}
+          </span>
+
+        </span>
+      `;
+
+
+      row.addEventListener(
+        'click',
+        () => {
+          openAuditDetail(
+            item,
+            row
           );
+        }
+      );
 
 
-        row.innerHTML = `
-          <span class="operation-item__icon">
-            SK
-          </span>
-
-          <span class="operation-item__content">
-
-            <strong class="operation-item__title">
-              ${escapeHtml(
-                item.title
-              )}
-            </strong>
-
-            <span class="operation-item__meta">
-              ${escapeHtml(
-                item.meta
-              )}
-            </span>
-
-            <span class="operation-item__operator">
-              ${escapeHtml(
-                item.operator
-              )}
-            </span>
-
-          </span>
-
-          <span class="operation-item__side">
-
-            <strong>
-              ${formatDate(
-                item.date
-              )}
-            </strong>
-
-            <span>
-              ${formatTime(
-                item.date
-              )}
-            </span>
-
-          </span>
-        `;
-
-
-        root.append(row);
-      }
-    );
+      root.append(
+        row
+      );
+    }
+  );
 
 
   if (
-    root.children.length ===
+    history.length ===
     0
   ) {
     root.append(
@@ -8451,11 +12767,650 @@ function renderHistory() {
       )
     );
   }
+
+
+  setText(
+    byId(
+      'history-result-count'
+    ),
+    history.length
+  );
 }
 
 
 // ============================================================
-// 87. HISTORY EVENTS
+// 118. AUDIT INITIALS
+// ============================================================
+
+function getAuditInitials(
+  name
+) {
+  const value =
+    normalizeString(
+      name,
+      'SK'
+    );
+
+
+  const parts =
+    value
+      .split(' ')
+      .filter(Boolean);
+
+
+  if (
+    parts.length === 1
+  ) {
+    return parts[0]
+      .slice(
+        0,
+        2
+      )
+      .toLocaleUpperCase(
+        'az-AZ'
+      );
+  }
+
+
+  return (
+    parts[0][0] +
+    parts[
+      parts.length - 1
+    ][0]
+  ).toLocaleUpperCase(
+    'az-AZ'
+  );
+}
+
+
+// ============================================================
+// 119. AUDIT CHANGE KEYS
+// ============================================================
+
+const AUDIT_HIDDEN_FIELDS =
+  new Set([
+    'updated_at',
+    'operator_shift_id',
+  ]);
+
+
+function auditChanges(
+  oldData,
+  newData
+) {
+  const oldObject =
+    oldData &&
+    typeof oldData ===
+      'object'
+      ? oldData
+      : {};
+
+
+  const newObject =
+    newData &&
+    typeof newData ===
+      'object'
+      ? newData
+      : {};
+
+
+  const keys =
+    new Set([
+      ...Object.keys(
+        oldObject
+      ),
+
+      ...Object.keys(
+        newObject
+      ),
+    ]);
+
+
+  return Array.from(
+    keys
+  )
+    .filter(
+      key =>
+        !AUDIT_HIDDEN_FIELDS
+          .has(key)
+    )
+    .filter(
+      key => {
+        const oldValue =
+          oldObject[key];
+
+
+        const newValue =
+          newObject[key];
+
+
+        return (
+          JSON.stringify(
+            oldValue
+          ) !==
+          JSON.stringify(
+            newValue
+          )
+        );
+      }
+    )
+    .map(
+      key => ({
+        key,
+
+        oldValue:
+          oldObject[key],
+
+        newValue:
+          newObject[key],
+      })
+    );
+}
+
+
+// ============================================================
+// 120. AUDIT FIELD LABEL
+// ============================================================
+
+function auditFieldLabel(
+  key
+) {
+  const labels = {
+
+    name:
+      'Ad',
+
+    full_name:
+      'Ad və soyad',
+
+    retail_price:
+      'Pərakəndə qiymət',
+
+    portion_price:
+      'Porsiya qiyməti',
+
+    cost_price:
+      'Maya qiyməti',
+
+    stock_quantity:
+      'Stok',
+
+    low_stock_threshold:
+      'Az stok limiti',
+
+    is_active:
+      'Aktivlik',
+
+    show_public:
+      'Saytda görünmə',
+
+    payment_status:
+      'Ödəniş',
+
+    payment_method:
+      'Ödəniş üsulu',
+
+    status:
+      'Status',
+
+    start_date:
+      'Başlanğıc',
+
+    end_date:
+      'Bitmə',
+
+    price:
+      'Qiymət',
+
+    amount:
+      'Məbləğ',
+
+    attendance_type:
+      'Giriş növü',
+
+    specialty:
+      'İxtisas',
+
+    phone:
+      'Telefon',
+
+    bio:
+      'Haqqında',
+
+    image_url:
+      'Şəkil',
+
+    sort_order:
+      'Sıralama',
+
+    note:
+      'Qeyd',
+
+    description:
+      'Açıqlama',
+
+    category:
+      'Kateqoriya',
+
+    movement_type:
+      'Stok hərəkəti',
+
+    quantity:
+      'Miqdar',
+
+    balance_after:
+      'Qalıq',
+
+    transaction_type:
+      'Əməliyyat növü',
+  };
+
+
+  return (
+    labels[key] ||
+    key
+      .replaceAll(
+        '_',
+        ' '
+      )
+  );
+}
+
+
+// ============================================================
+// 121. AUDIT VALUE
+// ============================================================
+
+function formatAuditValue(
+  key,
+  value
+) {
+  if (
+    value === null ||
+    value === undefined ||
+    value === ''
+  ) {
+    return '—';
+  }
+
+
+  if (
+    typeof value ===
+    'boolean'
+  ) {
+    return value
+      ? 'Bəli'
+      : 'Xeyr';
+  }
+
+
+  if (
+    [
+      'retail_price',
+      'portion_price',
+      'cost_price',
+      'price',
+      'amount',
+      'total_amount',
+      'subtotal',
+      'balance',
+    ].includes(
+      key
+    )
+  ) {
+    return money(
+      value
+    );
+  }
+
+
+  if (
+    [
+      'start_date',
+      'end_date',
+      'entry_date',
+    ].includes(
+      key
+    )
+  ) {
+    return formatDate(
+      value
+    );
+  }
+
+
+  if (
+    typeof value ===
+    'object'
+  ) {
+    return JSON.stringify(
+      value
+    );
+  }
+
+
+  return String(value);
+}
+
+
+// ============================================================
+// 122. AUDIT DETAIL MODAL
+//
+// Burada artıq:
+// kim
+// nə vaxt
+// hansı cədvəldə
+// hansı record
+// nədən
+// nəyə
+//
+// hamısı görünür.
+// ============================================================
+
+function openAuditDetail(
+  item,
+  trigger = null
+) {
+  const changes =
+    auditChanges(
+      item.old_data,
+      item.new_data
+    );
+
+
+  const content =
+    createElement(
+      'div',
+      {
+        className:
+          'audit-detail',
+      }
+    );
+
+
+  const metadata =
+    `
+      <div class="audit-detail__summary">
+
+        <div>
+          <span>Operator</span>
+
+          <strong>
+            ${escapeHtml(
+              item.actor_name ||
+              'Sistem'
+            )}
+          </strong>
+        </div>
+
+
+        <div>
+          <span>Rol</span>
+
+          <strong>
+            ${escapeHtml(
+              roleLabel(
+                item.actor_role
+              )
+            )}
+          </strong>
+        </div>
+
+
+        <div>
+          <span>Əməliyyat</span>
+
+          <strong>
+            ${escapeHtml(
+              historyActionLabel(
+                item.action
+              )
+            )}
+          </strong>
+        </div>
+
+
+        <div>
+          <span>Bölmə</span>
+
+          <strong>
+            ${escapeHtml(
+              historyTableLabel(
+                item.table_name
+              )
+            )}
+          </strong>
+        </div>
+
+
+        <div>
+          <span>Tarix</span>
+
+          <strong>
+            ${formatDateTime(
+              item.created_at
+            )}
+          </strong>
+        </div>
+
+
+        <div>
+          <span>Record ID</span>
+
+          <strong class="audit-detail__id">
+            ${escapeHtml(
+              item.record_id ||
+              '—'
+            )}
+          </strong>
+        </div>
+
+      </div>
+    `;
+
+
+  let changesMarkup =
+    '';
+
+
+  if (
+    changes.length > 0
+  ) {
+    changesMarkup = `
+      <div class="audit-change-list">
+
+        ${changes
+          .map(
+            change => `
+              <article class="audit-change">
+
+                <strong class="audit-change__field">
+                  ${escapeHtml(
+                    auditFieldLabel(
+                      change.key
+                    )
+                  )}
+                </strong>
+
+
+                <div class="audit-change__values">
+
+                  <div class="audit-change__value audit-change__value--old">
+
+                    <span>
+                      Əvvəl
+                    </span>
+
+                    <strong>
+                      ${escapeHtml(
+                        formatAuditValue(
+                          change.key,
+                          change.oldValue
+                        )
+                      )}
+                    </strong>
+
+                  </div>
+
+
+                  <span class="audit-change__arrow">
+                    →
+                  </span>
+
+
+                  <div class="audit-change__value audit-change__value--new">
+
+                    <span>
+                      Sonra
+                    </span>
+
+                    <strong>
+                      ${escapeHtml(
+                        formatAuditValue(
+                          change.key,
+                          change.newValue
+                        )
+                      )}
+                    </strong>
+
+                  </div>
+
+                </div>
+
+              </article>
+            `
+          )
+          .join('')}
+
+      </div>
+    `;
+  } else {
+    changesMarkup = `
+      <div class="ui-info-card">
+
+        <span class="ui-info-card__label">
+          Dəyişiklik
+        </span>
+
+        <strong>
+          ${
+            normalizeString(
+              item.action
+            ).toUpperCase() ===
+              'INSERT'
+              ? 'Yeni qeyd yaradılıb'
+              : normalizeString(
+                  item.action
+                ).toUpperCase() ===
+                  'DELETE'
+                ? 'Qeyd silinib'
+                : 'Sahə fərqi tapılmadı'
+          }
+        </strong>
+
+      </div>
+    `;
+  }
+
+
+  content.innerHTML =
+    metadata +
+    changesMarkup;
+
+
+  openModal({
+    eyebrow:
+      'Audit tarixçəsi',
+
+    title:
+      `${historyTableLabel(
+        item.table_name
+      )} · ${historyActionLabel(
+        item.action
+      )}`,
+
+    content,
+
+    trigger,
+  });
+}
+
+
+// ============================================================
+// 123. HISTORY RELOAD WITH SERVER FILTER
+// ============================================================
+
+async function reloadHistoryFromFilters() {
+  const from =
+    normalizeString(
+      byId(
+        'history-date-from'
+      )?.value
+    );
+
+
+  const to =
+    normalizeString(
+      byId(
+        'history-date-to'
+      )?.value
+    );
+
+
+  const actorId =
+    normalizeString(
+      byId(
+        'history-operator-filter'
+      )?.value
+    );
+
+
+  let fromTimestamp =
+    null;
+
+
+  let toTimestamp =
+    null;
+
+
+  if (from) {
+    fromTimestamp =
+      new Date(
+        `${from}T00:00:00`
+      ).toISOString();
+  }
+
+
+  if (to) {
+    toTimestamp =
+      new Date(
+        `${to}T23:59:59.999`
+      ).toISOString();
+  }
+
+
+  await loadHistory({
+    from:
+      fromTimestamp,
+
+    to:
+      toTimestamp,
+
+    actorId:
+      actorId ||
+      null,
+
+    limit:
+      2000,
+  });
+
+
+  renderHistory();
+}
+
+
+// ============================================================
+// 124. HISTORY EVENTS
 // ============================================================
 
 function bindHistoryEvents() {
@@ -8464,7 +13419,8 @@ function bindHistoryEvents() {
   )?.addEventListener(
     'input',
     debounce(
-      renderHistory
+      renderHistory,
+      180
     )
   );
 
@@ -8478,10 +13434,18 @@ function bindHistoryEvents() {
 
 
   byId(
+    'history-operator-filter'
+  )?.addEventListener(
+    'change',
+    reloadHistoryFromFilters
+  );
+
+
+  byId(
     'history-date-from'
   )?.addEventListener(
     'change',
-    renderHistory
+    reloadHistoryFromFilters
   );
 
 
@@ -8489,21 +13453,169 @@ function bindHistoryEvents() {
     'history-date-to'
   )?.addEventListener(
     'change',
-    renderHistory
+    reloadHistoryFromFilters
+  );
+
+
+  byId(
+    'history-refresh-button'
+  )?.addEventListener(
+    'click',
+    async () => {
+      await reloadHistoryFromFilters();
+
+
+      notify.success(
+        'Tarixçə yeniləndi.'
+      );
+    }
   );
 }
 
 
 // ============================================================
-// 88. AUTH CHANGE
+// 125. GLOBAL ADMIN SEARCH
+//
+// Admin header-də universal search varsa uyğun tab-a keçir.
+// HTML-də yoxdursa heç bir problem yaratmır.
 // ============================================================
 
-function bindAdminAuthChange() {
+function bindGlobalSearch() {
+  const input =
+    byId(
+      'admin-global-search'
+    );
+
+
+  if (!input) {
+    return;
+  }
+
+
+  input.addEventListener(
+    'input',
+    debounce(
+      () => {
+        const query =
+          normalizeString(
+            input.value
+          );
+
+
+        if (!query) {
+          return;
+        }
+
+
+        const normalized =
+          normalizeSearch(
+            query
+          );
+
+
+        const member =
+          state.members.find(
+            item =>
+              [
+                item.full_name,
+                item.phone,
+                item.email,
+              ]
+                .filter(Boolean)
+                .join(' ')
+                .toLocaleLowerCase(
+                  'az-AZ'
+                )
+                .includes(
+                  normalized
+                )
+          );
+
+
+        if (member) {
+          setActiveTab(
+            'members'
+          );
+
+
+          const search =
+            byId(
+              'members-search'
+            );
+
+
+          if (search) {
+            search.value =
+              query;
+          }
+
+
+          renderMembers();
+
+          return;
+        }
+
+
+        const product =
+          state.products.find(
+            item =>
+              [
+                item.name,
+                item.sku,
+                item.category,
+              ]
+                .filter(Boolean)
+                .join(' ')
+                .toLocaleLowerCase(
+                  'az-AZ'
+                )
+                .includes(
+                  normalized
+                )
+          );
+
+
+        if (product) {
+          setActiveTab(
+            'products'
+          );
+
+
+          const search =
+            byId(
+              'products-admin-search'
+            );
+
+
+          if (search) {
+            search.value =
+              query;
+          }
+
+
+          renderAdminProducts();
+        }
+      },
+      350
+    )
+  );
+}
+
+
+// ============================================================
+// 126. AUTH CHANGE
+// ============================================================
+
+function bindAdminAuthEvents() {
   window.addEventListener(
-    'skyfit:authchange',
+    SKYFIT_EVENTS
+      .authChange,
     async event => {
       const authEvent =
-        event.detail?.event;
+        normalizeString(
+          event.detail
+            ?.event
+        );
 
 
       if (
@@ -8511,40 +13623,97 @@ function bindAdminAuthChange() {
         'SIGNED_OUT'
       ) {
         window.location.replace(
-          APP_CONFIG.routes.login
+          APP_CONFIG
+            .routes
+            .login
         );
+
 
         return;
       }
 
 
-      const identity =
-        await getCurrentIdentity();
+      try {
+        const identity =
+          event.detail
+            ?.identity ||
+          await getCurrentIdentity({
+            force:
+              true,
+          });
 
 
-      if (
-        !identity?.isStaff
-      ) {
-        window.location.replace(
-          APP_CONFIG.routes.home
+        if (
+          !identity
+            ?.authenticated
+        ) {
+          window.location.replace(
+            APP_CONFIG
+              .routes
+              .login
+          );
+
+
+          return;
+        }
+
+
+        if (
+          !identity.isStaff
+        ) {
+          window.location.replace(
+            APP_CONFIG
+              .routes
+              .home
+          );
+
+
+          return;
+        }
+
+
+        state.identity =
+          identity;
+
+
+        renderOperator();
+      } catch (error) {
+        console.error(
+          '[SKy Fit Admin] Auth change:',
+          error
         );
-
-        return;
       }
-
-
-      state.identity =
-        identity;
-
-
-      renderOperator();
     }
   );
 }
 
 
 // ============================================================
-// 89. INITIAL LOAD CACHE
+// 127. ADMIN OPERATION EVENT
+//
+// Eyni səhifədə əməliyyat tamamlananda KPI-lar köhnə qalmasın.
+// ============================================================
+
+function bindAdminOperationEvents() {
+  window.addEventListener(
+    'skyfit:admin-operation',
+    () => {
+      if (
+        state.activeTab ===
+        'dashboard'
+      ) {
+        void loadDashboard();
+      }
+    }
+  );
+}
+
+
+// ============================================================
+// 128. PRELOAD CORE DATA
+//
+// Admin panel ilk açılarkən global search,
+// POS və üzv seçimləri üçün əsas data əvvəlcədən hazırlanır.
 // ============================================================
 
 async function preloadAdminData() {
@@ -8557,19 +13726,17 @@ async function preloadAdminData() {
 
 
 // ============================================================
-// 90. ALL EVENT BINDINGS
+// 129. BIND ALL EVENTS
 // ============================================================
 
 function bindAdminEvents() {
   bindPosEvents();
 
-  bindProductAdminEvents();
+  bindProductEvents();
 
   bindStockEvents();
 
   bindQuickAction();
-
-  bindGlobalSearch();
 
   bindMemberEvents();
 
@@ -8585,12 +13752,36 @@ function bindAdminEvents() {
 
   bindHistoryEvents();
 
-  bindAdminAuthChange();
+  bindGlobalSearch();
+
+  bindAdminAuthEvents();
+
+  bindAdminOperationEvents();
 }
 
 
 // ============================================================
-// 91. INIT
+// 130. INITIAL TAB
+// ============================================================
+
+function resolveInitialAdminTab() {
+  const params =
+    new URLSearchParams(
+      window.location.search
+    );
+
+
+  return normalizeTab(
+    params.get(
+      'tab'
+    ) ||
+    'dashboard'
+  );
+}
+
+
+// ============================================================
+// 131. INIT
 // ============================================================
 
 async function init() {
@@ -8610,10 +13801,23 @@ async function init() {
     bindAdminEvents();
 
 
+    const initialTab =
+      resolveInitialAdminTab();
+
+
+    setActiveTab(
+      initialTab,
+      {
+        load:
+          false,
+      }
+    );
+
+
     await loadActiveTab();
   } catch (error) {
     console.error(
-      'Admin initialization error:',
+      '[SKy Fit Admin] Init:',
       error
     );
 
@@ -8629,7 +13833,7 @@ async function init() {
 
 
 // ============================================================
-// 92. START
+// 132. START
 // ============================================================
 
 asyncHandler(
@@ -8642,5 +13846,6 @@ asyncHandler(
 
 
 // ============================================================
+// SKY FIT PRO
 // ADMIN.JS COMPLETE
 // ============================================================
