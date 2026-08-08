@@ -1,6 +1,18 @@
-<!doctype html>
-<html lang="az">
+<!DOCTYPE html>
+
+<html
+  lang="az"
+  data-theme="dark"
+  data-theme-source="system"
+>
 <head>
+
+  <!-- ========================================================
+       SKY FIT PRO
+       Favorites Page
+       File: favorites.html
+       ======================================================== -->
+
   <meta charset="UTF-8">
 
   <meta
@@ -9,28 +21,29 @@
   >
 
   <meta
+    name="theme-color"
+    content="#090b10"
+  >
+
+  <meta
+    name="color-scheme"
+    content="dark light"
+  >
+
+  <meta
     name="description"
     content="SKy Fit Pro sevimli məhsullar."
   >
 
-  <meta name="theme-color" content="#090b10">
-
   <meta
-    name="apple-mobile-web-app-capable"
-    content="yes"
+    name="author"
+    content="Qərib Səfərli"
   >
 
-  <meta
-    name="apple-mobile-web-app-status-bar-style"
-    content="black-translucent"
-  >
 
-  <meta
-    name="apple-mobile-web-app-title"
-    content="SKy Fit"
-  >
-
-  <title>Sevimlilər | SKy Fit Pro</title>
+  <!-- ========================================================
+       PWA
+       ======================================================== -->
 
   <link
     rel="manifest"
@@ -39,8 +52,8 @@
 
   <link
     rel="icon"
-    href="./assets/icons/favicon.png"
     type="image/png"
+    href="./assets/icons/favicon.png"
   >
 
   <link
@@ -48,170 +61,127 @@
     href="./assets/icons/apple-touch-icon.png"
   >
 
+
+  <!-- ========================================================
+       CSS
+       ======================================================== -->
+
   <link
     rel="stylesheet"
     href="./css/app.css"
   >
+
+
+  <title>
+    Sevimlilər · SKy Fit Pro
+  </title>
+
 </head>
 
-<body
-  class="app-body"
-  data-page="favorites"
->
 
-  <!-- =====================================================
-       GLOBAL ROOTS
-  ====================================================== -->
-
-  <div
-    id="app-loader-root"
-    aria-live="polite"
-  ></div>
-
-  <div
-    id="app-toast-root"
-    aria-live="polite"
-    aria-atomic="true"
-  ></div>
-
-  <div
-    id="app-modal-root"
-    aria-live="polite"
-  ></div>
-
-  <div
-    id="app-drawer-root"
-  ></div>
-
-  <div
-    id="app-header-root"
-  ></div>
+<body data-page="favorites">
 
 
-  <!-- =====================================================
-       MAIN
-  ====================================================== -->
+  <!-- ========================================================
+       SHARED LAYOUT ROOTS
+       ======================================================== -->
+
+  <div id="app-header-root"></div>
+
+  <div id="app-drawer-root"></div>
+
+
+  <!-- ========================================================
+       FAVORITES PAGE
+       ======================================================== -->
 
   <main
     id="app-main"
-    class="app-main"
+    class="app-main favorites-page"
   >
 
-    <!-- ===================================================
-         PAGE HERO
-    ==================================================== -->
+    <div class="page-shell favorites-shell">
 
-    <section
-      class="page-hero page-hero--compact"
-      aria-labelledby="favorites-title"
-    >
 
-      <div class="page-hero__content">
+      <!-- ====================================================
+           PAGE HERO
+           ==================================================== -->
 
-        <div>
+      <section class="favorites-hero">
 
-          <span class="section-heading__eyebrow">
-            Saxlanılanlar
+        <div
+          class="favorites-hero__glow"
+          aria-hidden="true"
+        ></div>
+
+
+        <div class="favorites-hero__content">
+
+          <span class="section-eyebrow">
+            SKy Fit Shop
           </span>
 
-          <h1
-            id="favorites-title"
-            class="page-hero__title"
-          >
+
+          <h1 class="favorites-hero__title">
             Sevimlilər
           </h1>
 
-          <p class="page-hero__description">
-            Bəyəndiyin məhsulları bir yerdə saxla.
+
+          <p class="favorites-hero__description">
+            Bəyəndiyin məhsulları bir yerdə saxla və istədiyin
+            zaman yenidən bax.
           </p>
 
         </div>
 
 
-        <div
-          id="favorites-counter"
-          class="page-hero__counter"
-          aria-live="polite"
-        >
+        <div class="favorites-hero__stat">
+
+          <span>
+            Seçilmiş məhsul
+          </span>
+
           <strong id="favorites-count">
             0
           </strong>
 
-          <span>
-            məhsul
-          </span>
         </div>
 
-      </div>
-
-    </section>
+      </section>
 
 
-    <!-- ===================================================
-         FAVORITES
-    ==================================================== -->
+      <!-- ====================================================
+           TOOLBAR
+           ==================================================== -->
 
-    <section
-      class="content-section"
-      aria-labelledby="favorites-products-title"
-    >
-
-      <div class="section-heading">
-
-        <div class="section-heading__content">
-
-          <span class="section-heading__eyebrow">
-            SKy Fit Shop
-          </span>
-
-          <h2
-            id="favorites-products-title"
-            class="section-heading__title"
-          >
-            Seçilmiş məhsullar
-          </h2>
-
-        </div>
-
-        <button
-          id="favorites-clear-button"
-          class="section-heading__action is-hidden"
-          type="button"
-        >
-          Təmizlə
-        </button>
-
-      </div>
+      <section class="favorites-toolbar">
 
 
-      <!-- SEARCH -->
-
-      <div class="product-toolbar">
+        <!-- Search -->
 
         <label
-          class="ui-search"
-          for="favorites-search-input"
+          class="search-control"
+          for="favorites-search"
         >
 
           <span
-            class="ui-search__icon"
+            class="search-control__icon"
             aria-hidden="true"
           >
             <svg
               viewBox="0 0 24 24"
               fill="none"
-              xmlns="http://www.w3.org/2000/svg"
             >
-              <path
-                d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14Z"
+              <circle
+                cx="10.5"
+                cy="10.5"
+                r="5.5"
                 stroke="currentColor"
                 stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
               />
 
               <path
-                d="m20 20-4.2-4.2"
+                d="m15 15 4.5 4.5"
                 stroke="currentColor"
                 stroke-width="1.8"
                 stroke-linecap="round"
@@ -219,204 +189,280 @@
             </svg>
           </span>
 
+
           <input
-            id="favorites-search-input"
-            class="ui-search__input"
+            id="favorites-search"
+            class="search-control__input"
             type="search"
             inputmode="search"
             autocomplete="off"
-            placeholder="Sevimlilərdə axtar"
-            aria-label="Sevimli məhsullarda axtar"
+            placeholder="Sevimlilərdə axtar..."
           >
 
+
           <button
-            type="button"
             id="favorites-search-clear"
-            class="ui-search__clear is-hidden"
+            class="search-control__clear"
+            type="button"
             aria-label="Axtarışı təmizlə"
+            hidden
           >
             ×
           </button>
 
         </label>
 
-      </div>
+
+        <!-- Clear favorites -->
+
+        <button
+          id="favorites-clear-all"
+          class="ui-button ui-button--glass"
+          type="button"
+          hidden
+        >
+          <span class="ui-button__label">
+            Hamısını təmizlə
+          </span>
+        </button>
+
+      </section>
 
 
-      <!-- PRODUCTS -->
+      <!-- ====================================================
+           FAVORITES CONTENT
+           ==================================================== -->
 
-      <div
-        id="favorites-grid"
-        class="product-grid"
-        aria-live="polite"
-      >
-        <!-- favorites.js -->
-      </div>
+      <section class="favorites-content">
 
 
-      <!-- EMPTY STATE -->
+        <!-- Loading skeleton -->
 
-      <div
-        id="favorites-empty-state"
-        class="empty-state is-hidden"
-      >
+        <div
+          id="favorites-loading"
+          class="favorites-loading"
+          aria-hidden="true"
+        >
 
-        <div class="empty-state__icon">
+          <div class="product-card-skeleton"></div>
 
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            aria-hidden="true"
-          >
-            <path
-              d="M12 20.2 4.9 13.6C1 10 3.3 4.5 7.7 4.5c1.8 0 3.3 1 4.3 2.3 1-1.3 2.5-2.3 4.3-2.3 4.4 0 6.7 5.5 2.8 9.1L12 20.2Z"
-              stroke="currentColor"
-              stroke-width="1.7"
-              stroke-linejoin="round"
-            />
-          </svg>
+          <div class="product-card-skeleton"></div>
+
+          <div class="product-card-skeleton"></div>
+
+          <div class="product-card-skeleton"></div>
+
+          <div class="product-card-skeleton"></div>
 
         </div>
 
-        <strong class="empty-state__title">
-          Sevimli məhsul yoxdur
-        </strong>
 
-        <p class="empty-state__description">
-          Bəyəndiyin məhsulların ürək düyməsinə toxun və
-          onları burada saxla.
-        </p>
+        <!-- Product grid -->
+
+        <div
+          id="favorites-grid"
+          class="products-grid is-hidden"
+          aria-live="polite"
+        ></div>
+
+
+        <!-- ==================================================
+             EMPTY FAVORITES
+             ================================================== -->
+
+        <div
+          id="favorites-empty"
+          class="favorites-empty ui-empty-state is-hidden"
+          hidden
+        >
+
+          <span
+            class="ui-empty-state__icon"
+            aria-hidden="true"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+            >
+              <path
+                d="M12 20.1 5 13.6C1.2 10.1 3.4 4.7 7.7 4.7c1.8 0 3.4 1 4.3 2.4.9-1.4 2.5-2.4 4.3-2.4 4.3 0 6.5 5.4 2.7 8.9L12 20.1Z"
+                stroke="currentColor"
+                stroke-width="1.7"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </span>
+
+
+          <strong>
+            Hələ sevimli məhsulun yoxdur
+          </strong>
+
+
+          <span>
+            Məhsul kartındakı ürək işarəsinə toxunaraq onu
+            sevimlilərə əlavə edə bilərsən.
+          </span>
+
+
+          <a
+            href="./index.html#products"
+            class="ui-button ui-button--primary"
+          >
+            <span class="ui-button__label">
+              Məhsullara bax
+            </span>
+          </a>
+
+        </div>
+
+
+        <!-- ==================================================
+             SEARCH EMPTY
+             ================================================== -->
+
+        <div
+          id="favorites-search-empty"
+          class="ui-empty-state is-hidden"
+          hidden
+        >
+
+          <span
+            class="ui-empty-state__icon"
+            aria-hidden="true"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+            >
+              <circle
+                cx="10.5"
+                cy="10.5"
+                r="5.5"
+                stroke="currentColor"
+                stroke-width="1.8"
+              />
+
+              <path
+                d="m15 15 4.5 4.5"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              />
+            </svg>
+          </span>
+
+
+          <strong>
+            Nəticə tapılmadı
+          </strong>
+
+
+          <span>
+            Axtarış sözünü dəyişib yenidən yoxla.
+          </span>
+
+        </div>
+
+      </section>
+
+
+      <!-- ====================================================
+           SHOP CTA
+           ==================================================== -->
+
+      <section class="favorites-cta">
+
+        <div class="favorites-cta__content">
+
+          <span class="section-eyebrow">
+            SKy Fit Shop
+          </span>
+
+          <h2>
+            Daha çox məhsula bax.
+          </h2>
+
+          <p>
+            Fitness və məşq ehtiyacların üçün digər məhsulları
+            kəşf et.
+          </p>
+
+        </div>
+
 
         <a
           href="./index.html#products"
           class="ui-button ui-button--primary"
         >
           <span class="ui-button__label">
-            Məhsullara bax
-          </span>
-        </a>
-
-      </div>
-
-
-      <!-- SEARCH EMPTY -->
-
-      <div
-        id="favorites-search-empty-state"
-        class="empty-state is-hidden"
-      >
-
-        <div class="empty-state__icon">
-          <span>SK</span>
-        </div>
-
-        <strong class="empty-state__title">
-          Nəticə tapılmadı
-        </strong>
-
-        <p class="empty-state__description">
-          Axtarışa uyğun sevimli məhsul yoxdur.
-        </p>
-
-      </div>
-
-    </section>
-
-
-    <!-- ===================================================
-         BACK TO SHOP
-    ==================================================== -->
-
-    <section class="content-section">
-
-      <article class="favorites-shop-card">
-
-        <div class="favorites-shop-card__content">
-
-          <span class="section-heading__eyebrow">
-            Daha çoxunu kəşf et
-          </span>
-
-          <h2 class="favorites-shop-card__title">
-            SKy Fit Shop
-          </h2>
-
-          <p class="favorites-shop-card__description">
-            Məhsullara bax və istədiklərini sevimlilərinə əlavə et.
-          </p>
-
-        </div>
-
-        <a
-          href="./index.html#products"
-          class="ui-button ui-button--glass"
-        >
-          <span class="ui-button__label">
             Mağazaya keç
           </span>
         </a>
 
-      </article>
-
-    </section>
+      </section>
 
 
-    <!-- ===================================================
-         SAFE SPACE
-    ==================================================== -->
+      <!-- ====================================================
+           DEVELOPER CREDIT
+           ==================================================== -->
 
-    <div
-      class="app-bottom-spacer"
-      aria-hidden="true"
-    ></div>
+      <footer class="favorites-developer-credit">
+
+        <span>
+          Senior Full Stack Developer:
+        </span>
+
+        <strong>
+          Qərib Səfərli
+        </strong>
+
+      </footer>
+
+    </div>
 
   </main>
 
 
-  <!-- =====================================================
-       FOOTER
-  ====================================================== -->
+  <!-- ========================================================
+       SHARED ROOTS
+       ======================================================== -->
 
-  <div
-    id="app-footer-root"
-  ></div>
+  <div id="app-footer-root"></div>
 
+  <div id="app-bottom-nav-root"></div>
 
-  <!-- =====================================================
-       BOTTOM NAV
-  ====================================================== -->
+  <div id="app-modal-root"></div>
 
-  <div
-    id="app-bottom-nav-root"
-  ></div>
+  <div id="app-toast-root"></div>
+
+  <div id="app-loader-root"></div>
 
 
-  <!-- =====================================================
+  <!-- ========================================================
        NOSCRIPT
-  ====================================================== -->
+       ======================================================== -->
 
   <noscript>
 
     <div class="noscript-message">
 
       <strong>
-        JavaScript tələb olunur
+        JavaScript aktiv deyil
       </strong>
 
-      <p>
-        Sevimli məhsulları göstərmək üçün
-        brauzerdə JavaScript aktiv olmalıdır.
-      </p>
+      <span>
+        Sevimlilər bölməsinin işləməsi üçün JavaScript aktiv olmalıdır.
+      </span>
 
     </div>
 
   </noscript>
 
 
-  <!-- =====================================================
-       FAVORITES ENTRY
-  ====================================================== -->
+  <!-- ========================================================
+       FAVORITES MODULE
+       ======================================================== -->
 
   <script
     type="module"
