@@ -14068,3 +14068,3592 @@ span {
    Qərib Səfərli
    ============================================================ */
 
+
+/* =================================================================================================================== */
+
+/* ============================================================
+   SKY FIT PRO
+   COMPACT PRODUCTION PATCH — 1 / 2
+
+   Screenshot-based UI correction layer
+   Senior Full Stack Developer: Qərib Səfərli
+
+   IMPORTANT:
+   - Existing app.css silinmir.
+   - Bu blok faylın LAP SONUNA əlavə edilir.
+   ============================================================ */
+
+
+/* ============================================================
+   01. GLOBAL DESKTOP COMPACTNESS
+   ============================================================ */
+
+:root {
+  --page-max: 1540px;
+  --page-x: 20px;
+}
+
+
+body {
+  font-size: 15px;
+}
+
+
+.app-main {
+  padding-top: 12px;
+  padding-bottom: 34px;
+}
+
+
+.page-shell {
+  width:
+    min(
+      calc(100% - (var(--page-x) * 2)),
+      var(--page-max)
+    );
+}
+
+
+/* ============================================================
+   02. SECTION RHYTHM
+
+   48px + 48px boşluqları ləğv edir.
+   ============================================================ */
+
+.home-section {
+  padding: 26px 0;
+}
+
+
+.home-section + .home-section {
+  border-top:
+    1px solid
+    var(--border-soft);
+}
+
+
+.section-heading {
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 12px;
+}
+
+
+.section-eyebrow {
+  margin-bottom: 5px;
+  font-size: 11px;
+}
+
+
+.section-title {
+  font-size:
+    clamp(
+      25px,
+      2.5vw,
+      34px
+    );
+}
+
+
+.section-description {
+  max-width: 560px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+
+/* ============================================================
+   03. HOME HERO — SHORTER / CLEANER
+   ============================================================ */
+
+.home-hero {
+  min-height: 455px;
+}
+
+
+.home-hero__inner {
+  min-height: 455px;
+
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(280px, 420px);
+
+  gap: 34px;
+
+  padding-top: 34px;
+  padding-bottom: 30px;
+}
+
+
+.home-hero__content {
+  max-width: 630px;
+}
+
+
+.home-hero__title {
+  font-size:
+    clamp(
+      48px,
+      5.3vw,
+      78px
+    );
+
+  line-height: .94;
+}
+
+
+.home-hero__description {
+  max-width: 560px;
+
+  margin-top: 16px;
+
+  font-size: 14px;
+}
+
+
+.home-hero__actions {
+  margin-top: 19px;
+}
+
+
+.home-hero__features {
+  gap: 7px;
+}
+
+
+.hero-feature-card {
+  min-height: 61px;
+
+  padding:
+    9px
+    11px;
+}
+
+
+.hero-feature-card__icon {
+  width: 36px;
+  height: 36px;
+  flex-basis: 36px;
+}
+
+
+.hero-feature-card__content strong {
+  font-size: 11px;
+}
+
+
+.hero-feature-card__content small {
+  font-size: 9px;
+}
+
+
+/* ============================================================
+   04. HOME MEMBER ACCOUNT BOX
+   ============================================================ */
+
+.member-overview-section {
+  padding-top: 16px;
+  padding-bottom: 12px;
+}
+
+
+.member-overview-card {
+  padding: 14px;
+
+  border-radius: 18px;
+}
+
+
+.member-overview-card__header {
+  margin-bottom: 10px;
+}
+
+
+.member-overview-grid,
+.profile-stat-grid {
+  gap: 7px;
+}
+
+
+.member-overview-item,
+.status-card {
+  min-height: 74px;
+
+  padding: 9px;
+}
+
+
+/* ============================================================
+   05. GYM SHOWCASE
+
+   Screenshot-dakı nəhəng boş şəkil bloklarını azaldır.
+   ============================================================ */
+
+.gym-showcase {
+  grid-template-columns:
+    minmax(0, 1.65fr)
+    minmax(280px, .95fr);
+
+  grid-template-rows:
+    repeat(2, 160px);
+
+  gap: 8px;
+}
+
+
+.gym-showcase__item {
+  border-radius: 15px;
+}
+
+
+.gym-showcase__placeholder span {
+  font-size: 17px;
+}
+
+
+.gym-showcase__placeholder small {
+  font-size: 9px;
+}
+
+
+/* ============================================================
+   06. HOME PRODUCT / TRAINER SECTIONS
+   ============================================================ */
+
+.product-toolbar {
+  margin-bottom: 10px;
+}
+
+
+.product-toolbar .search-control,
+.product-toolbar .ui-search {
+  max-width: 460px;
+}
+
+
+/*
+   Əsas grid auto-fill olur.
+   1 məhsul varsa 300px kart + boşluq deyil;
+   çox məhsul olduqda avtomatik doldurur.
+*/
+
+.product-grid,
+.products-grid {
+  grid-template-columns:
+    repeat(
+      auto-fill,
+      minmax(190px, 1fr)
+    );
+
+  gap: 9px;
+}
+
+
+/*
+   Çox geniş desktopda kartların həddindən artıq böyüməsinin qarşısı.
+*/
+
+.product-grid > .product-card,
+.products-grid > .product-card {
+  max-width: 270px;
+}
+
+
+/* ============================================================
+   07. PRODUCT CARD
+   ============================================================ */
+
+.product-card {
+  border-radius: 14px;
+}
+
+
+.product-card__media {
+  aspect-ratio: 1 / .82;
+}
+
+
+.product-card__body {
+  padding:
+    8px
+    9px
+    9px;
+}
+
+
+.product-card__name {
+  min-height: 31px;
+
+  font-size: 11.5px;
+}
+
+
+.product-card__price {
+  font-size: 13px;
+}
+
+
+.product-card__unit {
+  font-size: 8.5px;
+}
+
+
+.product-card__stock {
+  font-size: 8px;
+}
+
+
+/* ============================================================
+   08. TRAINERS
+   ============================================================ */
+
+.trainer-grid,
+.trainers-grid {
+  grid-template-columns:
+    repeat(
+      auto-fill,
+      minmax(190px, 1fr)
+    );
+
+  gap: 9px;
+}
+
+
+.trainer-grid > .trainer-card,
+.trainers-grid > .trainer-card {
+  max-width: 265px;
+}
+
+
+.trainer-card {
+  border-radius: 15px;
+}
+
+
+.trainer-card__media {
+  aspect-ratio: 4 / 4.8;
+}
+
+
+.trainer-card__content {
+  padding: 11px;
+}
+
+
+.trainer-card__name {
+  font-size: 13px;
+}
+
+
+/* ============================================================
+   09. HOME CTA
+   ============================================================ */
+
+.home-cta {
+  gap: 18px;
+
+  padding: 18px 20px;
+
+  border-radius: 17px;
+}
+
+
+.home-cta__title {
+  font-size:
+    clamp(
+      22px,
+      2.5vw,
+      31px
+    );
+}
+
+
+.home-cta__description {
+  margin-top: 6px;
+}
+
+
+/* ============================================================
+   10. FAVORITES
+
+   Screenshot-da skeleton divarları burada yaranırdı.
+   ============================================================ */
+
+.favorites-shell {
+  padding-top: 2px;
+}
+
+
+.favorites-hero {
+  padding: 17px 19px;
+
+  border-radius: 18px;
+}
+
+
+.favorites-hero__title {
+  font-size:
+    clamp(
+      28px,
+      3vw,
+      40px
+    );
+}
+
+
+.favorites-hero__stat {
+  min-width: 96px;
+  min-height: 68px;
+}
+
+
+.favorites-content {
+  margin-top: 9px;
+}
+
+
+.favorites-loading {
+  grid-template-columns:
+    repeat(
+      auto-fill,
+      minmax(170px, 1fr)
+    );
+
+  gap: 8px;
+}
+
+
+.product-card-skeleton {
+  width: 100%;
+
+  max-width: 260px;
+
+  height: 250px;
+
+  aspect-ratio: auto;
+
+  border-radius: 14px;
+}
+
+
+.favorites-cta {
+  margin-top: 11px;
+
+  padding: 14px 16px;
+
+  border-radius: 15px;
+}
+
+
+/* ============================================================
+   11. PROFILE COMPACT
+   ============================================================ */
+
+.profile-shell {
+  padding-top: 2px;
+}
+
+
+.profile-hero {
+  padding: 16px 18px;
+
+  border-radius: 18px;
+}
+
+
+.profile-avatar {
+  width: 88px;
+  height: 88px;
+  flex-basis: 88px;
+
+  border-radius: 22px;
+}
+
+
+.profile-hero__identity {
+  gap: 14px;
+}
+
+
+.profile-hero__title {
+  font-size:
+    clamp(
+      26px,
+      3vw,
+      37px
+    );
+}
+
+
+.profile-overview {
+  gap: 7px;
+
+  margin-top: 8px;
+}
+
+
+.profile-stat-card {
+  min-height: 78px;
+
+  padding: 9px;
+}
+
+
+.profile-layout {
+  grid-template-columns:
+    minmax(0, 1fr)
+    345px;
+
+  gap: 8px;
+
+  margin-top: 8px;
+}
+
+
+.profile-layout__main,
+.profile-layout__side {
+  gap: 8px;
+}
+
+
+.profile-card,
+.profile-side-card {
+  padding: 13px;
+
+  border-radius: 15px;
+}
+
+
+.profile-card__header,
+.profile-side-card__header {
+  margin-bottom: 9px;
+}
+
+
+.profile-card__title,
+.profile-side-card__title {
+  font-size: 15px;
+}
+
+
+.profile-detail-grid {
+  gap: 6px;
+}
+
+
+.profile-detail-item {
+  min-height: 58px;
+
+  padding: 8px 10px;
+}
+
+
+.profile-action,
+.profile-security-item {
+  min-height: 54px;
+}
+
+
+/* ============================================================
+   12. MEMBERSHIP CARD
+   ============================================================ */
+
+.membership-card {
+  min-height: 185px;
+
+  padding: 14px;
+
+  border-radius: 16px;
+}
+
+
+.membership-card__stats {
+  margin-top: 18px;
+
+  gap: 5px;
+}
+
+
+.membership-card__stats > div {
+  padding: 7px;
+}
+
+
+/* ============================================================
+   13. FOOTER
+
+   Böyük aşağı boşluğu aradan qaldırır.
+   ============================================================ */
+
+.app-footer {
+  margin:
+    18px
+    auto
+    16px;
+
+  padding:
+    14px
+    0;
+
+  font-size: 10px;
+}
+
+
+/* ============================================================
+   14. DESKTOP BOTTOM NAV
+
+   Desktop admin/sidebar rejimində floating dock artıq lazımsızdır.
+   ============================================================ */
+
+@media (min-width: 861px) {
+
+  body[data-page="admin"]
+  #app-bottom-nav-root,
+  body[data-page="admin"]
+  .app-bottom-nav,
+  body[data-page="admin"]
+  .bottom-navigation {
+    display: none !important;
+  }
+
+
+  body[data-page="admin"]
+  .app-main {
+    padding-bottom: 0;
+  }
+
+
+  body[data-page="admin"]
+  .app-footer {
+    margin-bottom: 14px;
+  }
+
+}
+
+
+/* ============================================================
+   15. ADMIN FRAME
+   ============================================================ */
+
+body[data-page="admin"] {
+  --admin-sidebar-width: 214px;
+}
+
+
+.admin-sidebar__inner {
+  padding:
+    10px
+    9px
+    12px;
+}
+
+
+.admin-sidebar__brand {
+  padding:
+    3px
+    5px
+    10px;
+}
+
+
+.admin-operator-card {
+  margin:
+    8px
+    0;
+
+  padding: 8px;
+}
+
+
+.admin-navigation {
+  gap: 2px;
+}
+
+
+.admin-navigation__item {
+  min-height: 40px;
+
+  gap: 7px;
+
+  padding:
+    0
+    8px;
+
+  border-radius: 10px;
+
+  font-size: 10.5px;
+}
+
+
+.admin-navigation__icon {
+  width: 27px;
+  height: 27px;
+  flex-basis: 27px;
+}
+
+
+.admin-navigation__icon svg {
+  width: 15px;
+  height: 15px;
+}
+
+
+/* ============================================================
+   16. ADMIN TOPBAR
+   ============================================================ */
+
+.admin-topbar {
+  min-height: 60px;
+
+  padding:
+    8px
+    14px;
+}
+
+
+.admin-topbar__title {
+  font-size: 17px;
+}
+
+
+.admin-global-search {
+  height: 39px;
+}
+
+
+.admin-topbar__operator {
+  padding:
+    6px
+    8px;
+}
+
+
+/* ============================================================
+   17. ADMIN MAIN CONTENT
+   ============================================================ */
+
+.admin-panels {
+  padding:
+    14px
+    16px
+    18px;
+}
+
+
+.admin-panel__header {
+  align-items: center;
+
+  gap: 12px;
+
+  margin-bottom: 10px;
+}
+
+
+.admin-panel__title {
+  font-size:
+    clamp(
+      23px,
+      2.3vw,
+      30px
+    );
+}
+
+
+.admin-panel__description {
+  margin-top: 4px;
+
+  font-size: 10.5px;
+}
+
+
+/* ============================================================
+   18. ADMIN CARDS / SECTIONS
+   ============================================================ */
+
+.admin-section {
+  padding: 11px 12px;
+
+  border-radius: 14px;
+}
+
+
+.admin-section + .admin-section {
+  margin-top: 7px;
+}
+
+
+.admin-section__header {
+  align-items: center;
+
+  margin-bottom: 8px;
+}
+
+
+.admin-section__title {
+  font-size: 14px;
+}
+
+
+/* ============================================================
+   19. DASHBOARD KPI
+   ============================================================ */
+
+.admin-kpi-grid {
+  gap: 7px;
+
+  margin-bottom: 7px;
+}
+
+
+.admin-kpi-card {
+  min-height: 85px;
+
+  padding: 10px;
+
+  border-radius: 13px;
+}
+
+
+.admin-kpi-card strong {
+  margin-top: 6px;
+
+  font-size:
+    clamp(
+      19px,
+      2vw,
+      25px
+    );
+}
+
+
+.admin-kpi-card > span:last-child {
+  margin-top: 5px;
+}
+
+
+.admin-dashboard-grid {
+  gap: 7px;
+
+  margin-top: 7px;
+}
+
+
+/* ============================================================
+   20. FINANCE KPI
+   ============================================================ */
+
+.finance-summary-grid {
+  gap: 7px;
+
+  margin-bottom: 8px;
+}
+
+
+.finance-summary-card {
+  min-height: 82px;
+
+  padding: 10px;
+
+  border-radius: 13px;
+}
+
+
+.finance-summary-card strong {
+  margin-top: 7px;
+}
+
+
+/* ============================================================
+   21. TOOLBARS
+
+   Desktopda axtarış + filtrləri bir sətirdə kompakt saxlayır.
+   ============================================================ */
+
+.admin-toolbar {
+  grid-template-columns:
+    minmax(320px, 1fr)
+    minmax(145px, 175px)
+    minmax(145px, 175px);
+
+  gap: 6px;
+
+  margin-bottom: 8px;
+}
+
+
+.admin-toolbar--finance,
+.admin-toolbar--history {
+  grid-template-columns:
+    minmax(280px, 1fr)
+    160px
+    145px
+    145px
+    auto;
+
+  gap: 6px;
+}
+
+
+/* ============================================================
+   22. FORM CONTROLS — GLOBAL COMPACT
+   ============================================================ */
+
+.ui-field {
+  gap: 5px;
+}
+
+
+.ui-field__label {
+  font-size: 11px;
+}
+
+
+.ui-input {
+  min-height: 42px;
+
+  border-radius: 11px;
+}
+
+
+.ui-input__control {
+  height: 40px;
+
+  padding:
+    0
+    12px;
+
+  font-size: 13px;
+}
+
+
+.ui-input__icon {
+  width: 38px;
+  height: 40px;
+  flex-basis: 38px;
+}
+
+
+.ui-select,
+.ui-date-input {
+  height: 42px;
+
+  padding:
+    0
+    35px
+    0
+    12px;
+
+  border-radius: 11px;
+
+  font-size: 12px;
+}
+
+
+.ui-textarea {
+  min-height: 78px;
+
+  padding:
+    10px
+    12px;
+
+  border-radius: 11px;
+
+  font-size: 13px;
+}
+
+
+/* ============================================================
+   23. NUMBER INPUT FIX
+
+   Screenshot-da rəqəmlərin sol tərəfdə itməsi üçün.
+   ============================================================ */
+
+input[type="number"],
+.ui-input__control[type="number"] {
+  text-indent: 0 !important;
+
+  padding-left: 14px !important;
+
+  padding-right: 36px !important;
+
+  font-variant-numeric:
+    tabular-nums;
+}
+
+
+/* ============================================================
+   24. BUTTON COMPACT
+   ============================================================ */
+
+.ui-button {
+  min-height: 40px;
+
+  padding:
+    0
+    13px;
+
+  border-radius: 11px;
+
+  font-size: 11px;
+}
+
+
+.ui-button--compact {
+  min-height: 32px;
+
+  padding:
+    0
+    9px;
+
+  font-size: 9px;
+}
+
+
+/* ============================================================
+   25. MODAL FOUNDATION
+
+   Əsas screenshot problemi burada idi.
+   ============================================================ */
+
+.app-modal-backdrop,
+.ui-modal-backdrop,
+.modal-backdrop {
+  padding:
+    10px
+    12px;
+
+  align-items: center;
+}
+
+
+.app-modal,
+.ui-modal,
+.modal {
+  width:
+    min(
+      calc(100vw - 28px),
+      760px
+    );
+
+  max-height:
+    calc(100dvh - 24px);
+
+  border-radius: 17px;
+}
+
+
+.app-modal__header,
+.ui-modal__header,
+.modal__header {
+  min-height: 57px;
+
+  align-items: center;
+
+  padding:
+    11px
+    14px;
+
+  gap: 10px;
+}
+
+
+.app-modal__title,
+.ui-modal__title,
+.modal__title {
+  font-size: 17px;
+}
+
+
+.app-modal__close,
+.ui-modal__close,
+.modal__close {
+  width: 34px;
+  height: 34px;
+  flex-basis: 34px;
+}
+
+
+.app-modal__body,
+.ui-modal__body,
+.modal__body {
+  max-height:
+    calc(
+      100dvh -
+      104px
+    );
+
+  padding:
+    12px
+    14px
+    14px;
+}
+
+
+/* ============================================================
+   26. MODAL FORMS — 2 COLUMN SYSTEM
+
+   Screenshot-dakı uzun məhsul redaktə formasını sıxır.
+   ============================================================ */
+
+.modal-form {
+  gap: 9px;
+}
+
+
+.modal-form__grid {
+  grid-template-columns:
+    repeat(
+      2,
+      minmax(0, 1fr)
+    );
+
+  gap:
+    8px
+    10px;
+}
+
+
+.modal-form__actions {
+  position: sticky;
+
+  z-index: 5;
+
+  bottom: -14px;
+
+  margin:
+    4px
+    -14px
+    -14px;
+
+  padding:
+    10px
+    14px
+    12px;
+
+  border-top:
+    1px solid
+    var(--border);
+
+  background:
+    var(--surface-glass-strong);
+
+  backdrop-filter:
+    blur(18px);
+
+  -webkit-backdrop-filter:
+    blur(18px);
+}
+
+
+/* ============================================================
+   27. LONG TEXTAREA IN MODAL
+
+   Açıqlama 100-120px yox, kompakt 2-3 sətir.
+   ============================================================ */
+
+.app-modal .ui-textarea,
+.ui-modal .ui-textarea,
+.modal .ui-textarea {
+  min-height: 68px;
+
+  max-height: 110px;
+}
+
+
+/* ============================================================
+   28. FILE INPUT ROW
+   ============================================================ */
+
+.app-modal input[type="file"],
+.ui-modal input[type="file"],
+.modal input[type="file"] {
+  width: 100%;
+
+  min-height: 38px;
+
+  padding: 5px;
+
+  border:
+    1px dashed
+    var(--border);
+
+  border-radius: 10px;
+
+  color: var(--text-muted);
+
+  background: var(--surface);
+
+  font-size: 10px;
+}
+
+
+/* ============================================================
+   29. MODAL IMAGE — NEVER GIANT
+   ============================================================ */
+
+.app-modal img,
+.ui-modal img,
+.modal img {
+  max-height: 260px;
+
+  object-fit: contain;
+}
+
+
+/*
+   Product / Trainer details:
+   screenshot-dakı 500px nəhəng şəkilləri sıxır.
+*/
+
+.app-modal
+.product-card__image,
+.ui-modal
+.product-card__image,
+.modal
+.product-card__image,
+.app-modal
+.trainer-card__image,
+.ui-modal
+.trainer-card__image,
+.modal
+.trainer-card__image {
+  width: 100%;
+
+  max-height: 245px;
+
+  object-fit: contain;
+}
+
+
+/* ============================================================
+   30. ADMIN TABLES
+   ============================================================ */
+
+.admin-table-wrap {
+  border-radius: 12px;
+}
+
+
+.admin-table {
+  font-size: 10px;
+}
+
+
+.admin-table th {
+  height: 34px;
+
+  padding:
+    0
+    9px;
+
+  font-size: 7.8px;
+}
+
+
+.admin-table td {
+  padding:
+    7px
+    9px;
+}
+
+
+.admin-table__primary {
+  font-size: 10px;
+}
+
+
+.admin-table__secondary {
+  margin-top: 2px;
+
+  font-size: 8px;
+}
+
+
+/* ============================================================
+   31. POS GRID
+
+   6 dar sütun əvəzinə real kassaya uyğun kart ölçüsü.
+   ============================================================ */
+
+.pos-products-grid {
+  grid-template-columns:
+    repeat(
+      auto-fill,
+      minmax(165px, 1fr)
+    );
+
+  gap: 7px;
+}
+
+
+.pos-products-grid
+>
+.pos-product-card {
+  max-width: 220px;
+}
+
+
+.pos-product-card__media {
+  aspect-ratio: 1 / .78;
+}
+
+
+.pos-product-card__body {
+  padding: 7px;
+}
+
+
+.pos-product-card__name {
+  min-height: 28px;
+
+  font-size: 9.5px;
+}
+
+
+.pos-product-card__price {
+  margin-top: 4px;
+
+  font-size: 11.5px;
+}
+
+
+/* ============================================================
+   32. ADMIN PRODUCT / TRAINER GRIDS
+   ============================================================ */
+
+.admin-products-grid,
+.admin-trainers-grid {
+  grid-template-columns:
+    repeat(
+      auto-fill,
+      minmax(180px, 1fr)
+    );
+
+  gap: 8px;
+}
+
+
+.admin-products-grid
+>
+.admin-product-card,
+.admin-trainers-grid
+>
+.trainer-card {
+  max-width: 245px;
+}
+
+
+/* ============================================================
+   33. STOCK PAGE
+   ============================================================ */
+
+.stock-status--ok {
+  font-weight: 850;
+}
+
+
+.admin-section
+.admin-table-wrap {
+  margin-top: 4px;
+}
+
+
+/* ============================================================
+   34. DEBTS
+
+   Məlumat yoxdursa nəhəng boş card qalmasın.
+   ============================================================ */
+
+.admin-section:has(.debt-balance),
+.admin-section:has(.debt-paid) {
+  min-height: 0;
+}
+
+
+/* ============================================================
+   35. AUDIT HISTORY
+
+   Screenshot-dakı 80-100px kartları kompaktlaşdırır.
+   ============================================================ */
+
+.operation-list,
+.compact-list {
+  gap: 5px;
+}
+
+
+.operation-item,
+.compact-list-item {
+  min-height: 48px;
+
+  padding:
+    7px
+    9px;
+
+  border-radius: 10px;
+}
+
+
+.operation-list--audit
+.operation-item {
+  min-height: 50px;
+
+  display: grid;
+
+  grid-template-columns:
+    34px
+    minmax(180px, 1fr)
+    minmax(150px, .7fr)
+    auto;
+
+  align-items: center;
+
+  gap: 9px;
+}
+
+
+.operation-item__title,
+.compact-list-item__title {
+  font-size: 10.5px;
+}
+
+
+.operation-item__meta,
+.operation-item__operator,
+.compact-list-item__meta {
+  font-size: 8.5px;
+}
+
+
+/* ============================================================
+   36. FINANCE LEGEND
+   ============================================================ */
+
+.finance-legend {
+  gap: 10px;
+
+  margin-bottom: 7px;
+
+  padding:
+    6px
+    9px;
+
+  border-radius: 10px;
+}
+
+
+/* ============================================================
+   37. ADMIN CREDIT / LARGE EMPTY FOOT SPACE
+   ============================================================ */
+
+.admin-credit {
+  margin:
+    10px
+    16px
+    8px;
+
+  padding:
+    9px
+    8px;
+
+  font-size: 7.5px;
+}
+
+
+/* ============================================================
+   38. RESPONSIVE — TABLET
+   ============================================================ */
+
+@media (max-width: 1080px) {
+
+  .home-hero {
+    min-height: 420px;
+  }
+
+
+  .home-hero__inner {
+    min-height: 420px;
+
+    grid-template-columns: 1fr;
+  }
+
+
+  .home-hero__features {
+    grid-template-columns:
+      repeat(
+        3,
+        minmax(0, 1fr)
+      );
+  }
+
+
+  .profile-layout {
+    grid-template-columns:
+      1fr
+      300px;
+  }
+
+
+  .admin-toolbar--finance,
+  .admin-toolbar--history {
+    grid-template-columns:
+      minmax(230px, 1fr)
+      150px
+      135px
+      135px;
+  }
+
+}
+
+
+/* ============================================================
+   39. RESPONSIVE — MOBILE
+   ============================================================ */
+
+@media (max-width: 760px) {
+
+  :root {
+    --page-x: 10px;
+  }
+
+
+  .app-main {
+    padding-top: 8px;
+
+    padding-bottom:
+      calc(
+        var(--bottom-nav-height) +
+        var(--safe-bottom) +
+        18px
+      );
+  }
+
+
+  .home-section {
+    padding: 20px 0;
+  }
+
+
+  .home-hero {
+    min-height: 0;
+  }
+
+
+  .home-hero__inner {
+    min-height: 0;
+
+    gap: 18px;
+
+    padding-top: 22px;
+    padding-bottom: 22px;
+  }
+
+
+  .home-hero__title {
+    font-size:
+      clamp(
+        38px,
+        13vw,
+        58px
+      );
+  }
+
+
+  .gym-showcase {
+    grid-template-rows:
+      190px
+      120px;
+  }
+
+
+  .product-grid,
+  .products-grid {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+  }
+
+
+  .product-grid > .product-card,
+  .products-grid > .product-card {
+    max-width: none;
+  }
+
+
+  .trainer-grid,
+  .trainers-grid {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+  }
+
+
+  .trainer-grid > .trainer-card,
+  .trainers-grid > .trainer-card {
+    max-width: none;
+  }
+
+
+  .favorites-loading {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+  }
+
+
+  .product-card-skeleton {
+    max-width: none;
+
+    height: 220px;
+  }
+
+
+  .profile-layout {
+    grid-template-columns: 1fr;
+  }
+
+
+  .app-modal,
+  .ui-modal,
+  .modal {
+    width:
+      calc(100vw - 16px);
+
+    max-height:
+      calc(100dvh - 16px);
+
+    border-radius: 15px;
+  }
+
+
+  .modal-form__grid {
+    grid-template-columns: 1fr;
+  }
+
+
+  .admin-toolbar,
+  .admin-toolbar--finance,
+  .admin-toolbar--history {
+    grid-template-columns: 1fr;
+  }
+
+}
+
+
+/* ============================================================
+   40. VERY SMALL MOBILE
+   ============================================================ */
+
+@media (max-width: 420px) {
+
+  .product-grid,
+  .products-grid {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+
+    gap: 5px;
+  }
+
+
+  .product-card__name {
+    font-size: 10.5px;
+  }
+
+
+  .trainer-grid,
+  .trainers-grid {
+    gap: 5px;
+  }
+
+}
+
+
+/* ============================================================
+   END — COMPACT PRODUCTION PATCH 1 / 2
+   ============================================================ */
+
+/* ============================================================
+   SKY FIT PRO
+   COMPACT PRODUCTION PATCH — 2 / 2
+
+   Final screenshot-based correction layer
+   Senior Full Stack Developer: Qərib Səfərli
+   ============================================================ */
+
+
+/* ============================================================
+   41. GLOBAL DENSITY FINISH
+   ============================================================ */
+
+.admin-panel,
+.admin-content,
+.admin-section,
+.profile-card,
+.profile-side-card,
+.member-overview-card,
+.favorites-hero,
+.home-cta {
+  min-width: 0;
+}
+
+
+.admin-panel {
+  padding-bottom: 6px;
+}
+
+
+.admin-panel > *:last-child {
+  margin-bottom: 0;
+}
+
+
+/* ============================================================
+   42. EMPTY STATES
+
+   190px-lik boş blokları kompakt edir.
+   ============================================================ */
+
+.ui-empty-state {
+  min-height: 118px;
+
+  gap: 5px;
+
+  padding:
+    17px
+    14px;
+
+  border-radius: 13px;
+}
+
+
+.ui-empty-state__icon {
+  width: 38px;
+  height: 38px;
+
+  margin-bottom: 1px;
+
+  border-radius: 11px;
+}
+
+
+.ui-empty-state__icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+
+.ui-empty-state strong {
+  font-size: 12px;
+}
+
+
+.ui-empty-state
+>
+span:not(.ui-empty-state__icon) {
+  max-width: 390px;
+
+  font-size: 9.5px;
+
+  line-height: 1.4;
+}
+
+
+/* ============================================================
+   43. SEARCH CONTROLS
+   ============================================================ */
+
+.search-control,
+.ui-search {
+  min-height: 42px;
+
+  border-radius: 11px;
+}
+
+
+.search-control__icon,
+.ui-search__icon {
+  width: 38px;
+  height: 40px;
+
+  flex-basis: 38px;
+}
+
+
+.search-control__icon svg,
+.ui-search__icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+
+.search-control__input,
+.ui-search__input {
+  height: 40px;
+
+  font-size: 12.5px;
+}
+
+
+/* ============================================================
+   44. BADGES
+
+   Statuslar daha tez oxunsun.
+   ============================================================ */
+
+.ui-badge {
+  min-height: 21px;
+
+  padding:
+    3px
+    7px;
+
+  font-size: 8.5px;
+}
+
+
+.ui-badge--success {
+  color: #43ee91;
+
+  background:
+    rgba(53, 220, 130, .14);
+}
+
+
+.ui-badge--danger {
+  color: #ff6574;
+
+  background:
+    rgba(255, 93, 108, .14);
+}
+
+
+.ui-badge--warning {
+  color: #ffb54d;
+
+  background:
+    rgba(255, 173, 66, .14);
+}
+
+
+.ui-badge--info {
+  color: #78b4ff;
+
+  background:
+    rgba(105, 169, 255, .14);
+}
+
+
+/* ============================================================
+   45. MODAL — PRODUCT EDIT / GENERIC FORMS
+   ============================================================ */
+
+.modal-form {
+  gap: 8px;
+}
+
+
+.modal-form__grid {
+  align-items: start;
+
+  gap:
+    8px
+    10px;
+}
+
+
+.modal-form .ui-field {
+  min-width: 0;
+}
+
+
+.modal-form .ui-field__label {
+  margin-bottom: 0;
+
+  font-size: 10.5px;
+}
+
+
+.modal-form .ui-input,
+.modal-form .ui-select,
+.modal-form .ui-date-input {
+  min-height: 40px;
+}
+
+
+.modal-form .ui-input__control {
+  height: 38px;
+
+  font-size: 12.5px;
+}
+
+
+.modal-form textarea,
+.modal-form .ui-textarea {
+  min-height: 62px;
+
+  max-height: 92px;
+
+  resize: vertical;
+}
+
+
+/* ============================================================
+   46. MODAL CHECKBOX / VISIBILITY AREA
+   ============================================================ */
+
+.modal-form .ui-check {
+  min-height: 28px;
+
+  align-items: center;
+
+  gap: 7px;
+
+  font-size: 10.5px;
+
+  line-height: 1.25;
+}
+
+
+.modal-form .ui-check input {
+  width: 16px;
+  height: 16px;
+
+  flex-basis: 16px;
+
+  margin: 0;
+}
+
+
+/*
+   Bir neçə checkbox yanaşı gələndə vertikal boşluq yaratmasın.
+*/
+
+.modal-form
+.ui-field:has(.ui-check)
+{
+  align-content: start;
+
+  gap: 4px;
+}
+
+
+/* ============================================================
+   47. PRODUCT IMAGE UPLOAD AREA
+   ============================================================ */
+
+.modal-form
+input[type="file"] {
+  width: 100%;
+
+  min-height: 38px;
+
+  padding:
+    5px
+    6px;
+
+  overflow: hidden;
+
+  border:
+    1px dashed
+    var(--border);
+
+  border-radius: 10px;
+
+  color: var(--text-muted);
+
+  background: var(--surface);
+
+  font-size: 10px;
+}
+
+
+.modal-form
+input[type="file"]::file-selector-button {
+  min-height: 27px;
+
+  margin-right: 8px;
+
+  padding:
+    0
+    9px;
+
+  border:
+    1px solid
+    var(--border);
+
+  border-radius: 8px;
+
+  color: var(--text-soft);
+
+  background: var(--surface-hover);
+
+  font-size: 9px;
+
+  font-weight: 750;
+
+  cursor: pointer;
+}
+
+
+/* ============================================================
+   48. MODAL FOOTER — ALWAYS VISIBLE
+   ============================================================ */
+
+.modal-form__actions {
+  position: sticky;
+
+  z-index: 8;
+
+  bottom: -14px;
+
+  justify-content: flex-end;
+
+  gap: 7px;
+
+  margin:
+    3px
+    -14px
+    -14px;
+
+  padding:
+    9px
+    14px
+    11px;
+
+  border-top:
+    1px solid
+    var(--border);
+
+  background:
+    rgba(12, 16, 23, .97);
+
+  box-shadow:
+    0
+    -12px
+    30px
+    rgba(0, 0, 0, .16);
+}
+
+
+html[data-theme="light"]
+.modal-form__actions {
+  background:
+    rgba(255, 255, 255, .97);
+}
+
+
+/* ============================================================
+   49. PRODUCT / TRAINER DETAIL MODALS
+
+   Böyük portret və məhsul şəkillərini kompakt edir.
+   ============================================================ */
+
+.modal-product,
+.product-detail-modal,
+.trainer-detail-modal {
+  width:
+    min(
+      calc(100vw - 28px),
+      680px
+    );
+}
+
+
+.product-detail-modal img,
+.modal-product img {
+  width: 100%;
+
+  max-height: 270px;
+
+  object-fit: contain;
+
+  background: var(--bg-soft);
+}
+
+
+.trainer-detail-modal img {
+  width: 100%;
+
+  max-height: 320px;
+
+  object-fit: cover;
+
+  object-position: center 20%;
+}
+
+
+.product-detail-modal h2,
+.trainer-detail-modal h2 {
+  margin:
+    7px
+    0
+    5px;
+
+  font-size: 17px;
+}
+
+
+.product-detail-modal p,
+.trainer-detail-modal p {
+  margin:
+    4px
+    0;
+
+  font-size: 11px;
+
+  line-height: 1.45;
+}
+
+
+/* ============================================================
+   50. POS CONFIRM MODAL
+   ============================================================ */
+
+.pos-sale-modal,
+.sale-confirm-modal {
+  width:
+    min(
+      calc(100vw - 28px),
+      640px
+    );
+}
+
+
+.pos-sale-modal__product,
+.sale-confirm-product {
+  display: grid;
+
+  grid-template-columns:
+    125px
+    minmax(0, 1fr);
+
+  align-items: center;
+
+  gap: 12px;
+}
+
+
+.pos-sale-modal__product img,
+.sale-confirm-product img {
+  width: 125px;
+  height: 110px;
+
+  border-radius: 11px;
+
+  object-fit: contain;
+
+  background: var(--bg-soft);
+}
+
+
+.pos-sale-modal
+.modal-form__grid,
+.sale-confirm-modal
+.modal-form__grid {
+  grid-template-columns:
+    repeat(
+      2,
+      minmax(0, 1fr)
+    );
+}
+
+
+/*
+   Əgər JS modalı class vermədən yaradırsa,
+   modal içindəki çox böyük birinci şəkli də qoruyur.
+*/
+
+.app-modal__body
+>
+img:first-child,
+.ui-modal__body
+>
+img:first-child,
+.modal__body
+>
+img:first-child {
+  width: 100%;
+
+  max-height: 250px;
+
+  object-fit: contain;
+
+  border-radius: 10px;
+
+  background: var(--bg-soft);
+}
+
+
+/* ============================================================
+   51. POS PRODUCT CARDS
+   ============================================================ */
+
+.pos-products-grid {
+  align-items: start;
+}
+
+
+.pos-product-card {
+  align-self: start;
+}
+
+
+.pos-product-card__media {
+  height: 138px;
+
+  aspect-ratio: auto;
+}
+
+
+.pos-product-card__image {
+  object-fit: contain;
+
+  background: #fff;
+}
+
+
+.pos-product-card__body {
+  text-align: center;
+}
+
+
+.pos-product-card__name {
+  min-height: 28px;
+
+  font-size: 10px;
+
+  line-height: 1.35;
+}
+
+
+.pos-product-card__price {
+  margin-top: 4px;
+
+  font-size: 12px;
+}
+
+
+.pos-product-card__stock {
+  margin-top: 2px;
+
+  font-size: 8px;
+}
+
+
+/* ============================================================
+   52. ADMIN PRODUCT CARD
+   ============================================================ */
+
+.admin-product-card__media {
+  height: 150px;
+
+  aspect-ratio: auto;
+}
+
+
+.admin-product-card__image {
+  object-fit: contain;
+
+  background: #fff;
+}
+
+
+.admin-product-card__body {
+  padding:
+    8px
+    9px;
+}
+
+
+.admin-product-card__name {
+  min-height: 28px;
+
+  font-size: 10.5px;
+}
+
+
+.admin-product-card__price {
+  margin-top: 5px;
+
+  font-size: 12px;
+}
+
+
+.admin-product-card__actions {
+  padding:
+    0
+    8px
+    8px;
+}
+
+
+/* ============================================================
+   53. MEMBERSHIP PLANS
+   ============================================================ */
+
+.admin-setting-grid {
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(210px, 280px)
+    );
+
+  justify-content: start;
+
+  gap: 7px;
+}
+
+
+.admin-setting-card {
+  min-height: 120px;
+
+  padding: 10px;
+
+  border-radius: 12px;
+}
+
+
+.admin-setting-card__title {
+  margin-top: 7px;
+
+  font-size: 12px;
+}
+
+
+.admin-setting-card__price {
+  margin:
+    8px
+    0;
+
+  font-size: 19px;
+}
+
+
+/* ============================================================
+   54. MEMBERSHIP HISTORY TABLE
+   ============================================================ */
+
+.admin-table
+td
+.ui-badge {
+  vertical-align: middle;
+}
+
+
+.admin-table
+td:last-child {
+  white-space: nowrap;
+}
+
+
+/* ============================================================
+   55. ATTENDANCE / GİRİŞ PAGE
+   ============================================================ */
+
+body[data-page="admin"]
+.admin-panel[data-panel="attendance"]
+.admin-kpi-grid {
+  grid-template-columns:
+    repeat(
+      3,
+      minmax(180px, 260px)
+    );
+
+  justify-content: start;
+}
+
+
+body[data-page="admin"]
+.admin-panel[data-panel="attendance"]
+.admin-toolbar {
+  grid-template-columns:
+    minmax(320px, 1fr)
+    170px;
+}
+
+
+body[data-page="admin"]
+.admin-panel[data-panel="attendance"]
+.admin-table td {
+  height: 42px;
+}
+
+
+/* ============================================================
+   56. STOCK PAGE
+   ============================================================ */
+
+body[data-page="admin"]
+.admin-panel[data-panel="stock"]
+.admin-section {
+  padding: 10px 11px;
+}
+
+
+body[data-page="admin"]
+.admin-panel[data-panel="stock"]
+.admin-table td,
+body[data-page="admin"]
+.admin-panel[data-panel="stock"]
+.admin-table th {
+  white-space: nowrap;
+}
+
+
+.stock-status--ok {
+  color: var(--success);
+}
+
+
+.stock-status--low {
+  color: var(--warning);
+}
+
+
+.stock-status--empty {
+  color: var(--danger);
+}
+
+
+/* ============================================================
+   57. DEBT SUMMARY
+   ============================================================ */
+
+body[data-page="admin"]
+.admin-panel[data-panel="debts"]
+.admin-kpi-grid {
+  grid-template-columns:
+    repeat(
+      2,
+      minmax(250px, 420px)
+    );
+
+  justify-content: start;
+
+  max-width: 860px;
+}
+
+
+body[data-page="admin"]
+.admin-panel[data-panel="debts"]
+.admin-section {
+  min-height: 0;
+}
+
+
+body[data-page="admin"]
+.admin-panel[data-panel="debts"]
+.admin-section:empty {
+  display: none;
+}
+
+
+.debt-balance {
+  color: var(--danger) !important;
+
+  font-weight: 950;
+}
+
+
+.debt-paid {
+  color: var(--success) !important;
+
+  font-weight: 850;
+}
+
+
+/* ============================================================
+   58. BORC ACCOUNT CARD / LIST
+
+   JS hansı wrapper-i istifadə edirsə bu generic strukturlar
+   onu kompakt saxlayacaq.
+   ============================================================ */
+
+.debt-list,
+.debt-account-list,
+.debt-history-list {
+  display: grid;
+
+  gap: 5px;
+}
+
+
+.debt-card,
+.debt-account-card,
+.debt-history-item {
+  min-height: 50px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 10px;
+
+  padding:
+    7px
+    9px;
+
+  border:
+    1px solid
+    var(--border-soft);
+
+  border-radius: 11px;
+
+  background: var(--surface);
+}
+
+
+.debt-card__name,
+.debt-account-card__name {
+  color: var(--text);
+
+  font-size: 10.5px;
+
+  font-weight: 850;
+}
+
+
+.debt-card__meta,
+.debt-account-card__meta {
+  color: var(--text-faint);
+
+  font-size: 8.5px;
+}
+
+
+/* ============================================================
+   59. FINANCE — STRONG SEMANTIC COLORS
+   ============================================================ */
+
+.finance-summary-card {
+  min-height: 80px;
+}
+
+
+.finance-summary-card--income {
+  border-color:
+    rgba(53, 220, 130, .36);
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(53, 220, 130, .13),
+      rgba(53, 220, 130, .035)
+    );
+}
+
+
+.finance-summary-card--income span {
+  color:
+    rgba(110, 245, 169, .7);
+}
+
+
+.finance-summary-card--income strong,
+.finance-value--income,
+.finance-amount--income {
+  color:
+    #3ee58a !important;
+}
+
+
+.finance-summary-card--expense {
+  border-color:
+    rgba(255, 93, 108, .36);
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 93, 108, .13),
+      rgba(255, 93, 108, .035)
+    );
+}
+
+
+.finance-summary-card--expense span {
+  color:
+    rgba(255, 132, 143, .74);
+}
+
+
+.finance-summary-card--expense strong,
+.finance-value--expense,
+.finance-amount--expense {
+  color:
+    #ff6171 !important;
+}
+
+
+.finance-summary-card--balance {
+  border-color:
+    rgba(105, 169, 255, .36);
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(105, 169, 255, .13),
+      rgba(105, 169, 255, .035)
+    );
+}
+
+
+.finance-summary-card--balance span {
+  color:
+    rgba(137, 188, 255, .74);
+}
+
+
+.finance-summary-card--balance strong,
+.finance-value--neutral {
+  color:
+    #72aeff !important;
+}
+
+
+/* ============================================================
+   60. FINANCE TOOLBAR
+   ============================================================ */
+
+.admin-toolbar--finance {
+  grid-template-columns:
+    minmax(280px, 1fr)
+    150px
+    140px
+    140px
+    100px;
+
+  align-items: end;
+}
+
+
+.admin-date-filter {
+  gap: 3px;
+}
+
+
+.admin-date-filter > span {
+  padding-left: 3px;
+
+  font-size: 7.5px;
+}
+
+
+/* ============================================================
+   61. FINANCE TABLE
+   ============================================================ */
+
+body[data-page="admin"]
+.admin-panel[data-panel="finance"]
+.admin-table {
+  min-width: 880px;
+}
+
+
+body[data-page="admin"]
+.admin-panel[data-panel="finance"]
+.admin-table td {
+  padding:
+    6px
+    9px;
+}
+
+
+.finance-amount--income::before {
+  content: "+ ";
+}
+
+
+.finance-amount--expense::before {
+  content: "− ";
+}
+
+
+/* ============================================================
+   62. FINANCE LEGEND
+   ============================================================ */
+
+.finance-legend {
+  min-height: 31px;
+
+  margin-bottom: 7px;
+
+  padding:
+    5px
+    8px;
+}
+
+
+.finance-legend__item {
+  font-size: 8px;
+}
+
+
+.finance-legend__dot {
+  width: 6px;
+  height: 6px;
+}
+
+
+/* ============================================================
+   63. TRAINER ADMIN
+   ============================================================ */
+
+.admin-trainers-grid {
+  align-items: start;
+}
+
+
+.admin-trainers-grid
+.trainer-card {
+  width: 100%;
+
+  max-width: 235px;
+}
+
+
+.admin-trainers-grid
+.trainer-card__media {
+  height: 255px;
+
+  aspect-ratio: auto;
+}
+
+
+.admin-trainers-grid
+.trainer-card__image {
+  object-position: center 20%;
+}
+
+
+/* ============================================================
+   64. AUDIT TOOLBAR
+   ============================================================ */
+
+.admin-toolbar--history {
+  grid-template-columns:
+    minmax(310px, 1fr)
+    180px
+    180px
+    140px
+    140px;
+
+  gap: 6px;
+}
+
+
+/* ============================================================
+   65. AUDIT CARDS
+
+   Hazır screenshot-dakı kartların uzunluğunu yarıya yaxın azaldır.
+   ============================================================ */
+
+.operation-list--audit {
+  gap: 4px;
+}
+
+
+.operation-list--audit
+.operation-item {
+  min-height: 46px;
+
+  display: grid;
+
+  grid-template-columns:
+    30px
+    minmax(190px, 1.3fr)
+    minmax(130px, .75fr)
+    minmax(145px, .85fr);
+
+  align-items: center;
+
+  gap: 8px;
+
+  padding:
+    6px
+    9px;
+
+  border-radius: 10px;
+}
+
+
+.operation-list--audit
+.operation-item__icon {
+  width: 29px;
+  height: 29px;
+
+  display: grid;
+
+  place-items: center;
+
+  border-radius: 9px;
+
+  color: var(--brand);
+
+  background:
+    var(--brand-softer);
+}
+
+
+.operation-list--audit
+.operation-item__title {
+  font-size: 10px;
+}
+
+
+.operation-list--audit
+.operation-item__meta,
+.operation-list--audit
+.operation-item__operator {
+  font-size: 8px;
+
+  line-height: 1.3;
+}
+
+
+.operation-list--audit
+.operation-item__date,
+.operation-list--audit
+.operation-item__time {
+  font-size: 8.5px;
+
+  font-variant-numeric:
+    tabular-nums;
+
+  white-space: nowrap;
+}
+
+
+/* ============================================================
+   66. AUDIT STATUS
+   ============================================================ */
+
+.operation-item
+.ui-badge--success {
+  box-shadow:
+    inset
+    0
+    0
+    0
+    1px
+    rgba(53, 220, 130, .06);
+}
+
+
+.operation-item
+.ui-badge--warning {
+  box-shadow:
+    inset
+    0
+    0
+    0
+    1px
+    rgba(255, 173, 66, .06);
+}
+
+
+/* ============================================================
+   67. AUDIT INFO STRIP
+   ============================================================ */
+
+.admin-info-strip {
+  min-height: 42px;
+
+  align-items: center;
+
+  margin-bottom: 7px;
+
+  padding:
+    6px
+    8px;
+
+  font-size: 8.5px;
+}
+
+
+.admin-info-strip__icon {
+  width: 25px;
+  height: 25px;
+
+  flex-basis: 25px;
+}
+
+
+/* ============================================================
+   68. PROFILE ATTENDANCE
+   ============================================================ */
+
+.attendance-history,
+.profile-attendance-list {
+  display: grid;
+
+  gap: 5px;
+}
+
+
+.attendance-history__item,
+.profile-attendance-item {
+  min-height: 48px;
+
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1fr)
+    auto;
+
+  align-items: center;
+
+  gap: 10px;
+
+  padding:
+    7px
+    9px;
+
+  border:
+    1px solid
+    var(--border-soft);
+
+  border-radius: 10px;
+
+  background: var(--surface);
+}
+
+
+/* ============================================================
+   69. PROFILE MEMBERSHIP EMPTY STATE
+   ============================================================ */
+
+.profile-card
+.ui-empty-state {
+  min-height: 105px;
+}
+
+
+/* ============================================================
+   70. FAVORITES LOADING
+
+   1 sevimli varsa 5 nəhəng placeholder göstərilməsin.
+   ============================================================ */
+
+.favorites-loading {
+  align-items: start;
+}
+
+
+.favorites-loading
+.product-card-skeleton {
+  min-height: 0;
+}
+
+
+/* ============================================================
+   71. GENERAL LIST COMPACTNESS
+   ============================================================ */
+
+.operation-item,
+.compact-list-item {
+  min-height: 48px;
+
+  padding:
+    7px
+    9px;
+
+  border-radius: 10px;
+}
+
+
+.operation-item__title,
+.compact-list-item__title {
+  font-size: 10.5px;
+}
+
+
+.operation-item__meta,
+.operation-item__operator,
+.compact-list-item__meta {
+  font-size: 8.5px;
+}
+
+
+/* ============================================================
+   72. QUICK SALE FLOATING BUTTON
+
+   Bu CSS artıq səndə mövcuddur.
+   Biz sadəcə daha görünən edirik.
+   ============================================================ */
+
+.quick-sale-launcher {
+  top:
+    calc(
+      var(--header-height) +
+      var(--safe-top) +
+      18px
+    );
+
+  right:
+    calc(
+      18px +
+      var(--safe-right)
+    );
+
+  min-width: 142px;
+
+  height: 46px;
+
+  border:
+    1px solid
+    rgba(255, 222, 0, .7);
+
+  box-shadow:
+    0
+    0
+    0
+    1px
+    rgba(255, 222, 0, .08),
+    0
+    0
+    25px
+    rgba(255, 222, 0, .19),
+    0
+    11px
+    34px
+    rgba(0, 0, 0, .31);
+
+  font-size: 10.5px;
+}
+
+
+/*
+   Admin sidebar açıq desktopda düymə sidebarın üstündə qalmasın.
+*/
+
+@media (min-width: 861px) {
+
+  body[data-page="admin"]
+  .quick-sale-launcher {
+    top: 75px;
+
+    right: 18px;
+  }
+
+}
+
+
+/* ============================================================
+   73. QUICK SALE PAGE
+   ============================================================ */
+
+.quick-sale-shell {
+  max-width: 1240px;
+
+  padding-top: 4px;
+}
+
+
+.quick-sale-hero {
+  padding: 14px 16px;
+
+  border-radius: 16px;
+}
+
+
+.quick-sale-hero__title {
+  font-size:
+    clamp(
+      25px,
+      3vw,
+      36px
+    );
+}
+
+
+.quick-sale-hero__description {
+  margin-top: 5px;
+
+  font-size: 10.5px;
+}
+
+
+.quick-sale-grid {
+  grid-template-columns:
+    repeat(
+      auto-fill,
+      minmax(160px, 1fr)
+    );
+
+  gap: 7px;
+
+  margin-top: 8px;
+}
+
+
+.quick-sale-grid
+>
+.quick-sale-card {
+  max-width: 215px;
+}
+
+
+.quick-sale-card__media {
+  height: 125px;
+
+  aspect-ratio: auto;
+}
+
+
+.quick-sale-card__image {
+  object-fit: contain;
+
+  background: #fff;
+}
+
+
+.quick-sale-card__body {
+  padding: 7px;
+}
+
+
+.quick-sale-card__name {
+  min-height: 29px;
+
+  font-size: 10px;
+}
+
+
+.quick-sale-card__price {
+  margin-top: 4px;
+
+  font-size: 12px;
+}
+
+
+/* ============================================================
+   74. QUICK SALE PRESETS
+   ============================================================ */
+
+.quick-sale-presets {
+  gap: 4px;
+
+  margin-top: 6px;
+}
+
+
+.quick-sale-preset {
+  min-height: 31px;
+
+  border-radius: 8px;
+
+  font-size: 8.5px;
+}
+
+
+.quick-sale-unit-selector {
+  gap: 6px;
+}
+
+
+.quick-sale-unit-tabs {
+  gap: 4px;
+}
+
+
+.quick-sale-unit-tab {
+  min-height: 34px;
+
+  border-radius: 9px;
+
+  font-size: 9px;
+}
+
+
+.quick-sale-gram-grid {
+  gap: 4px;
+}
+
+
+.quick-sale-gram {
+  min-height: 31px;
+
+  border-radius: 8px;
+
+  font-size: 8px;
+}
+
+
+/* ============================================================
+   75. QUICK SALE SUMMARY
+   ============================================================ */
+
+.quick-sale-summary {
+  border-radius: 11px;
+}
+
+
+.quick-sale-summary__row {
+  min-height: 36px;
+
+  padding:
+    0
+    9px;
+
+  font-size: 9px;
+}
+
+
+.quick-sale-summary__row strong {
+  font-size: 10px;
+}
+
+
+.quick-sale-summary__row--total {
+  min-height: 43px;
+}
+
+
+.quick-sale-summary__row--total strong {
+  font-size: 14px;
+}
+
+
+.quick-sale-actions {
+  gap: 6px;
+
+  margin-top: 7px;
+}
+
+
+.quick-sale-actions
+.ui-button {
+  min-height: 42px;
+}
+
+
+/* ============================================================
+   76. DESKTOP ADMIN — USE AVAILABLE HEIGHT
+   ============================================================ */
+
+@media (min-width: 1100px) {
+
+  body[data-page="admin"]
+  .admin-content {
+    min-height:
+      calc(
+        100dvh -
+        var(--header-height)
+      );
+  }
+
+
+  body[data-page="admin"]
+  .admin-panel {
+    min-height: 0;
+  }
+
+
+  body[data-page="admin"]
+  .admin-section {
+    margin-bottom: 0;
+  }
+
+}
+
+
+/* ============================================================
+   77. TABLET ADMIN
+   ============================================================ */
+
+@media (
+  min-width: 761px
+)
+and
+(
+  max-width: 1180px
+) {
+
+  .admin-toolbar--finance,
+  .admin-toolbar--history {
+    grid-template-columns:
+      minmax(250px, 1fr)
+      repeat(
+        2,
+        minmax(130px, 160px)
+      );
+  }
+
+
+  .operation-list--audit
+  .operation-item {
+    grid-template-columns:
+      28px
+      minmax(170px, 1fr)
+      auto;
+  }
+
+
+  .admin-setting-grid {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+  }
+
+}
+
+
+/* ============================================================
+   78. MOBILE MODALS
+   ============================================================ */
+
+@media (max-width: 760px) {
+
+  .app-modal-backdrop,
+  .ui-modal-backdrop,
+  .modal-backdrop {
+    padding:
+      6px;
+  }
+
+
+  .app-modal__header,
+  .ui-modal__header,
+  .modal__header {
+    padding:
+      10px
+      11px;
+  }
+
+
+  .app-modal__body,
+  .ui-modal__body,
+  .modal__body {
+    padding:
+      10px
+      11px
+      12px;
+  }
+
+
+  .modal-form__actions {
+    bottom: -12px;
+
+    margin:
+      3px
+      -11px
+      -12px;
+
+    padding:
+      8px
+      11px
+      calc(
+        9px +
+        var(--safe-bottom)
+      );
+  }
+
+
+  .pos-sale-modal__product,
+  .sale-confirm-product {
+    grid-template-columns:
+      85px
+      minmax(0, 1fr);
+  }
+
+
+  .pos-sale-modal__product img,
+  .sale-confirm-product img {
+    width: 85px;
+    height: 78px;
+  }
+
+
+  .pos-sale-modal
+  .modal-form__grid,
+  .sale-confirm-modal
+  .modal-form__grid {
+    grid-template-columns: 1fr;
+  }
+
+
+  .admin-setting-grid {
+    grid-template-columns: 1fr;
+  }
+
+
+  body[data-page="admin"]
+  .admin-panel[data-panel="debts"]
+  .admin-kpi-grid {
+    grid-template-columns: 1fr;
+
+    max-width: none;
+  }
+
+
+  body[data-page="admin"]
+  .admin-panel[data-panel="attendance"]
+  .admin-kpi-grid {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+  }
+
+
+  .operation-list--audit
+  .operation-item {
+    min-height: 55px;
+
+    grid-template-columns:
+      28px
+      minmax(0, 1fr)
+      auto;
+
+    gap: 6px;
+  }
+
+
+  .quick-sale-grid {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+  }
+
+
+  .quick-sale-grid
+  >
+  .quick-sale-card {
+    max-width: none;
+  }
+
+}
+
+
+/* ============================================================
+   79. PHONE PRODUCT MODAL
+   ============================================================ */
+
+@media (max-width: 480px) {
+
+  .app-modal,
+  .ui-modal,
+  .modal {
+    width:
+      calc(
+        100vw -
+        10px
+      );
+
+    max-height:
+      calc(
+        100dvh -
+        10px
+      );
+
+    border-radius: 14px;
+  }
+
+
+  .app-modal__title,
+  .ui-modal__title,
+  .modal__title {
+    font-size: 15px;
+  }
+
+
+  .app-modal img,
+  .ui-modal img,
+  .modal img {
+    max-height: 210px;
+  }
+
+
+  .modal-form .ui-field__label {
+    font-size: 10px;
+  }
+
+
+  .modal-form .ui-input__control {
+    font-size: 12px;
+  }
+
+
+  .quick-sale-launcher {
+    top:
+      calc(
+        var(--header-height) +
+        var(--safe-top) +
+        9px
+      );
+
+    right:
+      calc(
+        9px +
+        var(--safe-right)
+      );
+
+    min-width: 118px;
+
+    height: 40px;
+
+    padding:
+      0
+      10px;
+
+    border-radius: 12px;
+
+    font-size: 9px;
+  }
+
+}
+
+
+/* ============================================================
+   80. FINAL PROTECTION AGAINST RANDOM LARGE GAPS
+   ============================================================ */
+
+.admin-content
+>
+.admin-panel
+>
+.admin-section:last-child {
+  margin-bottom: 0;
+}
+
+
+.admin-panel
+.ui-empty-state:last-child {
+  margin-bottom: 0;
+}
+
+
+.admin-panel
+.admin-table-wrap:last-child {
+  margin-bottom: 0;
+}
+
+
+.admin-panel
+.operation-list:last-child {
+  margin-bottom: 0;
+}
+
+
+/* ============================================================
+   COMPACT PRODUCTION PATCH — 2 / 2 END
+
+   Senior Full Stack Developer:
+   Qərib Səfərli
+   ============================================================ */
