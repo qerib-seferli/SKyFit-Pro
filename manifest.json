@@ -1,0 +1,84 @@
+{
+  "id": "/",
+  "name": "SKy Fit Pro",
+  "short_name": "SKy Fit",
+  "description": "SKy Fit Pro — fitness klubu, üzvlük, satış, stok və idarəetmə platforması.",
+  "lang": "az",
+  "dir": "ltr",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#080a0f",
+  "theme_color": "#090b10",
+  "categories": [
+    "fitness",
+    "health",
+    "business",
+    "lifestyle"
+  ],
+  "icons": [
+    {
+      "src": "./assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./assets/icons/icon-192-maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./assets/icons/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Profil",
+      "short_name": "Profil",
+      "description": "SKy Fit profilini aç",
+      "url": "./profile.html",
+      "icons": [
+        {
+          "src": "./assets/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Sevimlilər",
+      "short_name": "Sevimli",
+      "description": "Sevimli məhsulları aç",
+      "url": "./favorites.html",
+      "icons": [
+        {
+          "src": "./assets/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "İdarəetmə",
+      "short_name": "Admin",
+      "description": "SKy Fit idarəetmə panelini aç",
+      "url": "./admin.html",
+      "icons": [
+        {
+          "src": "./assets/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}
