@@ -2,6 +2,16 @@
 // SKY FIT PRO
 // Authentication Controller
 // File: js/auth.js
+//
+// PART 1 / 2
+//
+// Pages:
+// - login.html
+// - register.html
+// - reset-password.html
+// - update-password.html
+//
+// Supabase Auth + profiles backend
 // ============================================================
 
 import {
@@ -11,1001 +21,1756 @@ import {
 } from './config.js';
 
 import {
-  byId,
+  SKYFIT_EVENTS,
+
   $,
+  byId,
+
   normalizeString,
+
   validateEmail,
   validatePhone,
   validatePassword,
+
   setFieldError,
   clearFormErrors,
-  bindPasswordToggle,
   setButtonLoading,
+
+  getCurrentIdentity,
+  clearIdentityCache,
+
+  bindPasswordToggle,
+
   notify,
   getErrorMessage,
-  getSession,
-  getCurrentIdentity,
-  showElement,
-  hideElement,
+
   asyncHandler,
 } from './core.js';
 
-
-// ============================================================
-// 01. PAGE
-// ============================================================
-
-const page =
-  document.body?.dataset?.page || '';
+import {
+  initLayout,
+} from './layout.js';
 
 
 // ============================================================
-// 02. SHARED HELPERS
+// 01. STATE
 // ============================================================
 
-function normalizeEmail(value) {
-  return normalizeString(value)
-    .toLowerCase();
+const state = {
+
+  page:
+    normalizeString(
+      document.body
+        ?.dataset
+        ?.page
+    ),
+
+  busy:
+    false,
+
+  recoverySessionReady:
+    false,
+};
+
+
+// ============================================================
+// 02. AUTH PAGES
+// ============================================================
+
+const AUTH_PAGES =
+  new Set([
+    'login',
+    'register',
+    'reset-password',
+    'update-password',
+  ]);
+
+
+// ============================================================
+// 03. CURRENT PAGE
+// ============================================================
+
+function currentPage() {
+  return state.page;
 }
 
 
-function normalizePhone(value) {
-  return normalizeString(value)
-    .replace(/\s+/g, '')
-    .replace(/[()-]/g, '');
-}
+// ============================================================
+// 04. REDIRECT TARGET
+//
+// Məsələn:
+// login.html?next=admin.html
+//
+// Yalnız layihə daxilində relative page qəbul edilir.
+// Xarici URL qəbul edilmir.
+// ============================================================
+
+function getNextRoute() {
+  const params =
+    new URLSearchParams(
+      window.location.search
+    );
 
 
-function redirect(url) {
-  window.location.replace(url);
+  const next =
+    normalizeString(
+      params.get(
+        'next'
+      )
+    );
+
+
+  if (!next) {
+    return '';
+  }
+
+
+  if (
+    next.includes(
+      '://'
+    ) ||
+    next.startsWith(
+      '//'
+    ) ||
+    next.startsWith(
+      'javascript:'
+    )
+  ) {
+    return '';
+  }
+
+
+  return next;
 }
 
 
 // ============================================================
-// 03. PASSWORD TOGGLES
+// 05. AUTHENTICATED REDIRECT
 // ============================================================
 
-function initPasswordToggles() {
-  const bindings = [
-    [
-      'login-password-toggle',
-      'login-password',
-    ],
+async function redirectAuthenticatedUser() {
+  if (
+    currentPage() ===
+    'update-password'
+  ) {
+    return false;
+  }
 
-    [
-      'register-password-toggle',
-      'register-password',
-    ],
 
-    [
-      'register-password-confirm-toggle',
-      'register-password-confirm',
-    ],
+  try {
+    const identity =
+      await getCurrentIdentity();
 
-    [
-      'update-password-new-toggle',
-      'update-password-new',
-    ],
 
-    [
-      'update-password-confirm-toggle',
-      'update-password-confirm',
-    ],
-  ];
+    if (
+      !identity
+        ?.authenticated
+    ) {
+      return false;
+    }
 
-  bindings.forEach(
-    ([buttonId, inputId]) => {
-      bindPasswordToggle(
-        byId(buttonId),
-        byId(inputId)
+
+    const next =
+      getNextRoute();
+
+
+    if (next) {
+      window.location.replace(
+        next
+      );
+
+      return true;
+    }
+
+
+    if (
+      identity.isStaff
+    ) {
+      window.location.replace(
+        APP_CONFIG.routes.admin
+      );
+    } else {
+      window.location.replace(
+        APP_CONFIG.routes.home
       );
     }
+
+
+    return true;
+  } catch (error) {
+    console.error(
+      '[SKy Fit Auth] Existing session:',
+      error
+    );
+
+
+    return false;
+  }
+}
+
+
+// ============================================================
+// 06. PASSWORD TOGGLE BINDING
+// ============================================================
+
+function bindPasswordToggles() {
+  document
+    .querySelectorAll(
+      '[data-password-toggle]'
+    )
+    .forEach(
+      button => {
+        const inputId =
+          normalizeString(
+            button.dataset
+              .passwordToggle
+          );
+
+
+        if (!inputId) {
+          return;
+        }
+
+
+        const input =
+          byId(
+            inputId
+          );
+
+
+        if (!input) {
+          return;
+        }
+
+
+        bindPasswordToggle(
+          button,
+          input
+        );
+      }
+    );
+}
+
+
+// ============================================================
+// 07. LOGIN DOM
+// ============================================================
+
+function getLoginElements() {
+  return {
+
+    form:
+      byId(
+        'login-form'
+      ),
+
+    email:
+      byId(
+        'login-email'
+      ),
+
+    emailError:
+      byId(
+        'login-email-error'
+      ),
+
+    password:
+      byId(
+        'login-password'
+      ),
+
+    passwordError:
+      byId(
+        'login-password-error'
+      ),
+
+    submit:
+      byId(
+        'login-submit'
+      ),
+  };
+}
+
+
+// ============================================================
+// 08. LOGIN
+// ============================================================
+
+function bindLogin() {
+  const elements =
+    getLoginElements();
+
+
+  if (
+    !elements.form
+  ) {
+    return;
+  }
+
+
+  elements.form
+    .addEventListener(
+      'submit',
+      async event => {
+        event.preventDefault();
+
+
+        if (
+          state.busy
+        ) {
+          return;
+        }
+
+
+        clearFormErrors(
+          elements.form
+        );
+
+
+        const email =
+          normalizeString(
+            elements.email
+              ?.value
+          )
+            .toLowerCase();
+
+
+        const password =
+          elements.password
+            ?.value ||
+          '';
+
+
+        let valid =
+          true;
+
+
+        if (
+          !validateEmail(
+            email
+          )
+        ) {
+          setFieldError(
+            elements.email,
+            elements.emailError,
+            'E-poçt ünvanını düzgün daxil et.'
+          );
+
+
+          valid =
+            false;
+        }
+
+
+        if (
+          !password
+        ) {
+          setFieldError(
+            elements.password,
+            elements.passwordError,
+            'Şifrəni daxil et.'
+          );
+
+
+          valid =
+            false;
+        }
+
+
+        if (!valid) {
+          return;
+        }
+
+
+        state.busy =
+          true;
+
+
+        setButtonLoading(
+          elements.submit,
+          true,
+          {
+            loadingText:
+              'Daxil olunur...',
+          }
+        );
+
+
+        try {
+          const {
+            data,
+            error,
+          } =
+            await supabase
+              .auth
+              .signInWithPassword({
+                email,
+                password,
+              });
+
+
+          if (error) {
+            throw error;
+          }
+
+
+          if (
+            !data?.user
+          ) {
+            throw new Error(
+              'Sessiya yaradılmadı.'
+            );
+          }
+
+
+          clearIdentityCache();
+
+
+          const identity =
+            await getCurrentIdentity({
+              force:
+                true,
+            });
+
+
+          if (
+            identity
+              ?.profile &&
+            identity.profile
+              .is_active ===
+              false
+          ) {
+            await supabase
+              .auth
+              .signOut();
+
+
+            clearIdentityCache();
+
+
+            notify.error(
+              'Hesab deaktiv edilib. Administrasiya ilə əlaqə saxla.'
+            );
+
+
+            return;
+          }
+
+
+          notify.success(
+            'Xoş gəldin.'
+          );
+
+
+          const next =
+            getNextRoute();
+
+
+          setTimeout(
+            () => {
+              if (next) {
+                window.location.replace(
+                  next
+                );
+
+                return;
+              }
+
+
+              window.location.replace(
+                identity
+                  ?.isStaff
+                  ? APP_CONFIG
+                      .routes
+                      .admin
+                  : APP_CONFIG
+                      .routes
+                      .home
+              );
+            },
+            180
+          );
+        } catch (error) {
+          console.error(
+            '[SKy Fit Auth] Login:',
+            error
+          );
+
+
+          notify.error(
+            loginErrorMessage(
+              error
+            )
+          );
+        } finally {
+          state.busy =
+            false;
+
+
+          setButtonLoading(
+            elements.submit,
+            false
+          );
+        }
+      }
+    );
+}
+
+
+// ============================================================
+// 09. LOGIN ERROR MESSAGE
+// ============================================================
+
+function loginErrorMessage(
+  error
+) {
+  const message =
+    normalizeString(
+      error?.message
+    ).toLowerCase();
+
+
+  if (
+    message.includes(
+      'invalid login credentials'
+    )
+  ) {
+    return (
+      'E-poçt və ya şifrə düzgün deyil.'
+    );
+  }
+
+
+  if (
+    message.includes(
+      'email not confirmed'
+    )
+  ) {
+    return (
+      'E-poçt ünvanı hələ təsdiqlənməyib.'
+    );
+  }
+
+
+  if (
+    message.includes(
+      'too many requests'
+    )
+  ) {
+    return (
+      'Çox sayda cəhd edildi. Bir qədər sonra yenidən yoxla.'
+    );
+  }
+
+
+  return getErrorMessage(
+    error,
+    'Daxil olmaq mümkün olmadı.'
   );
 }
 
 
 // ============================================================
-// 04. LOGIN
+// 10. REGISTER DOM
 // ============================================================
 
-function initLogin() {
-  const form =
-    byId('login-form');
+function getRegisterElements() {
+  return {
 
-  if (!form) return;
+    form:
+      byId(
+        'register-form'
+      ),
 
-  const emailInput =
-    byId('login-email');
+    fullName:
+      byId(
+        'register-full-name'
+      ),
 
-  const passwordInput =
-    byId('login-password');
+    fullNameError:
+      byId(
+        'register-full-name-error'
+      ),
 
-  const emailError =
-    byId('login-email-error');
+    email:
+      byId(
+        'register-email'
+      ),
 
-  const passwordError =
-    byId('login-password-error');
+    emailError:
+      byId(
+        'register-email-error'
+      ),
 
-  const submitButton =
-    byId('login-submit');
+    phone:
+      byId(
+        'register-phone'
+      ),
 
+    phoneError:
+      byId(
+        'register-phone-error'
+      ),
 
-  form.addEventListener(
-    'submit',
-    async event => {
-      event.preventDefault();
+    password:
+      byId(
+        'register-password'
+      ),
 
-      clearFormErrors(form);
+    passwordError:
+      byId(
+        'register-password-error'
+      ),
 
-      const email =
-        normalizeEmail(
-          emailInput?.value
-        );
+    passwordConfirm:
+      byId(
+        'register-password-confirm'
+      ),
 
-      const password =
-        passwordInput?.value || '';
+    passwordConfirmError:
+      byId(
+        'register-password-confirm-error'
+      ),
 
-      let valid = true;
+    terms:
+      byId(
+        'register-terms'
+      ),
 
+    termsError:
+      byId(
+        'register-terms-error'
+      ),
 
-      if (!validateEmail(email)) {
-        setFieldError(
-          emailInput,
-          emailError,
-          'Düzgün e-poçt ünvanı daxil et.'
-        );
-
-        valid = false;
-      }
-
-
-      if (
-        !validatePassword(
-          password
-        )
-      ) {
-        setFieldError(
-          passwordInput,
-          passwordError,
-          'Şifrə minimum 6 simvol olmalıdır.'
-        );
-
-        valid = false;
-      }
-
-
-      if (!valid) {
-        return;
-      }
-
-
-      setButtonLoading(
-        submitButton,
-        true,
-        {
-          loadingText:
-            'Daxil olunur...',
-        }
-      );
+    submit:
+      byId(
+        'register-submit'
+      ),
+  };
+}
 
 
-      try {
-        const {
-          data,
-          error,
-        } =
-          await supabase.auth
-            .signInWithPassword({
-              email,
-              password,
-            });
+// ============================================================
+// 11. REGISTER
+//
+// handle_new_user() trigger backenddə:
+// auth.users -> public.profiles
+//
+// full_name/email/phone metadata-dan profile-a yazılır.
+// ============================================================
+
+function bindRegister() {
+  const elements =
+    getRegisterElements();
 
 
-        if (error) {
-          throw error;
-        }
+  if (
+    !elements.form
+  ) {
+    return;
+  }
 
 
-        if (!data?.session) {
-          throw new Error(
-            'Sessiya yaradılmadı.'
-          );
-        }
-
-
-        const identity =
-          await getCurrentIdentity();
-
-
-        notify.success(
-          'Hesabına daxil oldun.'
-        );
+  elements.form
+    .addEventListener(
+      'submit',
+      async event => {
+        event.preventDefault();
 
 
         if (
-          identity?.isStaff
+          state.busy
         ) {
-          redirect(
-            APP_CONFIG.routes.admin
+          return;
+        }
+
+
+        clearFormErrors(
+          elements.form
+        );
+
+
+        const fullName =
+          normalizeString(
+            elements
+              .fullName
+              ?.value
+          );
+
+
+        const email =
+          normalizeString(
+            elements
+              .email
+              ?.value
+          )
+            .toLowerCase();
+
+
+        const phone =
+          normalizeString(
+            elements
+              .phone
+              ?.value
+          );
+
+
+        const password =
+          elements
+            .password
+            ?.value ||
+          '';
+
+
+        const passwordConfirm =
+          elements
+            .passwordConfirm
+            ?.value ||
+          '';
+
+
+        const acceptedTerms =
+          Boolean(
+            elements
+              .terms
+              ?.checked
+          );
+
+
+        let valid =
+          true;
+
+
+        // ----------------------------------------------------
+        // Name
+        // ----------------------------------------------------
+
+        if (
+          fullName.length < 3
+        ) {
+          setFieldError(
+            elements.fullName,
+            elements
+              .fullNameError,
+            'Ad və soyad minimum 3 simvol olmalıdır.'
+          );
+
+
+          valid =
+            false;
+        }
+
+
+        // ----------------------------------------------------
+        // Email
+        // ----------------------------------------------------
+
+        if (
+          !validateEmail(
+            email
+          )
+        ) {
+          setFieldError(
+            elements.email,
+            elements.emailError,
+            'E-poçt ünvanını düzgün daxil et.'
+          );
+
+
+          valid =
+            false;
+        }
+
+
+        // ----------------------------------------------------
+        // Phone
+        // ----------------------------------------------------
+
+        if (
+          phone &&
+          !validatePhone(
+            phone
+          )
+        ) {
+          setFieldError(
+            elements.phone,
+            elements.phoneError,
+            'Telefon nömrəsi düzgün deyil.'
+          );
+
+
+          valid =
+            false;
+        }
+
+
+        // ----------------------------------------------------
+        // Password
+        // ----------------------------------------------------
+
+        if (
+          !validatePassword(
+            password,
+            {
+              minLength:
+                8,
+            }
+          )
+        ) {
+          setFieldError(
+            elements.password,
+            elements
+              .passwordError,
+            'Şifrə minimum 8 simvol olmalıdır.'
+          );
+
+
+          valid =
+            false;
+        }
+
+
+        // ----------------------------------------------------
+        // Confirm
+        // ----------------------------------------------------
+
+        if (
+          password !==
+          passwordConfirm
+        ) {
+          setFieldError(
+            elements
+              .passwordConfirm,
+            elements
+              .passwordConfirmError,
+            'Şifrələr eyni deyil.'
+          );
+
+
+          valid =
+            false;
+        }
+
+
+        // ----------------------------------------------------
+        // Terms
+        // ----------------------------------------------------
+
+        if (
+          !acceptedTerms
+        ) {
+          if (
+            elements
+              .termsError
+          ) {
+            elements
+              .termsError
+              .textContent =
+                'Qaydaları qəbul etməlisən.';
+
+
+            elements
+              .termsError
+              .hidden =
+                false;
+
+
+            elements
+              .termsError
+              .classList
+              .remove(
+                'is-hidden'
+              );
+          }
+
+
+          valid =
+            false;
+        }
+
+
+        if (!valid) {
+          return;
+        }
+
+
+        state.busy =
+          true;
+
+
+        setButtonLoading(
+          elements.submit,
+          true,
+          {
+            loadingText:
+              'Hesab yaradılır...',
+          }
+        );
+
+
+        try {
+          const emailRedirectTo =
+            new URL(
+              APP_CONFIG
+                .routes
+                .login,
+              window.location.href
+            ).href;
+
+
+          const {
+            data,
+            error,
+          } =
+            await supabase
+              .auth
+              .signUp({
+                email,
+                password,
+
+                options: {
+
+                  emailRedirectTo,
+
+                  data: {
+                    full_name:
+                      fullName,
+
+                    phone:
+                      phone ||
+                      null,
+                  },
+                },
+              });
+
+
+          if (error) {
+            throw error;
+          }
+
+
+          if (
+            data?.session
+          ) {
+            clearIdentityCache();
+
+
+            notify.success(
+              'Hesab yaradıldı.'
+            );
+
+
+            setTimeout(
+              () => {
+                window.location.replace(
+                  APP_CONFIG
+                    .routes
+                    .home
+                );
+              },
+              200
+            );
+
+
+            return;
+          }
+
+
+          notify.success(
+            'Qeydiyyat tamamlandı. E-poçt ünvanına göndərilən təsdiq keçidini aç.'
+          );
+
+
+          elements.form.reset();
+
+
+          setTimeout(
+            () => {
+              window.location.href =
+                APP_CONFIG
+                  .routes
+                  .login;
+            },
+            1200
+          );
+        } catch (error) {
+          console.error(
+            '[SKy Fit Auth] Register:',
+            error
+          );
+
+
+          notify.error(
+            registerErrorMessage(
+              error
+            )
+          );
+        } finally {
+          state.busy =
+            false;
+
+
+          setButtonLoading(
+            elements.submit,
+            false
+          );
+        }
+      }
+    );
+}
+
+
+// ============================================================
+// 12. REGISTER ERROR
+// ============================================================
+
+function registerErrorMessage(
+  error
+) {
+  const message =
+    normalizeString(
+      error?.message
+    ).toLowerCase();
+
+
+  if (
+    message.includes(
+      'already registered'
+    ) ||
+    message.includes(
+      'user already registered'
+    )
+  ) {
+    return (
+      'Bu e-poçt ünvanı ilə artıq hesab mövcuddur.'
+    );
+  }
+
+
+  if (
+    message.includes(
+      'password'
+    ) &&
+    message.includes(
+      'weak'
+    )
+  ) {
+    return (
+      'Daha güclü şifrə seç.'
+    );
+  }
+
+
+  return getErrorMessage(
+    error,
+    'Qeydiyyat tamamlanmadı.'
+  );
+}
+
+
+// ============================================================
+// 13. RESET PASSWORD DOM
+// ============================================================
+
+function getResetElements() {
+  return {
+
+    form:
+      byId(
+        'reset-password-form'
+      ),
+
+    email:
+      byId(
+        'reset-password-email'
+      ),
+
+    emailError:
+      byId(
+        'reset-password-email-error'
+      ),
+
+    submit:
+      byId(
+        'reset-password-submit'
+      ),
+
+    success:
+      byId(
+        'reset-password-success'
+      ),
+  };
+}
+
+
+// ============================================================
+// 14. RESET PASSWORD
+// ============================================================
+
+function bindResetPassword() {
+  const elements =
+    getResetElements();
+
+
+  if (
+    !elements.form
+  ) {
+    return;
+  }
+
+
+  elements.form
+    .addEventListener(
+      'submit',
+      async event => {
+        event.preventDefault();
+
+
+        if (
+          state.busy
+        ) {
+          return;
+        }
+
+
+        clearFormErrors(
+          elements.form
+        );
+
+
+        const email =
+          normalizeString(
+            elements.email
+              ?.value
+          )
+            .toLowerCase();
+
+
+        if (
+          !validateEmail(
+            email
+          )
+        ) {
+          setFieldError(
+            elements.email,
+            elements.emailError,
+            'E-poçt ünvanını düzgün daxil et.'
+          );
+
+
+          return;
+        }
+
+
+        state.busy =
+          true;
+
+
+        setButtonLoading(
+          elements.submit,
+          true,
+          {
+            loadingText:
+              'Göndərilir...',
+          }
+        );
+
+
+        try {
+          const redirectTo =
+            new URL(
+              APP_CONFIG
+                .routes
+                .updatePassword,
+              window.location.href
+            ).href;
+
+
+          const {
+            error,
+          } =
+            await supabase
+              .auth
+              .resetPasswordForEmail(
+                email,
+                {
+                  redirectTo,
+                }
+              );
+
+
+          if (error) {
+            throw error;
+          }
+
+
+          if (
+            elements.success
+          ) {
+            elements.success
+              .hidden =
+                false;
+
+
+            elements.success
+              .classList
+              .remove(
+                'is-hidden'
+              );
+          }
+
+
+          notify.success(
+            'Şifrə yeniləmə keçidi göndərildi.'
+          );
+        } catch (error) {
+          console.error(
+            '[SKy Fit Auth] Reset password:',
+            error
+          );
+
+
+          notify.error(
+            getErrorMessage(
+              error,
+              'Şifrə yeniləmə keçidi göndərilmədi.'
+            )
+          );
+        } finally {
+          state.busy =
+            false;
+
+
+          setButtonLoading(
+            elements.submit,
+            false
+          );
+        }
+      }
+    );
+}
+
+
+// ============================================================
+
+// ============================================================
+// 15. UPDATE PASSWORD DOM
+// ============================================================
+
+function getUpdatePasswordElements() {
+  return {
+
+    form:
+      byId(
+        'update-password-form'
+      ),
+
+    password:
+      byId(
+        'update-password-new'
+      ),
+
+    passwordError:
+      byId(
+        'update-password-new-error'
+      ),
+
+    passwordConfirm:
+      byId(
+        'update-password-confirm'
+      ),
+
+    passwordConfirmError:
+      byId(
+        'update-password-confirm-error'
+      ),
+
+    submit:
+      byId(
+        'update-password-submit'
+      ),
+
+    invalidState:
+      byId(
+        'update-password-invalid'
+      ),
+
+    readyState:
+      byId(
+        'update-password-ready'
+      ),
+  };
+}
+
+
+// ============================================================
+// 16. RECOVERY STATE
+// ============================================================
+
+function setRecoveryState(
+  ready
+) {
+  state.recoverySessionReady =
+    Boolean(ready);
+
+
+  const elements =
+    getUpdatePasswordElements();
+
+
+  if (
+    elements.readyState
+  ) {
+    elements.readyState.hidden =
+      !ready;
+
+
+    elements.readyState
+      .classList
+      .toggle(
+        'is-hidden',
+        !ready
+      );
+  }
+
+
+  if (
+    elements.invalidState
+  ) {
+    elements.invalidState.hidden =
+      ready;
+
+
+    elements.invalidState
+      .classList
+      .toggle(
+        'is-hidden',
+        ready
+      );
+  }
+}
+
+
+// ============================================================
+// 17. HANDLE RECOVERY SESSION
+// ============================================================
+
+async function detectRecoverySession() {
+  if (
+    currentPage() !==
+    'update-password'
+  ) {
+    return;
+  }
+
+
+  try {
+    const {
+      data,
+      error,
+    } =
+      await supabase.auth
+        .getSession();
+
+
+    if (error) {
+      throw error;
+    }
+
+
+    const hasSession =
+      Boolean(
+        data?.session
+      );
+
+
+    if (hasSession) {
+      setRecoveryState(
+        true
+      );
+
+      return;
+    }
+
+
+    // URL hash/query içində recovery token varsa,
+    // Supabase client onu auth state event-də session-a çevirə bilər.
+    setRecoveryState(
+      false
+    );
+  } catch (error) {
+    console.error(
+      '[SKy Fit Auth] Recovery session:',
+      error
+    );
+
+
+    setRecoveryState(
+      false
+    );
+  }
+}
+
+
+// ============================================================
+// 18. PASSWORD RECOVERY AUTH EVENT
+// ============================================================
+
+function bindRecoveryAuthEvent() {
+  supabase.auth
+    .onAuthStateChange(
+      (
+        event,
+        session
+      ) => {
+        if (
+          currentPage() !==
+          'update-password'
+        ) {
+          return;
+        }
+
+
+        if (
+          event ===
+          'PASSWORD_RECOVERY'
+        ) {
+          setRecoveryState(
+            Boolean(session)
+          );
+        }
+      }
+    );
+}
+
+
+// ============================================================
+// 19. UPDATE PASSWORD
+// ============================================================
+
+function bindUpdatePassword() {
+  const elements =
+    getUpdatePasswordElements();
+
+
+  if (
+    !elements.form
+  ) {
+    return;
+  }
+
+
+  elements.form
+    .addEventListener(
+      'submit',
+      async event => {
+        event.preventDefault();
+
+
+        if (
+          state.busy
+        ) {
+          return;
+        }
+
+
+        if (
+          !state
+            .recoverySessionReady
+        ) {
+          notify.error(
+            'Şifrə yeniləmə sessiyası aktiv deyil. Yeni keçid tələb et.'
           );
 
           return;
         }
 
 
-        redirect(
-          APP_CONFIG.routes.home
+        clearFormErrors(
+          elements.form
         );
-      } catch (error) {
-        notify.error(
-          getErrorMessage(error)
-        );
-      } finally {
+
+
+        const password =
+          elements.password
+            ?.value ||
+          '';
+
+
+        const passwordConfirm =
+          elements
+            .passwordConfirm
+            ?.value ||
+          '';
+
+
+        let valid =
+          true;
+
+
+        if (
+          !validatePassword(
+            password,
+            {
+              minLength:
+                8,
+            }
+          )
+        ) {
+          setFieldError(
+            elements.password,
+            elements
+              .passwordError,
+            'Yeni şifrə minimum 8 simvol olmalıdır.'
+          );
+
+
+          valid =
+            false;
+        }
+
+
+        if (
+          password !==
+          passwordConfirm
+        ) {
+          setFieldError(
+            elements
+              .passwordConfirm,
+            elements
+              .passwordConfirmError,
+            'Şifrələr eyni deyil.'
+          );
+
+
+          valid =
+            false;
+        }
+
+
+        if (!valid) {
+          return;
+        }
+
+
+        state.busy =
+          true;
+
+
         setButtonLoading(
-          submitButton,
-          false
+          elements.submit,
+          true,
+          {
+            loadingText:
+              'Şifrə yenilənir...',
+          }
         );
+
+
+        try {
+          const {
+            error,
+          } =
+            await supabase.auth
+              .updateUser({
+                password,
+              });
+
+
+          if (error) {
+            throw error;
+          }
+
+
+          notify.success(
+            'Şifrə uğurla yeniləndi.'
+          );
+
+
+          setTimeout(
+            async () => {
+              try {
+                await supabase
+                  .auth
+                  .signOut();
+              } catch {
+                // ignore
+              }
+
+
+              clearIdentityCache();
+
+
+              window.location.replace(
+                APP_CONFIG
+                  .routes
+                  .login
+              );
+            },
+            500
+          );
+        } catch (error) {
+          console.error(
+            '[SKy Fit Auth] Update password:',
+            error
+          );
+
+
+          notify.error(
+            getErrorMessage(
+              error,
+              'Şifrə yenilənmədi.'
+            )
+          );
+        } finally {
+          state.busy =
+            false;
+
+
+          setButtonLoading(
+            elements.submit,
+            false
+          );
+        }
       }
+    );
+}
+
+
+// ============================================================
+// 20. AUTH PAGE LINKS
+// ============================================================
+
+function bindAuthLinks() {
+  byId(
+    'auth-go-login'
+  )?.addEventListener(
+    'click',
+    event => {
+      event.preventDefault();
+
+
+      window.location.href =
+        APP_CONFIG
+          .routes
+          .login;
+    }
+  );
+
+
+  byId(
+    'auth-go-register'
+  )?.addEventListener(
+    'click',
+    event => {
+      event.preventDefault();
+
+
+      window.location.href =
+        APP_CONFIG
+          .routes
+          .register;
+    }
+  );
+
+
+  byId(
+    'auth-go-reset'
+  )?.addEventListener(
+    'click',
+    event => {
+      event.preventDefault();
+
+
+      window.location.href =
+        APP_CONFIG
+          .routes
+          .resetPassword;
     }
   );
 }
 
 
 // ============================================================
-// 05. REGISTER
+// 21. CLEAR TERMS ERROR ON CHANGE
 // ============================================================
 
-function initRegister() {
-  const form =
-    byId('register-form');
-
-  if (!form) return;
-
-
-  const firstNameInput =
-    byId(
-      'register-first-name'
-    );
-
-  const lastNameInput =
-    byId(
-      'register-last-name'
-    );
-
-  const phoneInput =
-    byId(
-      'register-phone'
-    );
-
-  const emailInput =
-    byId(
-      'register-email'
-    );
-
-  const passwordInput =
-    byId(
-      'register-password'
-    );
-
-  const confirmInput =
-    byId(
-      'register-password-confirm'
-    );
-
-  const termsInput =
+function bindTermsChange() {
+  const terms =
     byId(
       'register-terms'
     );
 
 
-  const firstNameError =
-    byId(
-      'register-first-name-error'
-    );
-
-  const lastNameError =
-    byId(
-      'register-last-name-error'
-    );
-
-  const phoneError =
-    byId(
-      'register-phone-error'
-    );
-
-  const emailError =
-    byId(
-      'register-email-error'
-    );
-
-  const passwordError =
-    byId(
-      'register-password-error'
-    );
-
-  const confirmError =
-    byId(
-      'register-password-confirm-error'
-    );
-
-  const termsError =
+  const error =
     byId(
       'register-terms-error'
     );
 
-  const submitButton =
-    byId(
-      'register-submit'
-    );
 
-
-  form.addEventListener(
-    'submit',
-    async event => {
-      event.preventDefault();
-
-      clearFormErrors(form);
-
-
-      const firstName =
-        normalizeString(
-          firstNameInput?.value
-        );
-
-      const lastName =
-        normalizeString(
-          lastNameInput?.value
-        );
-
-      const phone =
-        normalizePhone(
-          phoneInput?.value
-        );
-
-      const email =
-        normalizeEmail(
-          emailInput?.value
-        );
-
-      const password =
-        passwordInput?.value || '';
-
-      const passwordConfirm =
-        confirmInput?.value || '';
-
-      const termsAccepted =
-        Boolean(
-          termsInput?.checked
-        );
-
-
-      let valid = true;
-
-
+  terms?.addEventListener(
+    'change',
+    () => {
       if (
-        firstName.length < 2
+        !error ||
+        !terms.checked
       ) {
-        setFieldError(
-          firstNameInput,
-          firstNameError,
-          'Ad minimum 2 simvol olmalıdır.'
-        );
-
-        valid = false;
-      }
-
-
-      if (
-        lastName.length < 2
-      ) {
-        setFieldError(
-          lastNameInput,
-          lastNameError,
-          'Soyad minimum 2 simvol olmalıdır.'
-        );
-
-        valid = false;
-      }
-
-
-      if (
-        phone &&
-        !validatePhone(phone)
-      ) {
-        setFieldError(
-          phoneInput,
-          phoneError,
-          'Telefon nömrəsi düzgün deyil.'
-        );
-
-        valid = false;
-      }
-
-
-      if (
-        !validateEmail(email)
-      ) {
-        setFieldError(
-          emailInput,
-          emailError,
-          'Düzgün e-poçt ünvanı daxil et.'
-        );
-
-        valid = false;
-      }
-
-
-      if (
-        !validatePassword(password)
-      ) {
-        setFieldError(
-          passwordInput,
-          passwordError,
-          'Şifrə minimum 6 simvol olmalıdır.'
-        );
-
-        valid = false;
-      }
-
-
-      if (
-        password !==
-        passwordConfirm
-      ) {
-        setFieldError(
-          confirmInput,
-          confirmError,
-          'Şifrələr eyni deyil.'
-        );
-
-        valid = false;
-      }
-
-
-      if (!termsAccepted) {
-        if (termsError) {
-          termsError.textContent =
-            'İstifadə qaydalarını qəbul etməlisən.';
-
-          showElement(
-            termsError
-          );
-        }
-
-        valid = false;
-      }
-
-
-      if (!valid) {
         return;
       }
 
 
-      setButtonLoading(
-        submitButton,
-        true,
-        {
-          loadingText:
-            'Hesab yaradılır...',
-        }
+      error.textContent =
+        '';
+
+
+      error.hidden =
+        true;
+
+
+      error.classList.add(
+        'is-hidden'
       );
-
-
-      try {
-        const {
-          data,
-          error,
-        } =
-          await supabase.auth
-            .signUp({
-              email,
-              password,
-
-              options: {
-                data: {
-                  first_name:
-                    firstName,
-
-                  last_name:
-                    lastName,
-
-                  phone:
-                    phone || null,
-                },
-              },
-            });
-
-
-        if (error) {
-          throw error;
-        }
-
-
-        const user =
-          data?.user;
-
-
-        if (!user) {
-          throw new Error(
-            'İstifadəçi hesabı yaradılmadı.'
-          );
-        }
-
-
-        // ----------------------------------------------------
-        // Mövcud handle_new_user() trigger profiles sətrini
-        // yaradır. Burada yalnız qeydiyyat metadata-sını
-        // istifadə edirik.
-        //
-        // profiles cədvəlində sütunlar trigger tərəfindən
-        // yazılırsa ayrıca insert etmirik.
-        // ----------------------------------------------------
-
-
-        if (data.session) {
-          notify.success(
-            'Hesab uğurla yaradıldı.'
-          );
-
-          redirect(
-            APP_CONFIG.routes.home
-          );
-
-          return;
-        }
-
-
-        notify.success(
-          'Qeydiyyat tamamlandı. E-poçtunu təsdiqlə və sonra daxil ol.',
-          'Hesab yaradıldı'
-        );
-
-
-        setTimeout(
-          () => {
-            redirect(
-              APP_CONFIG.routes.login
-            );
-          },
-          900
-        );
-      } catch (error) {
-        notify.error(
-          getErrorMessage(error)
-        );
-      } finally {
-        setButtonLoading(
-          submitButton,
-          false
-        );
-      }
     }
   );
 }
 
 
 // ============================================================
-// 06. RESET PASSWORD
+// 22. SUBMIT ON ENTER
+//
+// Browser form submit özü bunu edir.
+// Burada ayrıca keydown override etmirik.
+// Mobile keyboard davranışı qorunur.
 // ============================================================
-
-function initResetPassword() {
-  const form =
-    byId(
-      'reset-password-form'
-    );
-
-  if (!form) return;
-
-
-  const emailInput =
-    byId(
-      'reset-password-email'
-    );
-
-  const emailError =
-    byId(
-      'reset-password-email-error'
-    );
-
-  const submitButton =
-    byId(
-      'reset-password-submit'
-    );
-
-  const successState =
-    byId(
-      'reset-password-success'
-    );
-
-
-  form.addEventListener(
-    'submit',
-    async event => {
-      event.preventDefault();
-
-      clearFormErrors(form);
-
-
-      const email =
-        normalizeEmail(
-          emailInput?.value
-        );
-
-
-      if (
-        !validateEmail(email)
-      ) {
-        setFieldError(
-          emailInput,
-          emailError,
-          'Düzgün e-poçt ünvanı daxil et.'
-        );
-
-        return;
-      }
-
-
-      setButtonLoading(
-        submitButton,
-        true,
-        {
-          loadingText:
-            'Göndərilir...',
-        }
-      );
-
-
-      try {
-        const redirectTo =
-          new URL(
-            APP_CONFIG.routes
-              .updatePassword,
-            window.location.href
-          ).href;
-
-
-        const {
-          error,
-        } =
-          await supabase.auth
-            .resetPasswordForEmail(
-              email,
-              {
-                redirectTo,
-              }
-            );
-
-
-        if (error) {
-          throw error;
-        }
-
-
-        hideElement(form);
-
-        showElement(
-          successState
-        );
-
-
-        notify.success(
-          'Şifrə yeniləmə keçidi göndərildi.'
-        );
-      } catch (error) {
-        notify.error(
-          getErrorMessage(error)
-        );
-      } finally {
-        setButtonLoading(
-          submitButton,
-          false
-        );
-      }
-    }
-  );
-}
 
 
 // ============================================================
-// 07. UPDATE PASSWORD
+// 23. PAGE-SPECIFIC INIT
 // ============================================================
 
-async function initUpdatePassword() {
-  const form =
-    byId(
-      'update-password-form'
-    );
-
-  if (!form) return;
-
-
-  const invalidState =
-    byId(
-      'update-password-invalid'
-    );
-
-  const successState =
-    byId(
-      'update-password-success'
-    );
-
-  const passwordInput =
-    byId(
-      'update-password-new'
-    );
-
-  const confirmInput =
-    byId(
-      'update-password-confirm'
-    );
-
-  const passwordError =
-    byId(
-      'update-password-new-error'
-    );
-
-  const confirmError =
-    byId(
-      'update-password-confirm-error'
-    );
-
-  const submitButton =
-    byId(
-      'update-password-submit'
-    );
-
-
-  // ---------------------------------------------------------
-  // Recovery linkindən gələn Supabase sessiyasını yoxlayırıq.
-  // ---------------------------------------------------------
-
-  const session =
-    await getSession();
-
-
-  if (!session) {
-    hideElement(form);
-
-    showElement(
-      invalidState
-    );
-
-    return;
-  }
-
-
-  hideElement(
-    invalidState
-  );
-
-
-  form.addEventListener(
-    'submit',
-    async event => {
-      event.preventDefault();
-
-      clearFormErrors(form);
-
-
-      const password =
-        passwordInput?.value || '';
-
-      const confirmation =
-        confirmInput?.value || '';
-
-
-      let valid = true;
-
-
-      if (
-        !validatePassword(password)
-      ) {
-        setFieldError(
-          passwordInput,
-          passwordError,
-          'Şifrə minimum 6 simvol olmalıdır.'
-        );
-
-        valid = false;
-      }
-
-
-      if (
-        password !==
-        confirmation
-      ) {
-        setFieldError(
-          confirmInput,
-          confirmError,
-          'Şifrələr eyni deyil.'
-        );
-
-        valid = false;
-      }
-
-
-      if (!valid) {
-        return;
-      }
-
-
-      setButtonLoading(
-        submitButton,
-        true,
-        {
-          loadingText:
-            'Yenilənir...',
-        }
-      );
-
-
-      try {
-        const {
-          error,
-        } =
-          await supabase.auth
-            .updateUser({
-              password,
-            });
-
-
-        if (error) {
-          throw error;
-        }
-
-
-        hideElement(form);
-
-        showElement(
-          successState
-        );
-
-
-        notify.success(
-          'Yeni şifrə yadda saxlanıldı.'
-        );
-      } catch (error) {
-        notify.error(
-          getErrorMessage(error)
-        );
-      } finally {
-        setButtonLoading(
-          submitButton,
-          false
-        );
-      }
-    }
-  );
-}
-
-
-// ============================================================
-// 08. ALREADY AUTHENTICATED
-// ============================================================
-
-async function handleAuthenticatedPages() {
-  if (
-    page !== 'login' &&
-    page !== 'register'
+function bindCurrentPage() {
+  switch (
+    currentPage()
   ) {
-    return false;
-  }
-
-
-  const session =
-    await getSession();
-
-
-  if (!session) {
-    return false;
-  }
-
-
-  const identity =
-    await getCurrentIdentity();
-
-
-  if (
-    identity?.isStaff
-  ) {
-    redirect(
-      APP_CONFIG.routes.admin
-    );
-
-    return true;
-  }
-
-
-  redirect(
-    APP_CONFIG.routes.home
-  );
-
-  return true;
-}
-
-
-// ============================================================
-// 09. AUTH EVENT LISTENER
-// ============================================================
-
-function bindAuthEvents() {
-  supabase.auth.onAuthStateChange(
-    (
-      event,
-      session
-    ) => {
-      if (
-        event ===
-          'PASSWORD_RECOVERY' &&
-        page !==
-          'update-password'
-      ) {
-        redirect(
-          APP_CONFIG.routes
-            .updatePassword
-        );
-
-        return;
-      }
-
-
-      if (
-        event ===
-          'SIGNED_OUT' &&
-        (
-          page === 'admin' ||
-          page === 'profile'
-        )
-      ) {
-        redirect(
-          APP_CONFIG.routes.login
-        );
-      }
-
-
-      void session;
-    }
-  );
-}
-
-
-// ============================================================
-// 10. PAGE ROUTER
-// ============================================================
-
-async function initPage() {
-  initPasswordToggles();
-
-  bindAuthEvents();
-
-
-  const redirected =
-    await handleAuthenticatedPages();
-
-
-  if (redirected) {
-    return;
-  }
-
-
-  switch (page) {
     case 'login':
-      initLogin();
+      bindLogin();
       break;
 
 
     case 'register':
-      initRegister();
+      bindRegister();
+      bindTermsChange();
       break;
 
 
     case 'reset-password':
-      initResetPassword();
+      bindResetPassword();
       break;
 
 
     case 'update-password':
-      await initUpdatePassword();
+      bindUpdatePassword();
+      bindRecoveryAuthEvent();
       break;
 
 
@@ -1016,12 +1781,94 @@ async function initPage() {
 
 
 // ============================================================
-// 11. START
+// 24. AUTH UI READY
+// ============================================================
+
+function markAuthReady() {
+  document
+    .documentElement
+    .classList
+    .add(
+      'auth-page-ready'
+    );
+}
+
+
+// ============================================================
+// 25. INIT
+// ============================================================
+
+async function init() {
+  if (
+    !AUTH_PAGES.has(
+      currentPage()
+    )
+  ) {
+    return;
+  }
+
+
+  try {
+    await initLayout();
+
+
+    bindPasswordToggles();
+
+    bindAuthLinks();
+
+    bindCurrentPage();
+
+
+    if (
+      currentPage() ===
+      'update-password'
+    ) {
+      await detectRecoverySession();
+    } else {
+      const redirected =
+        await redirectAuthenticatedUser();
+
+
+      if (redirected) {
+        return;
+      }
+    }
+
+
+    markAuthReady();
+  } catch (error) {
+    console.error(
+      '[SKy Fit Auth] Init:',
+      error
+    );
+
+
+    notify.error(
+      getErrorMessage(
+        error,
+        'Giriş sistemi başladılmadı.'
+      )
+    );
+
+
+    markAuthReady();
+  }
+}
+
+
+// ============================================================
+// 26. START
 // ============================================================
 
 asyncHandler(
-  initPage,
+  init,
   {
-    notifyOnError: true,
+    notifyOnError:
+      true,
   }
 )();
+
+
+// ============================================================
+// SKY FIT PRO AUTH.JS COMPLETE
+// ============================================================
