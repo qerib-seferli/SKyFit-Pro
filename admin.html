@@ -1,6 +1,19 @@
-<!doctype html>
-<html lang="az">
+<!DOCTYPE html>
+
+<html
+  lang="az"
+  data-theme="dark"
+  data-theme-source="system"
+>
 <head>
+
+  <!-- ========================================================
+       SKY FIT PRO
+       Admin / Staff Management Panel
+       File: admin.html
+       PART 1 / 4
+       ======================================================== -->
+
   <meta charset="UTF-8">
 
   <meta
@@ -9,28 +22,24 @@
   >
 
   <meta
+    name="theme-color"
+    content="#090b10"
+  >
+
+  <meta
+    name="color-scheme"
+    content="dark light"
+  >
+
+  <meta
     name="description"
     content="SKy Fit Pro idarəetmə paneli."
   >
 
-  <meta name="theme-color" content="#090b10">
-
   <meta
-    name="apple-mobile-web-app-capable"
-    content="yes"
+    name="author"
+    content="Qərib Səfərli"
   >
-
-  <meta
-    name="apple-mobile-web-app-status-bar-style"
-    content="black-translucent"
-  >
-
-  <meta
-    name="apple-mobile-web-app-title"
-    content="SKy Fit"
-  >
-
-  <title>İdarəetmə | SKy Fit Pro</title>
 
   <link
     rel="manifest"
@@ -39,8 +48,8 @@
 
   <link
     rel="icon"
-    href="./assets/icons/favicon.png"
     type="image/png"
+    href="./assets/icons/favicon.png"
   >
 
   <link
@@ -52,1819 +61,2903 @@
     rel="stylesheet"
     href="./css/app.css"
   >
+
+  <title>
+    İdarəetmə · SKy Fit Pro
+  </title>
+
 </head>
 
-<body
-  class="app-body admin-page"
-  data-page="admin"
->
 
-  <!-- =====================================================
-       GLOBAL ROOTS
-  ====================================================== -->
-
-  <div
-    id="app-loader-root"
-    aria-live="polite"
-  ></div>
-
-  <div
-    id="app-toast-root"
-    aria-live="polite"
-    aria-atomic="true"
-  ></div>
-
-  <div
-    id="app-modal-root"
-    aria-live="polite"
-  ></div>
-
-  <div
-    id="app-drawer-root"
-  ></div>
-
-  <div
-    id="app-header-root"
-  ></div>
+<body data-page="admin">
 
 
-  <!-- =====================================================
-       ADMIN MAIN
-  ====================================================== -->
+  <!-- ========================================================
+       SHARED APPLICATION ROOTS
+       ======================================================== -->
+
+  <div id="app-header-root"></div>
+
+  <div id="app-drawer-root"></div>
+
+
+  <!-- ========================================================
+       ADMIN PAGE
+       ======================================================== -->
 
   <main
     id="app-main"
-    class="app-main admin-main"
+    class="app-main admin-page"
   >
 
-    <!-- ===================================================
-         ADMIN HERO
-    ==================================================== -->
-
-    <section
-      class="admin-hero"
-      aria-labelledby="admin-title"
-    >
-
-      <div class="admin-hero__content">
-
-        <div>
-
-          <span class="section-heading__eyebrow">
-            SKy Fit Pro
-          </span>
-
-          <h1
-            id="admin-title"
-            class="admin-hero__title"
-          >
-            İdarəetmə paneli
-          </h1>
-
-          <p
-            id="admin-operator-label"
-            class="admin-hero__description"
-          >
-            Operator məlumatı yüklənir
-          </p>
-
-        </div>
+    <div class="admin-shell">
 
 
-        <div class="admin-hero__actions">
+      <!-- ====================================================
+           ADMIN SIDEBAR
+           ==================================================== -->
 
-          <button
-            id="admin-global-search-button"
-            class="ui-button ui-button--glass"
-            type="button"
-          >
-            <span class="ui-button__label">
-              Axtar
+      <aside class="admin-sidebar">
+
+        <div class="admin-sidebar__inner">
+
+
+          <!-- BRAND -->
+
+          <div class="admin-sidebar__brand">
+
+            <span
+              class="admin-sidebar__brand-mark"
+              aria-hidden="true"
+            >
+              SK
             </span>
-          </button>
 
-          <button
-            id="admin-quick-action-button"
-            class="ui-button ui-button--primary"
-            type="button"
-          >
-            <span class="ui-button__label">
-              Yeni əməliyyat
+            <span class="admin-sidebar__brand-copy">
+
+              <strong>
+                SKy Fit
+              </strong>
+
+              <small>
+                PRO MANAGEMENT
+              </small>
+
             </span>
-          </button>
 
-        </div>
+          </div>
 
-      </div>
 
-    </section>
+          <!-- OPERATOR -->
 
+          <section class="admin-operator-card">
 
-    <!-- ===================================================
-         ADMIN NAVIGATION
-    ==================================================== -->
+            <span
+              class="admin-operator-card__status"
+              aria-hidden="true"
+            ></span>
 
-    <section
-      class="admin-navigation"
-      aria-label="Admin bölmələri"
-    >
+            <div class="admin-operator-card__identity">
 
-      <div
-        id="admin-tabs"
-        class="admin-tabs"
-        role="tablist"
-      >
-
-        <button
-          class="admin-tab is-active"
-          type="button"
-          role="tab"
-          aria-selected="true"
-          data-admin-tab="dashboard"
-        >
-          Panel
-        </button>
-
-        <button
-          class="admin-tab"
-          type="button"
-          role="tab"
-          aria-selected="false"
-          data-admin-tab="pos"
-        >
-          POS
-        </button>
-
-        <button
-          class="admin-tab"
-          type="button"
-          role="tab"
-          aria-selected="false"
-          data-admin-tab="members"
-        >
-          Üzvlər
-        </button>
-
-        <button
-          class="admin-tab"
-          type="button"
-          role="tab"
-          aria-selected="false"
-          data-admin-tab="memberships"
-        >
-          Üzvlük
-        </button>
-
-        <button
-          class="admin-tab"
-          type="button"
-          role="tab"
-          aria-selected="false"
-          data-admin-tab="attendance"
-        >
-          Giriş
-        </button>
-
-        <button
-          class="admin-tab"
-          type="button"
-          role="tab"
-          aria-selected="false"
-          data-admin-tab="products"
-        >
-          Məhsullar
-        </button>
-
-        <button
-          class="admin-tab"
-          type="button"
-          role="tab"
-          aria-selected="false"
-          data-admin-tab="stock"
-        >
-          Stok
-        </button>
-
-        <button
-          class="admin-tab"
-          type="button"
-          role="tab"
-          aria-selected="false"
-          data-admin-tab="debts"
-        >
-          Borclar
-        </button>
-
-        <button
-          class="admin-tab"
-          type="button"
-          role="tab"
-          aria-selected="false"
-          data-admin-tab="finance"
-        >
-          Maliyyə
-        </button>
-
-        <button
-          class="admin-tab"
-          type="button"
-          role="tab"
-          aria-selected="false"
-          data-admin-tab="trainers"
-        >
-          Məşqçilər
-        </button>
-
-        <button
-          class="admin-tab"
-          type="button"
-          role="tab"
-          aria-selected="false"
-          data-admin-tab="history"
-        >
-          Tarixçə
-        </button>
-
-      </div>
-
-    </section>
-
-
-    <!-- ===================================================
-         DASHBOARD
-    ==================================================== -->
-
-    <section
-      id="admin-panel-dashboard"
-      class="admin-panel"
-      data-admin-panel="dashboard"
-    >
-
-      <div class="section-heading">
-
-        <div class="section-heading__content">
-
-          <span class="section-heading__eyebrow">
-            Bu gün
-          </span>
-
-          <h2 class="section-heading__title">
-            Ümumi göstəricilər
-          </h2>
-
-        </div>
-
-        <button
-          id="admin-dashboard-refresh"
-          class="section-heading__action"
-          type="button"
-        >
-          Yenilə
-        </button>
-
-      </div>
-
-
-      <div class="admin-stat-grid">
-
-        <article class="admin-stat-card">
-
-          <span class="admin-stat-card__label">
-            Bu gün satış
-          </span>
-
-          <strong
-            id="dashboard-sales-total"
-            class="admin-stat-card__value"
-          >
-            —
-          </strong>
-
-          <span
-            id="dashboard-sales-count"
-            class="admin-stat-card__meta"
-          >
-            —
-          </span>
-
-        </article>
-
-
-        <article class="admin-stat-card">
-
-          <span class="admin-stat-card__label">
-            Aktiv üzvlük
-          </span>
-
-          <strong
-            id="dashboard-active-memberships"
-            class="admin-stat-card__value"
-          >
-            —
-          </strong>
-
-          <span class="admin-stat-card__meta">
-            üzv
-          </span>
-
-        </article>
-
-
-        <article class="admin-stat-card">
-
-          <span class="admin-stat-card__label">
-            Bu gün giriş
-          </span>
-
-          <strong
-            id="dashboard-attendance-today"
-            class="admin-stat-card__value"
-          >
-            —
-          </strong>
-
-          <span class="admin-stat-card__meta">
-            giriş
-          </span>
-
-        </article>
-
-
-        <article class="admin-stat-card">
-
-          <span class="admin-stat-card__label">
-            Açıq borc
-          </span>
-
-          <strong
-            id="dashboard-debt-total"
-            class="admin-stat-card__value"
-          >
-            —
-          </strong>
-
-          <span
-            id="dashboard-debt-accounts"
-            class="admin-stat-card__meta"
-          >
-            —
-          </span>
-
-        </article>
-
-
-        <article class="admin-stat-card">
-
-          <span class="admin-stat-card__label">
-            Bu gün gəlir
-          </span>
-
-          <strong
-            id="dashboard-income-today"
-            class="admin-stat-card__value"
-          >
-            —
-          </strong>
-
-          <span class="admin-stat-card__meta">
-            AZN
-          </span>
-
-        </article>
-
-
-        <article class="admin-stat-card">
-
-          <span class="admin-stat-card__label">
-            Bu gün xərc
-          </span>
-
-          <strong
-            id="dashboard-expense-today"
-            class="admin-stat-card__value"
-          >
-            —
-          </strong>
-
-          <span class="admin-stat-card__meta">
-            AZN
-          </span>
-
-        </article>
-
-      </div>
-
-
-      <div class="admin-dashboard-grid">
-
-        <!-- RECENT OPERATIONS -->
-
-        <article class="admin-card">
-
-          <div class="admin-card__header">
-
-            <div>
-
-              <span class="admin-card__eyebrow">
-                Audit
+              <span>
+                Cari operator
               </span>
 
-              <h3 class="admin-card__title">
-                Son əməliyyatlar
-              </h3>
+              <strong id="admin-operator-name">
+                —
+              </strong>
+
+              <small id="admin-operator-role">
+                —
+              </small>
 
             </div>
 
+          </section>
+
+
+          <!-- NAVIGATION -->
+
+          <nav
+            class="admin-navigation"
+            aria-label="İdarəetmə bölmələri"
+          >
+
+
+            <!-- Dashboard -->
+
             <button
-              class="admin-card__action"
+              class="admin-navigation__item is-active"
               type="button"
-              data-admin-open-tab="history"
+              data-admin-tab="dashboard"
+              aria-selected="true"
             >
-              Hamısı
+
+              <span
+                class="admin-navigation__icon"
+                aria-hidden="true"
+              >
+                <svg viewBox="0 0 24 24" fill="none">
+                  <rect
+                    x="4"
+                    y="4"
+                    width="6"
+                    height="6"
+                    rx="1.4"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                  />
+
+                  <rect
+                    x="14"
+                    y="4"
+                    width="6"
+                    height="6"
+                    rx="1.4"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                  />
+
+                  <rect
+                    x="4"
+                    y="14"
+                    width="6"
+                    height="6"
+                    rx="1.4"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                  />
+
+                  <rect
+                    x="14"
+                    y="14"
+                    width="6"
+                    height="6"
+                    rx="1.4"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                  />
+                </svg>
+              </span>
+
+              <span>
+                Dashboard
+              </span>
+
             </button>
 
-          </div>
 
-          <div
-            id="dashboard-recent-operations"
-            class="operation-list"
-          >
-          </div>
+            <!-- POS -->
 
-        </article>
+            <button
+              class="admin-navigation__item"
+              type="button"
+              data-admin-tab="pos"
+              aria-selected="false"
+            >
+
+              <span
+                class="admin-navigation__icon"
+                aria-hidden="true"
+              >
+                <svg viewBox="0 0 24 24" fill="none">
+
+                  <path
+                    d="M4 7h16v11H4V7Z"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    stroke-linejoin="round"
+                  />
+
+                  <path
+                    d="M8 11h3M15 11h1M8 15h8"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    stroke-linecap="round"
+                  />
+
+                </svg>
+              </span>
+
+              <span>
+                POS
+              </span>
+
+            </button>
 
 
-        <!-- LOW STOCK -->
+            <!-- Members -->
 
-        <article class="admin-card">
+            <button
+              class="admin-navigation__item"
+              type="button"
+              data-admin-tab="members"
+              aria-selected="false"
+            >
 
-          <div class="admin-card__header">
+              <span
+                class="admin-navigation__icon"
+                aria-hidden="true"
+              >
+                <svg viewBox="0 0 24 24" fill="none">
 
-            <div>
+                  <circle
+                    cx="9"
+                    cy="8"
+                    r="3"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                  />
 
-              <span class="admin-card__eyebrow">
+                  <path
+                    d="M3.5 19c.6-3.7 2.5-5.5 5.5-5.5s4.9 1.8 5.5 5.5"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    stroke-linecap="round"
+                  />
+
+                  <path
+                    d="M16 7.5a2.5 2.5 0 0 1 0 5M17.5 14c1.8.7 2.8 2.3 3 5"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    stroke-linecap="round"
+                  />
+
+                </svg>
+              </span>
+
+              <span>
+                Üzvlər
+              </span>
+
+            </button>
+
+
+            <!-- Memberships -->
+
+            <button
+              class="admin-navigation__item"
+              type="button"
+              data-admin-tab="memberships"
+              aria-selected="false"
+            >
+
+              <span
+                class="admin-navigation__icon"
+                aria-hidden="true"
+              >
+                <svg viewBox="0 0 24 24" fill="none">
+
+                  <rect
+                    x="4"
+                    y="5"
+                    width="16"
+                    height="14"
+                    rx="3"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                  />
+
+                  <path
+                    d="M8 9h8M8 13h5"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    stroke-linecap="round"
+                  />
+
+                </svg>
+              </span>
+
+              <span>
+                Üzvlüklər
+              </span>
+
+            </button>
+
+
+            <!-- Attendance -->
+
+            <button
+              class="admin-navigation__item"
+              type="button"
+              data-admin-tab="attendance"
+              aria-selected="false"
+            >
+
+              <span
+                class="admin-navigation__icon"
+                aria-hidden="true"
+              >
+                <svg viewBox="0 0 24 24" fill="none">
+
+                  <path
+                    d="M5 4h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5V4Z"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                  />
+
+                  <path
+                    d="m13 12 6-4v8l-6-4Z"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    stroke-linejoin="round"
+                  />
+
+                </svg>
+              </span>
+
+              <span>
+                Giriş
+              </span>
+
+            </button>
+
+
+            <!-- Products -->
+
+            <button
+              class="admin-navigation__item"
+              type="button"
+              data-admin-tab="products"
+              aria-selected="false"
+            >
+
+              <span
+                class="admin-navigation__icon"
+                aria-hidden="true"
+              >
+                <svg viewBox="0 0 24 24" fill="none">
+
+                  <path
+                    d="M5 8.5h14l-1.1 11H6.1L5 8.5Z"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    stroke-linejoin="round"
+                  />
+
+                  <path
+                    d="M9 9V6.8a3 3 0 1 1 6 0V9"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    stroke-linecap="round"
+                  />
+
+                </svg>
+              </span>
+
+              <span>
+                Məhsullar
+              </span>
+
+            </button>
+
+
+            <!-- Stock -->
+
+            <button
+              class="admin-navigation__item"
+              type="button"
+              data-admin-tab="stock"
+              aria-selected="false"
+            >
+
+              <span
+                class="admin-navigation__icon"
+                aria-hidden="true"
+              >
+                <svg viewBox="0 0 24 24" fill="none">
+
+                  <path
+                    d="M4 7.5 12 3l8 4.5-8 4.5-8-4.5Z"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    stroke-linejoin="round"
+                  />
+
+                  <path
+                    d="M4 7.5v9L12 21l8-4.5v-9M12 12v9"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    stroke-linejoin="round"
+                  />
+
+                </svg>
+              </span>
+
+              <span>
                 Stok
               </span>
 
-              <h3 class="admin-card__title">
-                Azalan məhsullar
-              </h3>
-
-            </div>
-
-            <button
-              class="admin-card__action"
-              type="button"
-              data-admin-open-tab="stock"
-            >
-              Bax
             </button>
 
-          </div>
 
-          <div
-            id="dashboard-low-stock"
-            class="compact-list"
-          >
-          </div>
+            <!-- Debts -->
 
-        </article>
+            <button
+              class="admin-navigation__item"
+              type="button"
+              data-admin-tab="debts"
+              aria-selected="false"
+            >
 
+              <span
+                class="admin-navigation__icon"
+                aria-hidden="true"
+              >
+                <svg viewBox="0 0 24 24" fill="none">
 
-        <!-- EXPIRING MEMBERSHIPS -->
+                  <rect
+                    x="4"
+                    y="5"
+                    width="16"
+                    height="14"
+                    rx="3"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                  />
 
-        <article class="admin-card">
+                  <path
+                    d="M8 9h8M8 13h4"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    stroke-linecap="round"
+                  />
 
-          <div class="admin-card__header">
+                  <path
+                    d="M16.5 13.5v4M14.5 15.5h4"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    stroke-linecap="round"
+                  />
 
-            <div>
-
-              <span class="admin-card__eyebrow">
-                Üzvlük
+                </svg>
               </span>
 
-              <h3 class="admin-card__title">
-                Bitmək üzrə olanlar
-              </h3>
-
-            </div>
-
-            <button
-              class="admin-card__action"
-              type="button"
-              data-admin-open-tab="memberships"
-            >
-              Bax
-            </button>
-
-          </div>
-
-          <div
-            id="dashboard-expiring-memberships"
-            class="compact-list"
-          >
-          </div>
-
-        </article>
-
-
-        <!-- RECENT DEBTS -->
-
-        <article class="admin-card">
-
-          <div class="admin-card__header">
-
-            <div>
-
-              <span class="admin-card__eyebrow">
+              <span>
                 Borclar
               </span>
 
-              <h3 class="admin-card__title">
-                Açıq hesablar
-              </h3>
+            </button>
 
-            </div>
+
+            <!-- Finance -->
 
             <button
-              class="admin-card__action"
+              class="admin-navigation__item"
               type="button"
-              data-admin-open-tab="debts"
+              data-admin-tab="finance"
+              aria-selected="false"
             >
-              Bax
+
+              <span
+                class="admin-navigation__icon"
+                aria-hidden="true"
+              >
+                <svg viewBox="0 0 24 24" fill="none">
+
+                  <path
+                    d="M5 18V11M10 18V6M15 18v-4M20 18V8"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                  />
+
+                </svg>
+              </span>
+
+              <span>
+                Maliyyə
+              </span>
+
+            </button>
+
+
+            <!-- Trainers -->
+
+            <button
+              class="admin-navigation__item"
+              type="button"
+              data-admin-tab="trainers"
+              aria-selected="false"
+            >
+
+              <span
+                class="admin-navigation__icon"
+                aria-hidden="true"
+              >
+                <svg viewBox="0 0 24 24" fill="none">
+
+                  <circle
+                    cx="12"
+                    cy="8"
+                    r="3.5"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                  />
+
+                  <path
+                    d="M5.5 20c.6-4 3-6 6.5-6s5.9 2 6.5 6"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    stroke-linecap="round"
+                  />
+
+                </svg>
+              </span>
+
+              <span>
+                Məşqçilər
+              </span>
+
+            </button>
+
+
+            <!-- History -->
+
+            <button
+              class="admin-navigation__item"
+              type="button"
+              data-admin-tab="history"
+              aria-selected="false"
+            >
+
+              <span
+                class="admin-navigation__icon"
+                aria-hidden="true"
+              >
+                <svg viewBox="0 0 24 24" fill="none">
+
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="8.5"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                  />
+
+                  <path
+                    d="M12 7.5V12l3 2M7.5 4.8 5 4.5l.3 2.5"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+
+                </svg>
+              </span>
+
+              <span>
+                Tarixçə
+              </span>
+
+            </button>
+
+          </nav>
+
+        </div>
+
+      </aside>
+
+
+      <!-- ====================================================
+           ADMIN CONTENT
+           ==================================================== -->
+
+      <div class="admin-content">
+
+
+        <!-- ==================================================
+             ADMIN TOPBAR
+             ================================================== -->
+
+        <header class="admin-topbar">
+
+          <div class="admin-topbar__heading">
+
+            <span class="section-eyebrow">
+              İdarəetmə sistemi
+            </span>
+
+            <h1 class="admin-topbar__title">
+              SKy Fit Pro
+            </h1>
+
+          </div>
+
+
+          <div class="admin-topbar__actions">
+
+
+            <!-- Global search -->
+
+            <label class="admin-global-search">
+
+              <span
+                class="admin-global-search__icon"
+                aria-hidden="true"
+              >
+                <svg viewBox="0 0 24 24" fill="none">
+
+                  <circle
+                    cx="10.5"
+                    cy="10.5"
+                    r="5.5"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                  />
+
+                  <path
+                    d="m15 15 4.5 4.5"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                  />
+
+                </svg>
+              </span>
+
+
+              <input
+                id="admin-global-search"
+                type="search"
+                inputmode="search"
+                autocomplete="off"
+                placeholder="Üzv və ya məhsul axtar..."
+              >
+
+            </label>
+
+
+            <!-- Operator -->
+
+            <span
+              id="admin-operator-label"
+              class="admin-topbar__operator"
+            >
+              —
+            </span>
+
+
+            <!-- Quick POS -->
+
+            <button
+              id="admin-quick-action-button"
+              class="ui-button ui-button--primary"
+              type="button"
+            >
+              <span class="ui-button__label">
+                Yeni satış
+              </span>
             </button>
 
           </div>
 
-          <div
-            id="dashboard-open-debts"
-            class="compact-list"
+        </header>
+
+
+        <!-- ==================================================
+             PANELS
+             ================================================== -->
+
+        <div class="admin-panels">
+
+
+          <!-- =================================================
+               DASHBOARD
+               ================================================= -->
+
+          <section
+            class="admin-panel"
+            data-admin-panel="dashboard"
           >
-          </div>
-
-        </article>
-
-      </div>
-
-    </section>
 
 
-    <!-- ===================================================
-         POS
-    ==================================================== -->
+            <!-- Panel header -->
 
-    <section
-      id="admin-panel-pos"
-      class="admin-panel is-hidden"
-      data-admin-panel="pos"
-    >
+            <div class="admin-panel__header">
 
-      <div class="section-heading">
+              <div>
 
-        <div class="section-heading__content">
+                <span class="section-eyebrow">
+                  Ümumi vəziyyət
+                </span>
 
-          <span class="section-heading__eyebrow">
-            Satış
-          </span>
+                <h2 class="admin-panel__title">
+                  Dashboard
+                </h2>
 
-          <h2 class="section-heading__title">
-            POS
-          </h2>
-
-        </div>
-
-      </div>
+              </div>
 
 
-      <div class="admin-toolbar">
+              <button
+                id="admin-dashboard-refresh"
+                class="ui-button ui-button--glass"
+                type="button"
+              >
+                <span class="ui-button__label">
+                  Yenilə
+                </span>
+              </button>
 
-        <label
-          class="ui-search"
-          for="pos-product-search"
-        >
+            </div>
 
-          <span
-            class="ui-search__icon"
-            aria-hidden="true"
+
+            <!-- ===============================================
+                 KPI
+                 =============================================== -->
+
+            <div class="admin-kpi-grid">
+
+
+              <!-- Sales -->
+
+              <article class="admin-kpi-card">
+
+                <span class="admin-kpi-card__label">
+                  Bu gün satış
+                </span>
+
+                <strong id="dashboard-sales-total">
+                  0,00 ₼
+                </strong>
+
+                <span id="dashboard-sales-count">
+                  0 satış
+                </span>
+
+              </article>
+
+
+              <!-- Memberships -->
+
+              <article class="admin-kpi-card">
+
+                <span class="admin-kpi-card__label">
+                  Aktiv üzvlük
+                </span>
+
+                <strong id="dashboard-active-memberships">
+                  0
+                </strong>
+
+                <span>
+                  Cari aktiv planlar
+                </span>
+
+              </article>
+
+
+              <!-- Attendance -->
+
+              <article class="admin-kpi-card">
+
+                <span class="admin-kpi-card__label">
+                  Bu gün giriş
+                </span>
+
+                <strong id="dashboard-attendance-today">
+                  0
+                </strong>
+
+                <span>
+                  Zal girişləri
+                </span>
+
+              </article>
+
+
+              <!-- Debt -->
+
+              <article class="admin-kpi-card admin-kpi-card--danger">
+
+                <span class="admin-kpi-card__label">
+                  Açıq borc
+                </span>
+
+                <strong id="dashboard-debt-total">
+                  0,00 ₼
+                </strong>
+
+                <span id="dashboard-debt-accounts">
+                  0 açıq hesab
+                </span>
+
+              </article>
+
+            </div>
+
+
+            <!-- ===============================================
+                 FINANCE TODAY
+                 =============================================== -->
+
+            <section class="admin-section">
+
+              <div class="admin-section__header">
+
+                <div>
+
+                  <span class="section-eyebrow">
+                    Bu gün
+                  </span>
+
+                  <h3 class="admin-section__title">
+                    Maliyyə
+                  </h3>
+
+                </div>
+
+
+                <button
+                  type="button"
+                  class="admin-section__link"
+                  data-admin-open-tab="finance"
+                >
+                  Ətraflı
+                </button>
+
+              </div>
+
+
+              <div class="finance-summary-grid">
+
+
+                <!-- Income -->
+
+                <article class="finance-summary-card finance-summary-card--income">
+
+                  <span>
+                    Gəlir
+                  </span>
+
+                  <strong id="dashboard-income-today">
+                    0,00 ₼
+                  </strong>
+
+                </article>
+
+
+                <!-- Expense -->
+
+                <article class="finance-summary-card finance-summary-card--expense">
+
+                  <span>
+                    Xərc
+                  </span>
+
+                  <strong id="dashboard-expense-today">
+                    0,00 ₼
+                  </strong>
+
+                </article>
+
+
+                <!-- Balance -->
+
+                <article class="finance-summary-card finance-summary-card--balance">
+
+                  <span>
+                    Balans
+                  </span>
+
+                  <strong id="dashboard-balance-today">
+                    0,00 ₼
+                  </strong>
+
+                </article>
+
+              </div>
+
+            </section>
+
+
+            <!-- ===============================================
+                 DASHBOARD CONTENT GRID
+                 =============================================== -->
+
+            <div class="admin-dashboard-grid">
+
+
+              <!-- LOW STOCK -->
+
+              <section class="admin-section">
+
+                <div class="admin-section__header">
+
+                  <div>
+
+                    <span class="section-eyebrow">
+                      Anbar
+                    </span>
+
+                    <h3 class="admin-section__title">
+                      Azalan stok
+                    </h3>
+
+                  </div>
+
+
+                  <button
+                    type="button"
+                    class="admin-section__link"
+                    data-admin-open-tab="stock"
+                  >
+                    Stoka keç
+                  </button>
+
+                </div>
+
+
+                <div
+                  id="dashboard-low-stock"
+                  class="compact-list"
+                ></div>
+
+              </section>
+
+
+              <!-- EXPIRING MEMBERSHIPS -->
+
+              <section class="admin-section">
+
+                <div class="admin-section__header">
+
+                  <div>
+
+                    <span class="section-eyebrow">
+                      Üzvlük
+                    </span>
+
+                    <h3 class="admin-section__title">
+                      Yaxın günlərdə bitənlər
+                    </h3>
+
+                  </div>
+
+
+                  <button
+                    type="button"
+                    class="admin-section__link"
+                    data-admin-open-tab="memberships"
+                  >
+                    Hamısı
+                  </button>
+
+                </div>
+
+
+                <div
+                  id="dashboard-expiring-memberships"
+                  class="compact-list"
+                ></div>
+
+              </section>
+
+
+              <!-- OPEN DEBTS -->
+
+              <section class="admin-section">
+
+                <div class="admin-section__header">
+
+                  <div>
+
+                    <span class="section-eyebrow">
+                      Borclar
+                    </span>
+
+                    <h3 class="admin-section__title">
+                      Açıq borclar
+                    </h3>
+
+                  </div>
+
+
+                  <button
+                    type="button"
+                    class="admin-section__link"
+                    data-admin-open-tab="debts"
+                  >
+                    Hamısı
+                  </button>
+
+                </div>
+
+
+                <div
+                  id="dashboard-open-debts"
+                  class="compact-list"
+                ></div>
+
+              </section>
+
+
+              <!-- ACTIVITY -->
+
+              <section class="admin-section">
+
+                <div class="admin-section__header">
+
+                  <div>
+
+                    <span class="section-eyebrow">
+                      Audit
+                    </span>
+
+                    <h3 class="admin-section__title">
+                      Son əməliyyatlar
+                    </h3>
+
+                  </div>
+
+
+                  <button
+                    type="button"
+                    class="admin-section__link"
+                    data-admin-open-tab="history"
+                  >
+                    Tarixçə
+                  </button>
+
+                </div>
+
+
+                <div
+                  id="dashboard-recent-operations"
+                  class="operation-list"
+                ></div>
+
+              </section>
+
+            </div>
+
+          </section>
+
+
+          <!-- =================================================
+               POS
+               ================================================= -->
+
+          <section
+            class="admin-panel is-hidden"
+            data-admin-panel="pos"
+            hidden
           >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
+
+            <div class="admin-panel__header">
+
+              <div>
+
+                <span class="section-eyebrow">
+                  Satış nöqtəsi
+                </span>
+
+                <h2 class="admin-panel__title">
+                  POS
+                </h2>
+
+                <p class="admin-panel__description">
+                  Məhsul kartına toxun. Satış yalnız təsdiq
+                  pəncərəsində “Sat” düyməsindən sonra tamamlanır.
+                </p>
+
+              </div>
+
+            </div>
+
+
+            <!-- POS TOOLBAR -->
+
+            <div class="admin-toolbar">
+
+              <label class="search-control">
+
+                <span
+                  class="search-control__icon"
+                  aria-hidden="true"
+                >
+                  <svg viewBox="0 0 24 24" fill="none">
+
+                    <circle
+                      cx="10.5"
+                      cy="10.5"
+                      r="5.5"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                    />
+
+                    <path
+                      d="m15 15 4.5 4.5"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                    />
+
+                  </svg>
+                </span>
+
+
+                <input
+                  id="pos-product-search"
+                  class="search-control__input"
+                  type="search"
+                  inputmode="search"
+                  autocomplete="off"
+                  placeholder="Məhsul, SKU və ya kateqoriya..."
+                >
+
+              </label>
+
+
+              <select
+                id="pos-product-filter"
+                class="ui-select admin-toolbar__select"
+              >
+                <option value="all">
+                  Bütün məhsullar
+                </option>
+
+                <option value="available">
+                  Stokda olanlar
+                </option>
+
+                <option value="low">
+                  Az stok
+                </option>
+
+                <option value="empty">
+                  Stok bitib
+                </option>
+              </select>
+
+            </div>
+
+
+            <!-- POS PRODUCTS -->
+
+            <div
+              id="pos-products-grid"
+              class="pos-products-grid"
+            ></div>
+
+
+            <!-- POS EMPTY -->
+
+            <div
+              id="pos-products-empty"
+              class="ui-empty-state is-hidden"
+              hidden
             >
-              <circle
-                cx="11"
-                cy="11"
-                r="6"
-                stroke="currentColor"
-                stroke-width="1.8"
-              />
 
-              <path
-                d="m16 16 4 4"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-              />
-            </svg>
-          </span>
+              <span
+                class="ui-empty-state__icon"
+                aria-hidden="true"
+              >
+                <svg viewBox="0 0 24 24" fill="none">
 
-          <input
-            id="pos-product-search"
-            class="ui-search__input"
-            type="search"
-            placeholder="Məhsul axtar"
-            autocomplete="off"
+                  <path
+                    d="M5 8.5h14l-1.1 11H6.1L5 8.5Z"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    stroke-linejoin="round"
+                  />
+
+                  <path
+                    d="M9 9V6.8a3 3 0 1 1 6 0V9"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    stroke-linecap="round"
+                  />
+
+                </svg>
+              </span>
+
+              <strong>
+                Məhsul tapılmadı
+              </strong>
+
+              <span>
+                Axtarış və filtr seçimlərini dəyiş.
+              </span>
+
+            </div>
+
+          </section>
+
+
+                    <!-- =================================================
+               MEMBERS
+               ================================================= -->
+
+          <section
+            class="admin-panel is-hidden"
+            data-admin-panel="members"
+            hidden
           >
 
-        </label>
+            <div class="admin-panel__header">
+
+              <div>
+
+                <span class="section-eyebrow">
+                  İstifadəçilər
+                </span>
+
+                <h2 class="admin-panel__title">
+                  Üzvlər
+                </h2>
+
+                <p class="admin-panel__description">
+                  Sistemdə olan üzvlər, əməkdaşlar və administratorlar.
+                </p>
+
+              </div>
+
+            </div>
 
 
-        <select
-          id="pos-product-filter"
-          class="ui-select"
-          aria-label="POS məhsul filtri"
-        >
-          <option value="all">
-            Bütün məhsullar
-          </option>
+            <!-- MEMBERS TOOLBAR -->
 
-          <option value="available">
-            Stokda olanlar
-          </option>
+            <div class="admin-toolbar">
 
-          <option value="low">
-            Az stok
-          </option>
-        </select>
+              <label class="search-control">
 
-      </div>
+                <span
+                  class="search-control__icon"
+                  aria-hidden="true"
+                >
+                  <svg viewBox="0 0 24 24" fill="none">
+
+                    <circle
+                      cx="10.5"
+                      cy="10.5"
+                      r="5.5"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                    />
+
+                    <path
+                      d="m15 15 4.5 4.5"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                    />
+
+                  </svg>
+                </span>
 
 
-      <div
-        id="pos-products-grid"
-        class="admin-product-grid"
-        aria-live="polite"
-      >
-      </div>
+                <input
+                  id="members-search"
+                  class="search-control__input"
+                  type="search"
+                  inputmode="search"
+                  autocomplete="off"
+                  placeholder="Ad, telefon, e-poçt və ya ünvan..."
+                >
+
+              </label>
 
 
-      <div
-        id="pos-products-empty"
-        class="empty-state is-hidden"
-      >
+              <select
+                id="members-role-filter"
+                class="ui-select admin-toolbar__select"
+              >
+                <option value="all">
+                  Bütün rollar
+                </option>
 
-        <div class="empty-state__icon">
-          <span>SK</span>
+                <option value="member">
+                  Üzv
+                </option>
+
+                <option value="staff">
+                  Əməkdaş
+                </option>
+
+                <option value="admin">
+                  Administrator
+                </option>
+              </select>
+
+
+              <select
+                id="members-status-filter"
+                class="ui-select admin-toolbar__select"
+              >
+                <option value="all">
+                  Bütün statuslar
+                </option>
+
+                <option value="active">
+                  Aktiv
+                </option>
+
+                <option value="inactive">
+                  Deaktiv
+                </option>
+              </select>
+
+            </div>
+
+
+            <!-- MEMBERS LIST -->
+
+            <div
+              id="members-list"
+              class="admin-table-wrap"
+            ></div>
+
+          </section>
+
+
+          <!-- =================================================
+               MEMBERSHIPS
+               ================================================= -->
+
+          <section
+            class="admin-panel is-hidden"
+            data-admin-panel="memberships"
+            hidden
+          >
+
+            <div class="admin-panel__header">
+
+              <div>
+
+                <span class="section-eyebrow">
+                  Abunəlik sistemi
+                </span>
+
+                <h2 class="admin-panel__title">
+                  Üzvlüklər
+                </h2>
+
+                <p class="admin-panel__description">
+                  Üzvlük planları, aktiv abunəliklər və ödəniş vəziyyəti.
+                </p>
+
+              </div>
+
+
+              <button
+                id="membership-create-button"
+                class="ui-button ui-button--primary"
+                type="button"
+              >
+                <span class="ui-button__label">
+                  Yeni üzvlük
+                </span>
+              </button>
+
+            </div>
+
+
+            <!-- ===============================================
+                 MEMBERSHIP PLANS
+                 =============================================== -->
+
+            <section class="admin-section">
+
+              <div class="admin-section__header">
+
+                <div>
+
+                  <span class="section-eyebrow">
+                    Qiymətlər
+                  </span>
+
+                  <h3 class="admin-section__title">
+                    Üzvlük planları
+                  </h3>
+
+                  <p class="admin-section__description">
+                    Aylıq üzvlük və günlük giriş qiymətlərini buradan dəyiş.
+                  </p>
+
+                </div>
+
+              </div>
+
+
+              <div
+                id="membership-plans-grid"
+                class="admin-setting-grid"
+              ></div>
+
+            </section>
+
+
+            <!-- ===============================================
+                 MEMBERSHIP LIST
+                 =============================================== -->
+
+            <section class="admin-section">
+
+              <div class="admin-section__header">
+
+                <div>
+
+                  <span class="section-eyebrow">
+                    Qeydiyyatlar
+                  </span>
+
+                  <h3 class="admin-section__title">
+                    Üzvlük tarixçəsi
+                  </h3>
+
+                </div>
+
+              </div>
+
+
+              <div class="admin-toolbar">
+
+                <label class="search-control">
+
+                  <span
+                    class="search-control__icon"
+                    aria-hidden="true"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none">
+
+                      <circle
+                        cx="10.5"
+                        cy="10.5"
+                        r="5.5"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                      />
+
+                      <path
+                        d="m15 15 4.5 4.5"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                      />
+
+                    </svg>
+                  </span>
+
+
+                  <input
+                    id="memberships-search"
+                    class="search-control__input"
+                    type="search"
+                    inputmode="search"
+                    autocomplete="off"
+                    placeholder="Üzv, telefon və ya plan..."
+                  >
+
+                </label>
+
+
+                <select
+                  id="memberships-status-filter"
+                  class="ui-select admin-toolbar__select"
+                >
+                  <option value="all">
+                    Bütün statuslar
+                  </option>
+
+                  <option value="active">
+                    Aktiv
+                  </option>
+
+                  <option value="expired">
+                    Bitib
+                  </option>
+
+                  <option value="cancelled">
+                    Ləğv edilib
+                  </option>
+                </select>
+
+              </div>
+
+
+              <div
+                id="memberships-list"
+                class="admin-table-wrap"
+              ></div>
+
+            </section>
+
+          </section>
+
+
+          <!-- =================================================
+               ATTENDANCE
+               ================================================= -->
+
+          <section
+            class="admin-panel is-hidden"
+            data-admin-panel="attendance"
+            hidden
+          >
+
+            <div class="admin-panel__header">
+
+              <div>
+
+                <span class="section-eyebrow">
+                  Giriş nəzarəti
+                </span>
+
+                <h2 class="admin-panel__title">
+                  Giriş qeydiyyatı
+                </h2>
+
+                <p class="admin-panel__description">
+                  Aktiv üzvlüyü sistem avtomatik yoxlayır. Aktiv üzvlük
+                  yoxdursa günlük giriş tətbiq olunur.
+                </p>
+
+              </div>
+
+
+              <button
+                id="attendance-create-button"
+                class="ui-button ui-button--primary"
+                type="button"
+              >
+                <span class="ui-button__label">
+                  Girişi qeyd et
+                </span>
+              </button>
+
+            </div>
+
+
+            <!-- TODAY KPI -->
+
+            <div class="admin-mini-kpi-row">
+
+              <article class="admin-mini-kpi">
+
+                <span>
+                  Bu gün giriş
+                </span>
+
+                <strong id="attendance-today-count">
+                  0
+                </strong>
+
+              </article>
+
+            </div>
+
+
+            <!-- ATTENDANCE TOOLBAR -->
+
+            <div class="admin-toolbar">
+
+              <label class="search-control">
+
+                <span
+                  class="search-control__icon"
+                  aria-hidden="true"
+                >
+                  <svg viewBox="0 0 24 24" fill="none">
+
+                    <circle
+                      cx="10.5"
+                      cy="10.5"
+                      r="5.5"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                    />
+
+                    <path
+                      d="m15 15 4.5 4.5"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                    />
+
+                  </svg>
+                </span>
+
+
+                <input
+                  id="attendance-search"
+                  class="search-control__input"
+                  type="search"
+                  inputmode="search"
+                  autocomplete="off"
+                  placeholder="Üzv, telefon və ya operator..."
+                >
+
+              </label>
+
+
+              <select
+                id="attendance-type-filter"
+                class="ui-select admin-toolbar__select"
+              >
+                <option value="all">
+                  Bütün girişlər
+                </option>
+
+                <option value="membership">
+                  Üzvlük ilə
+                </option>
+
+                <option value="daily">
+                  Günlük giriş
+                </option>
+              </select>
+
+            </div>
+
+
+            <!-- ATTENDANCE LIST -->
+
+            <div
+              id="attendance-list"
+              class="admin-table-wrap"
+            ></div>
+
+          </section>
+
+
+          <!-- =================================================
+               PRODUCTS
+               ================================================= -->
+
+          <section
+            class="admin-panel is-hidden"
+            data-admin-panel="products"
+            hidden
+          >
+
+            <div class="admin-panel__header">
+
+              <div>
+
+                <span class="section-eyebrow">
+                  SKy Fit Shop
+                </span>
+
+                <h2 class="admin-panel__title">
+                  Məhsullar
+                </h2>
+
+                <p class="admin-panel__description">
+                  Məhsul məlumatları, qiymətlər, görünürlük və stok vəziyyəti.
+                </p>
+
+              </div>
+
+
+              <button
+                id="product-create-button"
+                class="ui-button ui-button--primary"
+                type="button"
+              >
+                <span class="ui-button__label">
+                  Məhsul əlavə et
+                </span>
+              </button>
+
+            </div>
+
+
+            <!-- PRODUCTS TOOLBAR -->
+
+            <div class="admin-toolbar">
+
+              <label class="search-control">
+
+                <span
+                  class="search-control__icon"
+                  aria-hidden="true"
+                >
+                  <svg viewBox="0 0 24 24" fill="none">
+
+                    <circle
+                      cx="10.5"
+                      cy="10.5"
+                      r="5.5"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                    />
+
+                    <path
+                      d="m15 15 4.5 4.5"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                    />
+
+                  </svg>
+                </span>
+
+
+                <input
+                  id="products-admin-search"
+                  class="search-control__input"
+                  type="search"
+                  inputmode="search"
+                  autocomplete="off"
+                  placeholder="Məhsul, SKU və ya kateqoriya..."
+                >
+
+              </label>
+
+
+              <select
+                id="products-admin-status"
+                class="ui-select admin-toolbar__select"
+              >
+                <option value="all">
+                  Bütün məhsullar
+                </option>
+
+                <option value="active">
+                  Aktiv
+                </option>
+
+                <option value="inactive">
+                  Deaktiv
+                </option>
+
+                <option value="public">
+                  Saytda görünən
+                </option>
+              </select>
+
+            </div>
+
+
+            <!-- PRODUCT INFO -->
+
+            <div class="admin-info-strip">
+
+              <span
+                class="admin-info-strip__icon"
+                aria-hidden="true"
+              >
+                <svg viewBox="0 0 24 24" fill="none">
+
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="9"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                  />
+
+                  <path
+                    d="M12 10v6"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    stroke-linecap="round"
+                  />
+
+                  <circle
+                    cx="12"
+                    cy="7"
+                    r="1"
+                    fill="currentColor"
+                  />
+
+                </svg>
+              </span>
+
+
+              <span>
+                Məhsul kartına toxunaraq redaktə edə bilərsən.
+                “+ Stok” alış üçündür, “Düzəlt” isə inventar fərqini
+                səbəbi ilə birlikdə qeydə alır.
+              </span>
+
+            </div>
+
+
+            <!-- PRODUCT GRID -->
+
+            <div
+              id="admin-products-grid"
+              class="admin-products-grid"
+            ></div>
+
+          </section>
+
+
+                    <!-- =================================================
+               STOCK
+               ================================================= -->
+
+          <section
+            class="admin-panel is-hidden"
+            data-admin-panel="stock"
+            hidden
+          >
+
+            <div class="admin-panel__header">
+
+              <div>
+
+                <span class="section-eyebrow">
+                  Anbar
+                </span>
+
+                <h2 class="admin-panel__title">
+                  Stok idarəsi
+                </h2>
+
+                <p class="admin-panel__description">
+                  Məhsul qalığı, alışlar və inventar düzəlişləri.
+                </p>
+
+              </div>
+
+
+              <button
+                id="stock-add-button"
+                class="ui-button ui-button--primary"
+                type="button"
+              >
+                <span class="ui-button__label">
+                  Stok artır
+                </span>
+              </button>
+
+            </div>
+
+
+            <!-- STOCK TOOLBAR -->
+
+            <div class="admin-toolbar">
+
+              <label class="search-control">
+
+                <span
+                  class="search-control__icon"
+                  aria-hidden="true"
+                >
+                  <svg viewBox="0 0 24 24" fill="none">
+
+                    <circle
+                      cx="10.5"
+                      cy="10.5"
+                      r="5.5"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                    />
+
+                    <path
+                      d="m15 15 4.5 4.5"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                    />
+
+                  </svg>
+                </span>
+
+
+                <input
+                  id="stock-search"
+                  class="search-control__input"
+                  type="search"
+                  inputmode="search"
+                  autocomplete="off"
+                  placeholder="Məhsul, SKU və ya kateqoriya..."
+                >
+
+              </label>
+
+
+              <select
+                id="stock-filter"
+                class="ui-select admin-toolbar__select"
+              >
+                <option value="all">
+                  Bütün stok
+                </option>
+
+                <option value="low">
+                  Az stok
+                </option>
+
+                <option value="empty">
+                  Stok bitib
+                </option>
+              </select>
+
+            </div>
+
+
+            <!-- CURRENT STOCK -->
+
+            <section class="admin-section">
+
+              <div class="admin-section__header">
+
+                <div>
+
+                  <span class="section-eyebrow">
+                    Cari vəziyyət
+                  </span>
+
+                  <h3 class="admin-section__title">
+                    Məhsul stokları
+                  </h3>
+
+                </div>
+
+              </div>
+
+
+              <div
+                id="stock-list"
+                class="admin-table-wrap"
+              ></div>
+
+            </section>
+
+
+            <!-- MOVEMENTS -->
+
+            <section class="admin-section">
+
+              <div class="admin-section__header">
+
+                <div>
+
+                  <span class="section-eyebrow">
+                    Tarixçə
+                  </span>
+
+                  <h3 class="admin-section__title">
+                    Stok hərəkətləri
+                  </h3>
+
+                </div>
+
+              </div>
+
+
+              <div
+                id="stock-movements-list"
+                class="admin-table-wrap"
+              ></div>
+
+            </section>
+
+          </section>
+
+
+          <!-- =================================================
+               DEBTS
+               ================================================= -->
+
+          <section
+            class="admin-panel is-hidden"
+            data-admin-panel="debts"
+            hidden
+          >
+
+            <div class="admin-panel__header">
+
+              <div>
+
+                <span class="section-eyebrow">
+                  Borc nəzarəti
+                </span>
+
+                <h2 class="admin-panel__title">
+                  Borclar
+                </h2>
+
+                <p class="admin-panel__description">
+                  Açıq borclar, ödənişlər və borc tarixçəsi.
+                </p>
+
+              </div>
+
+            </div>
+
+
+            <!-- DEBT KPI -->
+
+            <div class="finance-summary-grid">
+
+
+              <article class="finance-summary-card finance-summary-card--expense">
+
+                <span>
+                  Açıq borc
+                </span>
+
+                <strong id="debt-total-amount">
+                  0,00 ₼
+                </strong>
+
+              </article>
+
+
+              <article class="finance-summary-card finance-summary-card--balance">
+
+                <span>
+                  Açıq hesab sayı
+                </span>
+
+                <strong id="debt-open-count">
+                  0
+                </strong>
+
+              </article>
+
+            </div>
+
+
+            <!-- DEBT TOOLBAR -->
+
+            <div class="admin-toolbar">
+
+              <label class="search-control">
+
+                <span
+                  class="search-control__icon"
+                  aria-hidden="true"
+                >
+                  <svg viewBox="0 0 24 24" fill="none">
+
+                    <circle
+                      cx="10.5"
+                      cy="10.5"
+                      r="5.5"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                    />
+
+                    <path
+                      d="m15 15 4.5 4.5"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                    />
+
+                  </svg>
+                </span>
+
+
+                <input
+                  id="debt-search"
+                  class="search-control__input"
+                  type="search"
+                  inputmode="search"
+                  autocomplete="off"
+                  placeholder="Üzv, telefon və ya e-poçt..."
+                >
+
+              </label>
+
+
+              <select
+                id="debt-status-filter"
+                class="ui-select admin-toolbar__select"
+              >
+                <option value="open">
+                  Açıq borclar
+                </option>
+
+                <option value="closed">
+                  Ödənilmiş
+                </option>
+
+                <option value="all">
+                  Hamısı
+                </option>
+              </select>
+
+            </div>
+
+
+            <!-- DEBT ACCOUNTS -->
+
+            <section class="admin-section">
+
+              <div class="admin-section__header">
+
+                <div>
+
+                  <span class="section-eyebrow">
+                    Hesablar
+                  </span>
+
+                  <h3 class="admin-section__title">
+                    Borc hesabları
+                  </h3>
+
+                </div>
+
+              </div>
+
+
+              <div
+                id="debt-accounts-list"
+                class="admin-table-wrap"
+              ></div>
+
+            </section>
+
+
+            <!-- DEBT TRANSACTIONS -->
+
+            <section class="admin-section">
+
+              <div class="admin-section__header">
+
+                <div>
+
+                  <span class="section-eyebrow">
+                    Tarixçə
+                  </span>
+
+                  <h3 class="admin-section__title">
+                    Borc əməliyyatları
+                  </h3>
+
+                </div>
+
+              </div>
+
+
+              <div
+                id="debt-transactions-list"
+                class="operation-list"
+              ></div>
+
+            </section>
+
+          </section>
+
+
+          <!-- =================================================
+               FINANCE
+               ================================================= -->
+
+          <section
+            class="admin-panel is-hidden"
+            data-admin-panel="finance"
+            hidden
+          >
+
+            <div class="admin-panel__header">
+
+              <div>
+
+                <span class="section-eyebrow">
+                  Maliyyə
+                </span>
+
+                <h2 class="admin-panel__title">
+                  Gəlir və xərclər
+                </h2>
+
+                <p class="admin-panel__description">
+                  Satış, üzvlük, günlük giriş, stok və borc
+                  ödənişlərinin maliyyə görünüşü.
+                </p>
+
+              </div>
+
+            </div>
+
+
+            <!-- FINANCE KPI -->
+
+            <div class="finance-summary-grid">
+
+
+              <!-- Income -->
+
+              <article class="finance-summary-card finance-summary-card--income">
+
+                <span>
+                  Gəlir
+                </span>
+
+                <strong
+                  id="finance-income"
+                  class="finance-value finance-value--income"
+                >
+                  0,00 ₼
+                </strong>
+
+              </article>
+
+
+              <!-- Expense -->
+
+              <article class="finance-summary-card finance-summary-card--expense">
+
+                <span>
+                  Xərc
+                </span>
+
+                <strong
+                  id="finance-expense"
+                  class="finance-value finance-value--expense"
+                >
+                  0,00 ₼
+                </strong>
+
+              </article>
+
+
+              <!-- Balance -->
+
+              <article class="finance-summary-card finance-summary-card--balance">
+
+                <span>
+                  Balans
+                </span>
+
+                <strong
+                  id="finance-balance"
+                  class="finance-value finance-value--neutral"
+                >
+                  0,00 ₼
+                </strong>
+
+              </article>
+
+            </div>
+
+
+            <!-- FINANCE TOOLBAR -->
+
+            <div class="admin-toolbar admin-toolbar--finance">
+
+
+              <!-- Search -->
+
+              <label class="search-control">
+
+                <span
+                  class="search-control__icon"
+                  aria-hidden="true"
+                >
+                  <svg viewBox="0 0 24 24" fill="none">
+
+                    <circle
+                      cx="10.5"
+                      cy="10.5"
+                      r="5.5"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                    />
+
+                    <path
+                      d="m15 15 4.5 4.5"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                    />
+
+                  </svg>
+                </span>
+
+
+                <input
+                  id="finance-search"
+                  class="search-control__input"
+                  type="search"
+                  inputmode="search"
+                  autocomplete="off"
+                  placeholder="Kateqoriya, açıqlama və ya mənbə..."
+                >
+
+              </label>
+
+
+              <!-- Type -->
+
+              <select
+                id="finance-type-filter"
+                class="ui-select admin-toolbar__select"
+              >
+                <option value="all">
+                  Gəlir + Xərc
+                </option>
+
+                <option value="income">
+                  Yalnız gəlir
+                </option>
+
+                <option value="expense">
+                  Yalnız xərc
+                </option>
+              </select>
+
+
+              <!-- From -->
+
+              <label class="admin-date-filter">
+
+                <span>
+                  Başlanğıc
+                </span>
+
+                <input
+                  id="finance-date-from"
+                  type="date"
+                  class="ui-date-input"
+                >
+
+              </label>
+
+
+              <!-- To -->
+
+              <label class="admin-date-filter">
+
+                <span>
+                  Son
+                </span>
+
+                <input
+                  id="finance-date-to"
+                  type="date"
+                  class="ui-date-input"
+                >
+
+              </label>
+
+
+              <!-- Reset -->
+
+              <button
+                id="finance-reset-filter"
+                class="ui-button ui-button--glass"
+                type="button"
+              >
+                <span class="ui-button__label">
+                  Təmizlə
+                </span>
+              </button>
+
+            </div>
+
+
+            <!-- FINANCE LEGEND -->
+
+            <div class="finance-legend">
+
+              <span class="finance-legend__item finance-legend__item--income">
+
+                <span
+                  class="finance-legend__dot"
+                  aria-hidden="true"
+                ></span>
+
+                Gəlir
+
+              </span>
+
+
+              <span class="finance-legend__item finance-legend__item--expense">
+
+                <span
+                  class="finance-legend__dot"
+                  aria-hidden="true"
+                ></span>
+
+                Xərc
+
+              </span>
+
+
+              <span class="finance-legend__item finance-legend__item--balance">
+
+                <span
+                  class="finance-legend__dot"
+                  aria-hidden="true"
+                ></span>
+
+                Balans
+
+              </span>
+
+            </div>
+
+
+            <!-- LEDGER -->
+
+            <section class="admin-section">
+
+              <div class="admin-section__header">
+
+                <div>
+
+                  <span class="section-eyebrow">
+                    Ledger
+                  </span>
+
+                  <h3 class="admin-section__title">
+                    Maliyyə əməliyyatları
+                  </h3>
+
+                </div>
+
+              </div>
+
+
+              <div
+                id="finance-ledger-list"
+                class="admin-table-wrap"
+              ></div>
+
+            </section>
+
+          </section>
+
+
+                    <!-- =================================================
+               TRAINERS
+               ================================================= -->
+
+          <section
+            class="admin-panel is-hidden"
+            data-admin-panel="trainers"
+            hidden
+          >
+
+            <div class="admin-panel__header">
+
+              <div>
+
+                <span class="section-eyebrow">
+                  Komanda
+                </span>
+
+                <h2 class="admin-panel__title">
+                  Məşqçilər
+                </h2>
+
+                <p class="admin-panel__description">
+                  Məşqçi profilləri, ixtisas, əlaqə məlumatları və
+                  saytda görünmə vəziyyəti.
+                </p>
+
+              </div>
+
+
+              <button
+                id="trainer-create-button"
+                class="ui-button ui-button--primary"
+                type="button"
+              >
+                <span class="ui-button__label">
+                  Məşqçi əlavə et
+                </span>
+              </button>
+
+            </div>
+
+
+            <!-- TRAINERS TOOLBAR -->
+
+            <div class="admin-toolbar">
+
+              <label class="search-control">
+
+                <span
+                  class="search-control__icon"
+                  aria-hidden="true"
+                >
+                  <svg viewBox="0 0 24 24" fill="none">
+
+                    <circle
+                      cx="10.5"
+                      cy="10.5"
+                      r="5.5"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                    />
+
+                    <path
+                      d="m15 15 4.5 4.5"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                    />
+
+                  </svg>
+                </span>
+
+
+                <input
+                  id="trainers-admin-search"
+                  class="search-control__input"
+                  type="search"
+                  inputmode="search"
+                  autocomplete="off"
+                  placeholder="Ad, ixtisas və ya telefon..."
+                >
+
+              </label>
+
+
+              <select
+                id="trainers-status-filter"
+                class="ui-select admin-toolbar__select"
+              >
+                <option value="all">
+                  Bütün məşqçilər
+                </option>
+
+                <option value="active">
+                  Aktiv
+                </option>
+
+                <option value="inactive">
+                  Deaktiv
+                </option>
+              </select>
+
+            </div>
+
+
+            <!-- TRAINERS GRID -->
+
+            <div
+              id="admin-trainers-grid"
+              class="admin-trainers-grid"
+            ></div>
+
+          </section>
+
+
+          <!-- =================================================
+               HISTORY / AUDIT
+               ================================================= -->
+
+          <section
+            class="admin-panel is-hidden"
+            data-admin-panel="history"
+            hidden
+          >
+
+            <div class="admin-panel__header">
+
+              <div>
+
+                <span class="section-eyebrow">
+                  Audit
+                </span>
+
+                <h2 class="admin-panel__title">
+                  Əməliyyat tarixçəsi
+                </h2>
+
+                <p class="admin-panel__description">
+                  Kim, nəyi, nə vaxt və nədən nəyə dəyişib —
+                  bütün əməliyyatları burada izləmək mümkündür.
+                </p>
+
+              </div>
+
+
+              <button
+                id="history-refresh-button"
+                class="ui-button ui-button--glass"
+                type="button"
+              >
+                <span class="ui-button__label">
+                  Yenilə
+                </span>
+              </button>
+
+            </div>
+
+
+            <!-- HISTORY SUMMARY -->
+
+            <div class="admin-mini-kpi-row">
+
+              <article class="admin-mini-kpi">
+
+                <span>
+                  Göstərilən nəticə
+                </span>
+
+                <strong id="history-result-count">
+                  0
+                </strong>
+
+              </article>
+
+            </div>
+
+
+            <!-- HISTORY FILTERS -->
+
+            <div class="admin-toolbar admin-toolbar--history">
+
+
+              <!-- Search -->
+
+              <label class="search-control">
+
+                <span
+                  class="search-control__icon"
+                  aria-hidden="true"
+                >
+                  <svg viewBox="0 0 24 24" fill="none">
+
+                    <circle
+                      cx="10.5"
+                      cy="10.5"
+                      r="5.5"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                    />
+
+                    <path
+                      d="m15 15 4.5 4.5"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                    />
+
+                  </svg>
+                </span>
+
+
+                <input
+                  id="history-search"
+                  class="search-control__input"
+                  type="search"
+                  inputmode="search"
+                  autocomplete="off"
+                  placeholder="Operator, əməliyyat və ya məlumat axtar..."
+                >
+
+              </label>
+
+
+              <!-- Type -->
+
+              <select
+                id="history-type-filter"
+                class="ui-select admin-toolbar__select"
+              >
+                <option value="all">
+                  Bütün bölmələr
+                </option>
+
+                <option value="products">
+                  Məhsullar
+                </option>
+
+                <option value="trainers">
+                  Məşqçilər
+                </option>
+
+                <option value="sales">
+                  Satışlar
+                </option>
+
+                <option value="sale_items">
+                  Satış məhsulları
+                </option>
+
+                <option value="memberships">
+                  Üzvlüklər
+                </option>
+
+                <option value="attendance">
+                  Giriş
+                </option>
+
+                <option value="stock_movements">
+                  Stok
+                </option>
+
+                <option value="debt_transactions">
+                  Borclar
+                </option>
+
+                <option value="ledger_entries">
+                  Maliyyə
+                </option>
+
+                <option value="staff_shifts">
+                  İş növbələri
+                </option>
+
+                <option value="staff_cash_transactions">
+                  Əməkdaş kassası
+                </option>
+              </select>
+
+
+              <!-- Operator -->
+
+              <select
+                id="history-operator-filter"
+                class="ui-select admin-toolbar__select"
+              >
+                <option value="">
+                  Bütün operatorlar
+                </option>
+              </select>
+
+
+              <!-- From -->
+
+              <label class="admin-date-filter">
+
+                <span>
+                  Başlanğıc
+                </span>
+
+                <input
+                  id="history-date-from"
+                  type="date"
+                  class="ui-date-input"
+                >
+
+              </label>
+
+
+              <!-- To -->
+
+              <label class="admin-date-filter">
+
+                <span>
+                  Son
+                </span>
+
+                <input
+                  id="history-date-to"
+                  type="date"
+                  class="ui-date-input"
+                >
+
+              </label>
+
+            </div>
+
+
+            <!-- HISTORY INFO -->
+
+            <div class="admin-info-strip">
+
+              <span
+                class="admin-info-strip__icon"
+                aria-hidden="true"
+              >
+                <svg viewBox="0 0 24 24" fill="none">
+
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="9"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                  />
+
+                  <path
+                    d="M12 10v6"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    stroke-linecap="round"
+                  />
+
+                  <circle
+                    cx="12"
+                    cy="7"
+                    r="1"
+                    fill="currentColor"
+                  />
+
+                </svg>
+              </span>
+
+
+              <span>
+                Tarixçədə bir əməliyyata toxunduqda operator,
+                tarix, record ID və dəyişən sahələrin
+                “Əvvəl → Sonra” detalları açılacaq.
+              </span>
+
+            </div>
+
+
+            <!-- HISTORY LIST -->
+
+            <div
+              id="history-list"
+              class="operation-list operation-list--audit"
+            ></div>
+
+          </section>
+
         </div>
 
-        <strong class="empty-state__title">
-          Məhsul tapılmadı
-        </strong>
 
-        <p class="empty-state__description">
-          Satış üçün uyğun məhsul yoxdur.
-        </p>
+        <!-- ==================================================
+             ADMIN CREDIT
+             ================================================== -->
+
+        <footer class="admin-credit">
+
+          <span class="admin-credit__product">
+            SKy Fit Pro Management System
+          </span>
+
+
+          <span class="admin-credit__separator" aria-hidden="true">
+            ·
+          </span>
+
+
+          <span class="admin-credit__developer">
+
+            Senior Full Stack Developer:
+
+            <strong>
+              Qərib Səfərli
+            </strong>
+
+          </span>
+
+        </footer>
 
       </div>
 
-    </section>
-
-
-    <!-- ===================================================
-         MEMBERS
-    ==================================================== -->
-
-    <section
-      id="admin-panel-members"
-      class="admin-panel is-hidden"
-      data-admin-panel="members"
-    >
-
-      <div class="section-heading">
-
-        <div class="section-heading__content">
-
-          <span class="section-heading__eyebrow">
-            Müştərilər
-          </span>
-
-          <h2 class="section-heading__title">
-            Üzvlər
-          </h2>
-
-        </div>
-
-      </div>
-
-
-      <div class="admin-toolbar">
-
-        <label
-          class="ui-search"
-          for="members-search"
-        >
-
-          <span class="ui-search__icon">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-            >
-              <circle
-                cx="11"
-                cy="11"
-                r="6"
-                stroke="currentColor"
-                stroke-width="1.8"
-              />
-
-              <path
-                d="m16 16 4 4"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-              />
-            </svg>
-          </span>
-
-          <input
-            id="members-search"
-            class="ui-search__input"
-            type="search"
-            placeholder="Ad, telefon və ya e-poçt"
-            autocomplete="off"
-          >
-
-        </label>
-
-
-        <select
-          id="members-role-filter"
-          class="ui-select"
-          aria-label="İstifadəçi rolu"
-        >
-          <option value="all">
-            Bütün rollar
-          </option>
-
-          <option value="member">
-            Üzvlər
-          </option>
-
-          <option value="staff">
-            Əməkdaşlar
-          </option>
-
-          <option value="admin">
-            Adminlər
-          </option>
-        </select>
-
-      </div>
-
-
-      <div
-        id="members-list"
-        class="admin-table-card"
-      >
-      </div>
-
-    </section>
-
-
-    <!-- ===================================================
-         MEMBERSHIPS
-    ==================================================== -->
-
-    <section
-      id="admin-panel-memberships"
-      class="admin-panel is-hidden"
-      data-admin-panel="memberships"
-    >
-
-      <div class="section-heading">
-
-        <div class="section-heading__content">
-
-          <span class="section-heading__eyebrow">
-            Abunəlik
-          </span>
-
-          <h2 class="section-heading__title">
-            Üzvlük idarəetməsi
-          </h2>
-
-        </div>
-
-        <button
-          id="membership-create-button"
-          class="ui-button ui-button--primary"
-          type="button"
-        >
-          <span class="ui-button__label">
-            Yeni üzvlük
-          </span>
-        </button>
-
-      </div>
-
-
-      <div class="admin-toolbar">
-
-        <label
-          class="ui-search"
-          for="memberships-search"
-        >
-
-          <span class="ui-search__icon">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-            >
-              <circle
-                cx="11"
-                cy="11"
-                r="6"
-                stroke="currentColor"
-                stroke-width="1.8"
-              />
-
-              <path
-                d="m16 16 4 4"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-              />
-            </svg>
-          </span>
-
-          <input
-            id="memberships-search"
-            class="ui-search__input"
-            type="search"
-            placeholder="Üzv axtar"
-          >
-
-        </label>
-
-
-        <select
-          id="memberships-status-filter"
-          class="ui-select"
-        >
-          <option value="all">
-            Bütün statuslar
-          </option>
-
-          <option value="active">
-            Aktiv
-          </option>
-
-          <option value="expired">
-            Bitmiş
-          </option>
-        </select>
-
-      </div>
-
-
-      <div
-        id="memberships-list"
-        class="admin-table-card"
-      >
-      </div>
-
-
-      <div class="section-heading section-heading--spaced">
-
-        <div class="section-heading__content">
-
-          <span class="section-heading__eyebrow">
-            Parametrlər
-          </span>
-
-          <h3 class="section-heading__title">
-            Üzvlük planları
-          </h3>
-
-        </div>
-
-      </div>
-
-
-      <div
-        id="membership-plans-grid"
-        class="admin-settings-grid"
-      >
-      </div>
-
-    </section>
-
-
-    <!-- ===================================================
-         ATTENDANCE
-    ==================================================== -->
-
-    <section
-      id="admin-panel-attendance"
-      class="admin-panel is-hidden"
-      data-admin-panel="attendance"
-    >
-
-      <div class="section-heading">
-
-        <div class="section-heading__content">
-
-          <span class="section-heading__eyebrow">
-            Giriş sistemi
-          </span>
-
-          <h2 class="section-heading__title">
-            Giriş qeydiyyatı
-          </h2>
-
-        </div>
-
-        <button
-          id="attendance-create-button"
-          class="ui-button ui-button--primary"
-          type="button"
-        >
-          <span class="ui-button__label">
-            Giriş qeyd et
-          </span>
-        </button>
-
-      </div>
-
-
-      <div class="admin-stat-grid">
-
-        <article class="admin-stat-card">
-
-          <span class="admin-stat-card__label">
-            Bu gün
-          </span>
-
-          <strong
-            id="attendance-today-count"
-            class="admin-stat-card__value"
-          >
-            —
-          </strong>
-
-          <span class="admin-stat-card__meta">
-            giriş
-          </span>
-
-        </article>
-
-
-        <article class="admin-stat-card">
-
-          <span class="admin-stat-card__label">
-            Aktiv aylıq
-          </span>
-
-          <strong
-            id="attendance-active-monthly"
-            class="admin-stat-card__value"
-          >
-            —
-          </strong>
-
-          <span class="admin-stat-card__meta">
-            üzv
-          </span>
-
-        </article>
-
-
-        <article class="admin-stat-card">
-
-          <span class="admin-stat-card__label">
-            Günlük giriş
-          </span>
-
-          <strong
-            id="attendance-daily-count"
-            class="admin-stat-card__value"
-          >
-            —
-          </strong>
-
-          <span class="admin-stat-card__meta">
-            bu gün
-          </span>
-
-        </article>
-
-      </div>
-
-
-      <div class="admin-toolbar">
-
-        <label
-          class="ui-search"
-          for="attendance-search"
-        >
-          <span class="ui-search__icon">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-            >
-              <circle
-                cx="11"
-                cy="11"
-                r="6"
-                stroke="currentColor"
-                stroke-width="1.8"
-              />
-
-              <path
-                d="m16 16 4 4"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-              />
-            </svg>
-          </span>
-
-          <input
-            id="attendance-search"
-            class="ui-search__input"
-            type="search"
-            placeholder="Üzv axtar"
-          >
-        </label>
-
-      </div>
-
-
-      <div
-        id="attendance-list"
-        class="admin-table-card"
-      >
-      </div>
-
-    </section>
-
-
-    <!-- ===================================================
-         PRODUCTS
-    ==================================================== -->
-
-    <section
-      id="admin-panel-products"
-      class="admin-panel is-hidden"
-      data-admin-panel="products"
-    >
-
-      <div class="section-heading">
-
-        <div class="section-heading__content">
-
-          <span class="section-heading__eyebrow">
-            Kataloq
-          </span>
-
-          <h2 class="section-heading__title">
-            Məhsullar
-          </h2>
-
-        </div>
-
-        <button
-          id="product-create-button"
-          class="ui-button ui-button--primary"
-          type="button"
-        >
-          <span class="ui-button__label">
-            Məhsul əlavə et
-          </span>
-        </button>
-
-      </div>
-
-
-      <div class="admin-toolbar">
-
-        <label
-          class="ui-search"
-          for="products-admin-search"
-        >
-
-          <span class="ui-search__icon">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-            >
-              <circle
-                cx="11"
-                cy="11"
-                r="6"
-                stroke="currentColor"
-                stroke-width="1.8"
-              />
-
-              <path
-                d="m16 16 4 4"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-              />
-            </svg>
-          </span>
-
-          <input
-            id="products-admin-search"
-            class="ui-search__input"
-            type="search"
-            placeholder="Məhsul axtar"
-          >
-
-        </label>
-
-
-        <select
-          id="products-admin-status"
-          class="ui-select"
-        >
-          <option value="all">
-            Hamısı
-          </option>
-
-          <option value="active">
-            Aktiv
-          </option>
-
-          <option value="inactive">
-            Deaktiv
-          </option>
-        </select>
-
-      </div>
-
-
-      <div
-        id="admin-products-grid"
-        class="admin-product-grid"
-      >
-      </div>
-
-    </section>
-
-
-    <!-- ===================================================
-         STOCK
-    ==================================================== -->
-
-    <section
-      id="admin-panel-stock"
-      class="admin-panel is-hidden"
-      data-admin-panel="stock"
-    >
-
-      <div class="section-heading">
-
-        <div class="section-heading__content">
-
-          <span class="section-heading__eyebrow">
-            Anbar
-          </span>
-
-          <h2 class="section-heading__title">
-            Stok idarəetməsi
-          </h2>
-
-        </div>
-
-        <button
-          id="stock-add-button"
-          class="ui-button ui-button--primary"
-          type="button"
-        >
-          <span class="ui-button__label">
-            Stok artır
-          </span>
-        </button>
-
-      </div>
-
-
-      <div class="admin-toolbar">
-
-        <label
-          class="ui-search"
-          for="stock-search"
-        >
-
-          <span class="ui-search__icon">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-            >
-              <circle
-                cx="11"
-                cy="11"
-                r="6"
-                stroke="currentColor"
-                stroke-width="1.8"
-              />
-
-              <path
-                d="m16 16 4 4"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-              />
-            </svg>
-          </span>
-
-          <input
-            id="stock-search"
-            class="ui-search__input"
-            type="search"
-            placeholder="Məhsul axtar"
-          >
-
-        </label>
-
-
-        <select
-          id="stock-filter"
-          class="ui-select"
-        >
-          <option value="all">
-            Bütün stok
-          </option>
-
-          <option value="low">
-            Az stok
-          </option>
-
-          <option value="empty">
-            Bitmiş
-          </option>
-        </select>
-
-      </div>
-
-
-      <div
-        id="stock-list"
-        class="admin-table-card"
-      >
-      </div>
-
-
-      <div class="section-heading section-heading--spaced">
-
-        <div class="section-heading__content">
-
-          <span class="section-heading__eyebrow">
-            Hərəkətlər
-          </span>
-
-          <h3 class="section-heading__title">
-            Son stok əməliyyatları
-          </h3>
-
-        </div>
-
-      </div>
-
-
-      <div
-        id="stock-movements-list"
-        class="admin-table-card"
-      >
-      </div>
-
-    </section>
-
-
-    <!-- ===================================================
-         DEBTS
-    ==================================================== -->
-
-    <section
-      id="admin-panel-debts"
-      class="admin-panel is-hidden"
-      data-admin-panel="debts"
-    >
-
-      <div class="section-heading">
-
-        <div class="section-heading__content">
-
-          <span class="section-heading__eyebrow">
-            Hesablar
-          </span>
-
-          <h2 class="section-heading__title">
-            Borclar
-          </h2>
-
-        </div>
-
-      </div>
-
-
-      <div class="admin-stat-grid">
-
-        <article class="admin-stat-card">
-
-          <span class="admin-stat-card__label">
-            Ümumi borc
-          </span>
-
-          <strong
-            id="debt-total-amount"
-            class="admin-stat-card__value"
-          >
-            —
-          </strong>
-
-          <span class="admin-stat-card__meta">
-            AZN
-          </span>
-
-        </article>
-
-
-        <article class="admin-stat-card">
-
-          <span class="admin-stat-card__label">
-            Açıq hesab
-          </span>
-
-          <strong
-            id="debt-open-count"
-            class="admin-stat-card__value"
-          >
-            —
-          </strong>
-
-          <span class="admin-stat-card__meta">
-            nəfər
-          </span>
-
-        </article>
-
-      </div>
-
-
-      <div class="admin-toolbar">
-
-        <label
-          class="ui-search"
-          for="debt-search"
-        >
-
-          <span class="ui-search__icon">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-            >
-              <circle
-                cx="11"
-                cy="11"
-                r="6"
-                stroke="currentColor"
-                stroke-width="1.8"
-              />
-
-              <path
-                d="m16 16 4 4"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-              />
-            </svg>
-          </span>
-
-          <input
-            id="debt-search"
-            class="ui-search__input"
-            type="search"
-            placeholder="Borclu şəxs axtar"
-          >
-
-        </label>
-
-      </div>
-
-
-      <div
-        id="debt-accounts-list"
-        class="admin-table-card"
-      >
-      </div>
-
-    </section>
-
-
-    <!-- ===================================================
-         FINANCE
-    ==================================================== -->
-
-    <section
-      id="admin-panel-finance"
-      class="admin-panel is-hidden"
-      data-admin-panel="finance"
-    >
-
-      <div class="section-heading">
-
-        <div class="section-heading__content">
-
-          <span class="section-heading__eyebrow">
-            Ledger
-          </span>
-
-          <h2 class="section-heading__title">
-            Maliyyə
-          </h2>
-
-        </div>
-
-      </div>
-
-
-      <div class="admin-stat-grid">
-
-        <article class="admin-stat-card">
-
-          <span class="admin-stat-card__label">
-            Gəlir
-          </span>
-
-          <strong
-            id="finance-income"
-            class="admin-stat-card__value"
-          >
-            —
-          </strong>
-
-          <span class="admin-stat-card__meta">
-            AZN
-          </span>
-
-        </article>
-
-
-        <article class="admin-stat-card">
-
-          <span class="admin-stat-card__label">
-            Xərc
-          </span>
-
-          <strong
-            id="finance-expense"
-            class="admin-stat-card__value"
-          >
-            —
-          </strong>
-
-          <span class="admin-stat-card__meta">
-            AZN
-          </span>
-
-        </article>
-
-
-        <article class="admin-stat-card">
-
-          <span class="admin-stat-card__label">
-            Balans
-          </span>
-
-          <strong
-            id="finance-balance"
-            class="admin-stat-card__value"
-          >
-            —
-          </strong>
-
-          <span class="admin-stat-card__meta">
-            AZN
-          </span>
-
-        </article>
-
-      </div>
-
-
-      <div class="admin-toolbar">
-
-        <select
-          id="finance-type-filter"
-          class="ui-select"
-        >
-          <option value="all">
-            Bütün əməliyyatlar
-          </option>
-
-          <option value="income">
-            Gəlir
-          </option>
-
-          <option value="expense">
-            Xərc
-          </option>
-        </select>
-
-
-        <input
-          id="finance-date-from"
-          class="ui-date-input"
-          type="date"
-          aria-label="Başlanğıc tarixi"
-        >
-
-        <input
-          id="finance-date-to"
-          class="ui-date-input"
-          type="date"
-          aria-label="Bitmə tarixi"
-        >
-
-      </div>
-
-
-      <div
-        id="finance-ledger-list"
-        class="admin-table-card"
-      >
-      </div>
-
-    </section>
-
-
-    <!-- ===================================================
-         TRAINERS
-    ==================================================== -->
-
-    <section
-      id="admin-panel-trainers"
-      class="admin-panel is-hidden"
-      data-admin-panel="trainers"
-    >
-
-      <div class="section-heading">
-
-        <div class="section-heading__content">
-
-          <span class="section-heading__eyebrow">
-            Komanda
-          </span>
-
-          <h2 class="section-heading__title">
-            Məşqçilər
-          </h2>
-
-        </div>
-
-        <button
-          id="trainer-create-button"
-          class="ui-button ui-button--primary"
-          type="button"
-        >
-          <span class="ui-button__label">
-            Məşqçi əlavə et
-          </span>
-        </button>
-
-      </div>
-
-
-      <div class="admin-toolbar">
-
-        <label
-          class="ui-search"
-          for="trainers-admin-search"
-        >
-
-          <span class="ui-search__icon">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-            >
-              <circle
-                cx="11"
-                cy="11"
-                r="6"
-                stroke="currentColor"
-                stroke-width="1.8"
-              />
-
-              <path
-                d="m16 16 4 4"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-              />
-            </svg>
-          </span>
-
-          <input
-            id="trainers-admin-search"
-            class="ui-search__input"
-            type="search"
-            placeholder="Məşqçi axtar"
-          >
-
-        </label>
-
-      </div>
-
-
-      <div
-        id="admin-trainers-grid"
-        class="trainer-grid"
-      >
-      </div>
-
-    </section>
-
-
-    <!-- ===================================================
-         HISTORY / AUDIT
-    ==================================================== -->
-
-    <section
-      id="admin-panel-history"
-      class="admin-panel is-hidden"
-      data-admin-panel="history"
-    >
-
-      <div class="section-heading">
-
-        <div class="section-heading__content">
-
-          <span class="section-heading__eyebrow">
-            Audit
-          </span>
-
-          <h2 class="section-heading__title">
-            Əməliyyat tarixçəsi
-          </h2>
-
-        </div>
-
-      </div>
-
-
-      <div class="admin-toolbar">
-
-        <label
-          class="ui-search"
-          for="history-search"
-        >
-
-          <span class="ui-search__icon">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-            >
-              <circle
-                cx="11"
-                cy="11"
-                r="6"
-                stroke="currentColor"
-                stroke-width="1.8"
-              />
-
-              <path
-                d="m16 16 4 4"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-              />
-            </svg>
-          </span>
-
-          <input
-            id="history-search"
-            class="ui-search__input"
-            type="search"
-            placeholder="Operator və ya əməliyyat axtar"
-          >
-
-        </label>
-
-
-        <select
-          id="history-type-filter"
-          class="ui-select"
-        >
-          <option value="all">
-            Bütün əməliyyatlar
-          </option>
-
-          <option value="sale">
-            Satış
-          </option>
-
-          <option value="stock">
-            Stok
-          </option>
-
-          <option value="membership">
-            Üzvlük
-          </option>
-
-          <option value="attendance">
-            Giriş
-          </option>
-
-          <option value="debt">
-            Borc
-          </option>
-        </select>
-
-
-        <input
-          id="history-date-from"
-          class="ui-date-input"
-          type="date"
-          aria-label="Başlanğıc tarixi"
-        >
-
-        <input
-          id="history-date-to"
-          class="ui-date-input"
-          type="date"
-          aria-label="Bitmə tarixi"
-        >
-
-      </div>
-
-
-      <div
-        id="history-list"
-        class="operation-list operation-list--full"
-      >
-      </div>
-
-    </section>
-
-
-    <!-- ===================================================
-         BOTTOM SAFE SPACE
-    ==================================================== -->
-
-    <div
-      class="app-bottom-spacer"
-      aria-hidden="true"
-    ></div>
+    </div>
 
   </main>
 
 
-  <!-- =====================================================
-       FOOTER
-  ====================================================== -->
+  <!-- ========================================================
+       SHARED ROOTS
+       ======================================================== -->
 
-  <div
-    id="app-footer-root"
-  ></div>
+  <div id="app-footer-root"></div>
 
+  <div id="app-bottom-nav-root"></div>
 
-  <!-- =====================================================
-       BOTTOM NAV
-  ====================================================== -->
+  <div id="app-modal-root"></div>
 
-  <div
-    id="app-bottom-nav-root"
-  ></div>
+  <div id="app-toast-root"></div>
+
+  <div id="app-loader-root"></div>
 
 
-  <!-- =====================================================
+  <!-- ========================================================
        NOSCRIPT
-  ====================================================== -->
+       ======================================================== -->
 
   <noscript>
 
     <div class="noscript-message">
 
       <strong>
-        JavaScript tələb olunur
+        JavaScript aktiv deyil
       </strong>
 
-      <p>
-        SKy Fit Pro idarəetmə panelindən istifadə etmək üçün
-        brauzerdə JavaScript aktiv olmalıdır.
-      </p>
+      <span>
+        SKy Fit Pro idarəetmə panelinin işləməsi üçün
+        JavaScript aktiv olmalıdır.
+      </span>
 
     </div>
 
   </noscript>
 
 
-  <!-- =====================================================
-       ADMIN ENTRY
-  ====================================================== -->
+  <!-- ========================================================
+       ADMIN MODULE
+       ======================================================== -->
 
   <script
     type="module"
