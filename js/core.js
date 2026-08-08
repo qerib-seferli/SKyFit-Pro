@@ -1,55 +1,150 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import {createClient}
+from
+'https://esm.sh/@supabase/supabase-js@2';
 
-import {
-  SUPABASE_URL,
-  SUPABASE_ANON_KEY,
-  THEME_KEY,
-} from './config.js';
+import {CONFIG}
+from './config.js';
 
-export const supabase = createClient(
-  SUPABASE_URL,
-  SUPABASE_ANON_KEY
+export const supabase=createClient(
+CONFIG.SUPABASE_URL,
+CONFIG.SUPABASE_ANON_KEY
 );
 
-export const $ = (s, p = document) => p.querySelector(s);
-export const $$ = (s, p = document) => [...p.querySelectorAll(s)];
+export const $=(s,p=document)=>p.querySelector(s);
 
-export function money(v = 0) {
-  return Number(v).toFixed(2) + ' ₼';
+export const $$=(s,p=document)=>
+[...p.querySelectorAll(s)];
+
+export function money(v){
+
+return new Intl.NumberFormat(
+
+'az-AZ',
+
+{
+
+minimumFractionDigits:2,
+
+maximumFractionDigits:2,
+
 }
 
-export function toast(text) {
-  const box = $('#toast');
+).format(Number(v||0))+' ₼';
 
-  if (!box) return;
-
-  box.textContent = text;
-  box.classList.add('show');
-
-  clearTimeout(box.timer);
-
-  box.timer = setTimeout(() => {
-    box.classList.remove('show');
-  }, 2500);
 }
 
-export function setTheme(theme) {
-  document.documentElement.dataset.theme = theme;
-  localStorage.setItem(THEME_KEY, theme);
+export function toast(text,type='info'){
+
+const wrap=$('#toast');
+
+if(!wrap)return;
+
+wrap.className='toast show '+type;
+
+wrap.textContent=text;
+
+clearTimeout(wrap.timer);
+
+wrap.timer=setTimeout(()=>{
+
+wrap.className='toast';
+
+},2500);
+
 }
 
-export function loadTheme() {
-  const t =
-    localStorage.getItem(THEME_KEY) || 'dark';
+export function saveTheme(theme){
 
-  setTheme(t);
+document.documentElement.dataset.theme=theme;
+
+localStorage.setItem(
+
+'skyfit-theme',
+
+theme
+
+);
+
 }
 
-export function toggleTheme() {
-  const next =
-    document.documentElement.dataset.theme === 'dark'
-      ? 'light'
-      : 'dark';
+export function loadTheme(){
 
-  setTheme(next);
+const theme=
+
+localStorage.getItem(
+
+'skyfit-theme'
+
+)
+
+||
+
+CONFIG.UI.theme;
+
+saveTheme(theme);
+
+}
+
+export function toggleTheme(){
+
+saveTheme(
+
+document.documentElement.dataset.theme==='dark'
+
+?
+
+'light'
+
+:
+
+'dark'
+
+);
+
+}
+
+export async function session(){
+
+const{
+
+data
+
+}=await supabase.auth.getSession();
+
+return data.session;
+
+}
+
+export async function user(){
+
+const s=await session();
+
+if(!s)return null;
+
+return s.user;
+
+}
+
+export async function profile(){
+
+const u=await user();
+
+if(!u)return null;
+
+const{
+
+data
+
+}=await supabase
+
+.from('profiles')
+
+.select('*')
+
+.eq('id',u.id)
+
+.single();
+
+return data;
+
 }
