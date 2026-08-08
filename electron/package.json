@@ -1,0 +1,70 @@
+{
+  "name": "skyfit-pro-desktop",
+  "version": "1.0.0",
+  "description": "SKy Fit Pro Desktop Management System",
+  "productName": "SKy Fit Pro",
+  "private": true,
+  "main": "main.js",
+  "author": "SKy Fit",
+  "license": "UNLICENSED",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron .",
+    "pack": "electron-builder --dir",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:win:x64": "electron-builder --win --x64"
+  },
+  "devDependencies": {
+    "electron": "^39.0.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "az.skyfit.pro",
+    "productName": "SKy Fit Pro",
+    "asar": true,
+    "compression": "maximum",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js"
+    ],
+    "extraResources": [
+      {
+        "from": "../",
+        "to": "app",
+        "filter": [
+          "**/*",
+          "!electron/**/*",
+          "!.git/**/*",
+          "!.github/**/*",
+          "!node_modules/**/*"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "../assets/icons/icon-512.png",
+      "artifactName": "SKy-Fit-Pro-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "SKy Fit Pro",
+      "uninstallDisplayName": "SKy Fit Pro",
+      "deleteAppDataOnUninstall": false,
+      "runAfterFinish": true
+    }
+  }
+}
