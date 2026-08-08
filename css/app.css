@@ -1,23 +1,4 @@
 /* ============================================================
-   SKY FIT PRO
-   Main Application Stylesheet
-   File: css/app.css
-
-   Senior Full Stack Developer: Qərib Səfərli
-
-   PART 1 / 3
-
-   Design:
-   - Premium compact UI
-   - Dark / Light
-   - Glassmorphism
-   - Neon yellow accent
-   - Web / PWA / Electron
-   - Mobile / Tablet / Desktop
-   ============================================================ */
-
-
-/* ============================================================
    01. DESIGN TOKENS
    ============================================================ */
 
@@ -2006,10 +1987,6 @@ strong {
 
 /* ============================================================
    14. INPUTS
-
-   Vacib:
-   İlk rəqəmin/ hərfin solda gizlənməməsi üçün input control
-   daxilində kifayət qədər real padding saxlanır.
    ============================================================ */
 
 .ui-field {
@@ -5918,51 +5895,6 @@ button.operation-item {
 
 
 /* ============================================================
-   APP.CSS PART 1 / 3 END
-
-   PART 2:
-   - Auth pages
-   - Profile
-   - Favorites
-   - all related responsive layouts
-
-   PART 3:
-   - Full Admin
-   - Dashboard
-   - POS
-   - Members
-   - Memberships
-   - Attendance
-   - Products admin
-   - Stock
-   - Debts
-   - Finance colors
-   - Trainers admin
-   - Audit history
-   - final PWA/Electron polish
-   ============================================================ */
-
-/* ============================================================
-   SKY FIT PRO
-   Main Application Stylesheet
-   File: css/app.css
-
-   Senior Full Stack Developer: Qərib Səfərli
-
-   PART 2 / 3
-
-   Includes:
-   - Auth
-   - Login
-   - Register
-   - Reset password
-   - Update password
-   - Profile
-   - Favorites
-   ============================================================ */
-
-
-/* ============================================================
    35. AUTH PAGE BASE
    ============================================================ */
 
@@ -9053,51 +8985,6 @@ html[data-theme="light"]
   }
 
 }
-
-
-/* ============================================================
-   APP.CSS PART 2 / 3 END
-
-   PART 3:
-   - Complete Admin UI
-   - Dashboard
-   - POS
-   - Members
-   - Memberships
-   - Attendance
-   - Admin Products
-   - Stock
-   - Debts
-   - Finance
-   - Trainers
-   - Audit
-   - final PWA / Electron polish
-   ============================================================ */
-
-/* ============================================================
-   SKY FIT PRO
-   Main Application Stylesheet
-   File: css/app.css
-
-   Senior Full Stack Developer: Qərib Səfərli
-
-   PART 3 / 3
-
-   Includes:
-   - Complete Admin UI
-   - Dashboard
-   - POS
-   - Members
-   - Memberships
-   - Attendance
-   - Products Admin
-   - Stock
-   - Debts
-   - Finance
-   - Trainers
-   - Audit History
-   - PWA / Electron polish
-   ============================================================ */
 
 
 /* ============================================================
@@ -12986,8 +12873,2161 @@ img[src=""] {
 
    Senior Full Stack Developer:
    Qərib Səfərli
+   ============================================================ */
 
-   Single CSS architecture.
-   No Bootstrap.
-   No secondary stylesheet.
+
+
+/* ============================================================
+   01. OLD / NEW TOKEN BRIDGE
+   ============================================================ */
+
+:root {
+  --brand: var(--accent, #ffde00);
+  --brand-rgb: 255, 222, 0;
+
+  --bg: var(--bg-1, #090b10);
+  --bg-elevated: var(--bg-2, #0d1017);
+  --bg-soft: var(--bg-3, #121620);
+  --bg-hover: var(--surface-2, rgba(255,255,255,.065));
+  --bg-active: var(--surface-3, rgba(255,255,255,.09));
+
+  --surface: var(--surface-1, rgba(255,255,255,.045));
+  --surface-solid: var(--bg-2, #0d1017);
+  --surface-strong: var(--surface-2, rgba(255,255,255,.065));
+  --surface-glass: var(--surface-1, rgba(255,255,255,.045));
+  --surface-glass-strong: var(--bg-2, #0d1017);
+
+  --text: var(--text-1, #f8fafc);
+  --text-soft: var(--text-2, #d4d9e2);
+  --text-muted: var(--text-3, #9da6b6);
+  --text-faint: var(--text-4, #717b8e);
+  --text-inverse: #090a0c;
+
+  --border: var(--line-1, rgba(255,255,255,.075));
+  --border-soft: var(--line-1, rgba(255,255,255,.075));
+  --border-strong: var(--line-2, rgba(255,255,255,.115));
+
+  --success: var(--green, #35dc82);
+  --success-rgb: 53, 220, 130;
+
+  --warning: var(--orange, #ffae3d);
+  --warning-rgb: 255, 174, 61;
+
+  --danger: var(--red, #ff5d6c);
+  --danger-rgb: 255, 93, 108;
+
+  --info: var(--blue, #66a7ff);
+  --info-rgb: 102, 167, 255;
+
+  --radius-pill: 999px;
+
+  --content-x: 16px;
+
+  --duration-fast: 140ms;
+  --duration: 220ms;
+  --duration-slow: 360ms;
+
+  --ease-snappy:
+    cubic-bezier(.2,.8,.2,1);
+}
+
+
+html[data-theme="light"] {
+  --surface-glass:
+    rgba(255,255,255,.78);
+
+  --surface-glass-strong:
+    rgba(255,255,255,.94);
+}
+
+
+/* ============================================================
+   02. APP MAIN / LAYOUT STABILITY
+   ============================================================ */
+
+.app-body {
+  position: relative;
+}
+
+
+.app-main {
+  width:
+    min(
+      100%,
+      var(--page-max)
+    );
+
+  min-height:
+    calc(
+      100vh -
+      var(--header-height)
+    );
+
+  margin-inline:
+    auto;
+
+  padding:
+    calc(
+      var(--header-height) +
+      var(--safe-top) +
+      18px
+    )
+    var(--content-x)
+    0;
+}
+
+
+.app-bottom-spacer {
+  height:
+    calc(
+      var(--bottom-nav-height) +
+      var(--safe-bottom) +
+      28px
+    );
+}
+
+
+/* ============================================================
+   03. BRAND MARK
+   layout.js tərəfindən istifadə olunan real class-lar
+   ============================================================ */
+
+.brand-mark {
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  gap:
+    9px;
+
+  width:
+    fit-content;
+
+  min-width:
+    0;
+}
+
+
+.brand-mark__icon {
+  width:
+    38px;
+
+  height:
+    38px;
+
+  flex:
+    0 0 38px;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  border:
+    1px solid rgba(255,222,0,.24);
+
+  border-radius:
+    12px;
+
+  color:
+    var(--brand);
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255,222,0,.18),
+      rgba(255,222,0,.045)
+    );
+
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.08),
+    0 8px 24px rgba(255,222,0,.06);
+
+  font-size:
+    12px;
+
+  font-weight:
+    900;
+
+  letter-spacing:
+    -.04em;
+}
+
+
+.brand-mark__text {
+  min-width: 0;
+
+  display:
+    grid;
+
+  line-height:
+    1;
+}
+
+
+.brand-mark__text strong {
+  overflow:
+    hidden;
+
+  color:
+    var(--text);
+
+  font-size:
+    15px;
+
+  font-weight:
+    850;
+
+  text-overflow:
+    ellipsis;
+
+  white-space:
+    nowrap;
+}
+
+
+.brand-mark__text small {
+  margin-top:
+    4px;
+
+  color:
+    var(--brand);
+
+  font-size:
+    9px;
+
+  font-weight:
+    850;
+
+  letter-spacing:
+    .15em;
+}
+
+
+/* ============================================================
+   04. HEADER — REAL layout.js STRUCTURE
+   ============================================================ */
+
+.app-header {
+  position:
+    fixed;
+
+  z-index:
+    1200;
+
+  top: 0;
+  left: 0;
+  right: 0;
+
+  width:
+    100%;
+
+  height:
+    calc(
+      var(--header-height) +
+      var(--safe-top)
+    );
+
+  padding-top:
+    var(--safe-top);
+
+  border-bottom:
+    1px solid var(--border-soft);
+
+  background:
+    rgba(8,10,15,.82);
+
+  backdrop-filter:
+    blur(24px)
+    saturate(140%);
+
+  -webkit-backdrop-filter:
+    blur(24px)
+    saturate(140%);
+
+  box-shadow:
+    0 8px 28px
+    rgba(0,0,0,.12);
+}
+
+
+html[data-theme="light"]
+.app-header {
+  background:
+    rgba(250,251,252,.88);
+}
+
+
+.app-header__inner {
+  width:
+    min(
+      100%,
+      var(--page-max)
+    );
+
+  height:
+    var(--header-height);
+
+  margin-inline:
+    auto;
+
+  padding-inline:
+    var(--content-x);
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    space-between;
+
+  gap:
+    12px;
+}
+
+
+.app-header__side {
+  min-width: 0;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  gap:
+    7px;
+}
+
+
+.app-header__menu,
+.app-header__action,
+.app-header__profile {
+  width:
+    40px;
+
+  height:
+    40px;
+
+  flex:
+    0 0 40px;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  padding:
+    0;
+
+  border:
+    1px solid transparent;
+
+  border-radius:
+    12px;
+
+  color:
+    var(--text-muted);
+
+  background:
+    transparent;
+
+  cursor:
+    pointer;
+
+  transition:
+    color .14s ease,
+    background .14s ease,
+    border-color .14s ease,
+    transform .14s ease;
+}
+
+
+.app-header__menu:hover,
+.app-header__action:hover,
+.app-header__profile:hover {
+  border-color:
+    var(--border);
+
+  color:
+    var(--text);
+
+  background:
+    var(--surface);
+}
+
+
+.app-header__menu:active,
+.app-header__action:active,
+.app-header__profile:active {
+  transform:
+    scale(.95);
+}
+
+
+.app-header__menu svg,
+.app-header__action svg {
+  width:
+    20px;
+
+  height:
+    20px;
+}
+
+
+.app-header__profile {
+  overflow:
+    hidden;
+
+  border-color:
+    var(--border);
+
+  background:
+    var(--bg-soft);
+}
+
+
+.app-header__profile img {
+  width:
+    100%;
+
+  height:
+    100%;
+
+  object-fit:
+    cover;
+}
+
+
+/* ============================================================
+   05. DRAWER
+   ============================================================ */
+
+.app-drawer-backdrop {
+  position:
+    fixed;
+
+  z-index:
+    1390;
+
+  inset:
+    0;
+
+  opacity:
+    0;
+
+  visibility:
+    hidden;
+
+  background:
+    rgba(0,0,0,.58);
+
+  backdrop-filter:
+    blur(5px);
+
+  -webkit-backdrop-filter:
+    blur(5px);
+
+  transition:
+    opacity .22s ease,
+    visibility .22s ease;
+}
+
+
+.app-drawer-backdrop.is-open {
+  opacity:
+    1;
+
+  visibility:
+    visible;
+}
+
+
+.app-drawer {
+  position:
+    fixed;
+
+  z-index:
+    1400;
+
+  top:
+    0;
+
+  bottom:
+    0;
+
+  left:
+    0;
+
+  width:
+    min(
+      88vw,
+      340px
+    );
+
+  height:
+    100dvh;
+
+  padding:
+    calc(
+      var(--safe-top) +
+      14px
+    )
+    14px
+    calc(
+      var(--safe-bottom) +
+      14px
+    );
+
+  overflow:
+    hidden;
+
+  border-right:
+    1px solid var(--border);
+
+  background:
+    color-mix(
+      in srgb,
+      var(--surface-solid) 94%,
+      transparent
+    );
+
+  box-shadow:
+    24px 0 70px
+    rgba(0,0,0,.38);
+
+  backdrop-filter:
+    blur(30px)
+    saturate(135%);
+
+  -webkit-backdrop-filter:
+    blur(30px)
+    saturate(135%);
+
+  transform:
+    translateX(-105%);
+
+  transition:
+    transform .34s
+    cubic-bezier(.22,1,.36,1);
+}
+
+
+.app-drawer.is-open {
+  transform:
+    translateX(0);
+}
+
+
+.app-drawer__inner {
+  width:
+    100%;
+
+  height:
+    100%;
+
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  overflow:
+    hidden;
+}
+
+
+.app-drawer__header {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    space-between;
+
+  gap:
+    10px;
+
+  padding:
+    2px 2px 14px;
+
+  border-bottom:
+    1px solid var(--border-soft);
+}
+
+
+.app-drawer__close {
+  width:
+    38px;
+
+  height:
+    38px;
+
+  flex:
+    0 0 38px;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  border-radius:
+    11px;
+
+  color:
+    var(--text-muted);
+
+  cursor:
+    pointer;
+}
+
+
+.app-drawer__close:hover {
+  color:
+    var(--text);
+
+  background:
+    var(--bg-hover);
+}
+
+
+.app-drawer__close svg {
+  width:
+    19px;
+
+  height:
+    19px;
+}
+
+
+.app-drawer__profile {
+  min-width: 0;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  gap:
+    11px;
+
+  padding:
+    15px 4px;
+}
+
+
+.app-drawer__avatar {
+  width:
+    44px;
+
+  height:
+    44px;
+
+  flex:
+    0 0 44px;
+
+  overflow:
+    hidden;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  border:
+    1px solid var(--border);
+
+  border-radius:
+    14px;
+
+  color:
+    var(--brand);
+
+  background:
+    var(--bg-soft);
+
+  font-size:
+    12px;
+
+  font-weight:
+    900;
+}
+
+
+.app-drawer__avatar img {
+  width:
+    100%;
+
+  height:
+    100%;
+
+  object-fit:
+    cover;
+}
+
+
+.app-drawer__identity {
+  min-width:
+    0;
+
+  flex:
+    1;
+}
+
+
+.app-drawer__identity strong,
+.app-drawer__identity span {
+  display:
+    block;
+
+  overflow:
+    hidden;
+
+  text-overflow:
+    ellipsis;
+
+  white-space:
+    nowrap;
+}
+
+
+.app-drawer__identity strong {
+  color:
+    var(--text);
+
+  font-size:
+    14px;
+
+  font-weight:
+    800;
+}
+
+
+.app-drawer__identity span {
+  margin-top:
+    3px;
+
+  color:
+    var(--text-muted);
+
+  font-size:
+    11px;
+}
+
+
+.app-drawer__nav {
+  min-height:
+    0;
+
+  overflow-y:
+    auto;
+
+  display:
+    grid;
+
+  gap:
+    4px;
+
+  margin-top:
+    3px;
+
+  padding-right:
+    2px;
+}
+
+
+.app-drawer__link {
+  width:
+    100%;
+
+  min-height:
+    46px;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  gap:
+    11px;
+
+  padding:
+    8px 10px;
+
+  border:
+    1px solid transparent;
+
+  border-radius:
+    13px;
+
+  color:
+    var(--text-muted);
+
+  background:
+    transparent;
+
+  font-size:
+    13px;
+
+  font-weight:
+    700;
+
+  text-align:
+    left;
+
+  cursor:
+    pointer;
+}
+
+
+.app-drawer__link:hover {
+  border-color:
+    var(--border-soft);
+
+  color:
+    var(--text);
+
+  background:
+    var(--bg-hover);
+}
+
+
+.app-drawer__link.is-active {
+  border-color:
+    rgba(255,222,0,.2);
+
+  color:
+    var(--brand);
+
+  background:
+    rgba(255,222,0,.08);
+}
+
+
+.app-drawer__link-icon {
+  width:
+    30px;
+
+  height:
+    30px;
+
+  flex:
+    0 0 30px;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  border-radius:
+    9px;
+
+  background:
+    rgba(255,255,255,.025);
+}
+
+
+.app-drawer__link-icon svg {
+  width:
+    17px;
+
+  height:
+    17px;
+}
+
+
+.app-drawer__footer {
+  display:
+    grid;
+
+  gap:
+    7px;
+
+  margin-top:
+    auto;
+
+  padding-top:
+    14px;
+
+  border-top:
+    1px solid var(--border-soft);
+}
+
+
+/* ============================================================
+   06. BOTTOM NAVIGATION
+   ============================================================ */
+
+.app-bottom-nav {
+  position:
+    fixed;
+
+  z-index:
+    1150;
+
+  right:
+    0;
+
+  bottom:
+    0;
+
+  left:
+    0;
+
+  width:
+    auto;
+
+  height:
+    auto;
+
+  background:
+    transparent;
+
+  border:
+    0;
+
+  pointer-events:
+    none;
+
+  transform:
+    none;
+}
+
+
+.app-bottom-nav__inner {
+  width:
+    min(
+      calc(
+        100% -
+        20px
+      ),
+      540px
+    );
+
+  min-height:
+    var(--bottom-nav-height);
+
+  display:
+    grid;
+
+  grid-template-columns:
+    repeat(
+      5,
+      minmax(0,1fr)
+    );
+
+  align-items:
+    center;
+
+  gap:
+    2px;
+
+  margin:
+    0
+    auto
+    calc(
+      var(--safe-bottom) +
+      9px
+    );
+
+  padding:
+    7px;
+
+  border:
+    1px solid var(--border);
+
+  border-radius:
+    23px;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(28,33,43,.92),
+      rgba(13,16,23,.94)
+    );
+
+  box-shadow:
+    0 20px 50px rgba(0,0,0,.34),
+    inset 0 1px 0 rgba(255,255,255,.065);
+
+  backdrop-filter:
+    blur(24px)
+    saturate(140%);
+
+  -webkit-backdrop-filter:
+    blur(24px)
+    saturate(140%);
+
+  pointer-events:
+    auto;
+}
+
+
+html[data-theme="light"]
+.app-bottom-nav__inner {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,.96),
+      rgba(246,248,250,.97)
+    );
+
+  box-shadow:
+    0 18px 44px rgba(25,35,48,.14),
+    inset 0 1px 0 rgba(255,255,255,.9);
+}
+
+
+.app-bottom-nav__item {
+  position:
+    relative;
+
+  min-width:
+    0;
+
+  min-height:
+    56px;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  align-content:
+    center;
+
+  gap:
+    4px;
+
+  padding:
+    0 3px;
+
+  border:
+    0;
+
+  border-radius:
+    16px;
+
+  color:
+    var(--text-faint);
+
+  background:
+    transparent;
+
+  cursor:
+    pointer;
+}
+
+
+.app-bottom-nav__item::before {
+  content:
+    "";
+
+  position:
+    absolute;
+
+  z-index:
+    -1;
+
+  inset:
+    3px;
+
+  border-radius:
+    14px;
+
+  opacity:
+    0;
+
+  background:
+    radial-gradient(
+      circle at 50% 20%,
+      rgba(255,222,0,.15),
+      rgba(255,222,0,.045) 55%,
+      transparent 80%
+    );
+
+  transition:
+    opacity .2s ease;
+}
+
+
+.app-bottom-nav__item.is-active {
+  color:
+    var(--brand);
+}
+
+
+.app-bottom-nav__item.is-active::before {
+  opacity:
+    1;
+}
+
+
+.app-bottom-nav__icon {
+  width:
+    25px;
+
+  height:
+    25px;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+}
+
+
+.app-bottom-nav__icon svg {
+  width:
+    21px;
+
+  height:
+    21px;
+}
+
+
+.app-bottom-nav__item.is-active
+.app-bottom-nav__icon {
+  filter:
+    drop-shadow(
+      0 0 8px
+      rgba(255,222,0,.3)
+    );
+}
+
+
+.app-bottom-nav__label {
+  width:
+    100%;
+
+  overflow:
+    hidden;
+
+  color:
+    inherit;
+
+  font-size:
+    10px;
+
+  line-height:
+    1;
+
+  font-weight:
+    700;
+
+  text-align:
+    center;
+
+  text-overflow:
+    ellipsis;
+
+  white-space:
+    nowrap;
+}
+
+
+/* ============================================================
+   07. PRODUCT GRID COMPATIBILITY
+   ============================================================ */
+
+.product-grid,
+.products-grid,
+.admin-product-grid,
+.admin-products-grid {
+  width:
+    100%;
+
+  display:
+    grid;
+
+  grid-template-columns:
+    repeat(
+      3,
+      minmax(0,1fr)
+    );
+
+  gap:
+    8px;
+}
+
+
+.product-card {
+  position:
+    relative;
+
+  min-width:
+    0;
+
+  overflow:
+    hidden;
+
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  border:
+    1px solid var(--border);
+
+  border-radius:
+    16px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255,255,255,.025),
+      transparent 50%
+    ),
+    var(--surface);
+
+  box-shadow:
+    0 8px 24px rgba(0,0,0,.13),
+    inset 0 1px 0 rgba(255,255,255,.03);
+}
+
+
+.product-card__media {
+  position:
+    relative;
+
+  width:
+    100%;
+
+  aspect-ratio:
+    1 / .94;
+
+  overflow:
+    hidden;
+
+  flex:
+    0 0 auto;
+
+  background:
+    radial-gradient(
+      circle at 50% 40%,
+      rgba(255,222,0,.055),
+      transparent 60%
+    ),
+    var(--bg-soft);
+}
+
+
+.product-card__image {
+  width:
+    100%;
+
+  height:
+    100%;
+
+  object-fit:
+    cover;
+}
+
+
+.product-card__body {
+  min-width:
+    0;
+
+  flex:
+    1;
+
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  padding:
+    9px;
+}
+
+
+.product-card__name {
+  min-height:
+    34px;
+
+  display:
+    -webkit-box;
+
+  overflow:
+    hidden;
+
+  color:
+    var(--text);
+
+  font-size:
+    12px;
+
+  line-height:
+    1.4;
+
+  font-weight:
+    800;
+
+  -webkit-box-orient:
+    vertical;
+
+  -webkit-line-clamp:
+    2;
+}
+
+
+.product-card__footer {
+  display:
+    flex;
+
+  align-items:
+    flex-end;
+
+  justify-content:
+    space-between;
+
+  gap:
+    6px;
+
+  margin-top:
+    auto;
+
+  padding-top:
+    8px;
+}
+
+
+.product-card__price {
+  color:
+    var(--brand) !important;
+
+  font-size:
+    14px;
+
+  line-height:
+    1;
+
+  font-weight:
+    900;
+
+  font-variant-numeric:
+    tabular-nums;
+}
+
+
+.product-card__stock {
+  color:
+    var(--text-faint);
+
+  font-size:
+    9px;
+}
+
+
+.product-card__favorite {
+  position:
+    absolute;
+
+  z-index:
+    4;
+
+  top:
+    7px;
+
+  right:
+    7px;
+
+  width:
+    32px;
+
+  height:
+    32px;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  padding:
+    0;
+
+  border:
+    1px solid rgba(255,255,255,.14);
+
+  border-radius:
+    10px;
+
+  color:
+    rgba(255,255,255,.84);
+
+  background:
+    rgba(8,10,15,.62);
+
+  backdrop-filter:
+    blur(9px);
+
+  cursor:
+    pointer;
+}
+
+
+.product-card__favorite.is-active {
+  border-color:
+    rgba(255,93,108,.3);
+
+  color:
+    var(--danger);
+
+  background:
+    rgba(40,8,14,.72);
+}
+
+
+/* ============================================================
+   08. TRAINER GRID + CARD
+   ============================================================ */
+
+.trainer-grid,
+.trainers-grid,
+.admin-trainers-grid {
+  width:
+    100%;
+
+  display:
+    grid;
+
+  grid-template-columns:
+    repeat(
+      2,
+      minmax(0,1fr)
+    );
+
+  gap:
+    9px;
+}
+
+
+.trainer-card {
+  position:
+    relative;
+
+  min-width:
+    0;
+
+  overflow:
+    hidden;
+
+  border:
+    1px solid var(--border);
+
+  border-radius:
+    17px;
+
+  background:
+    var(--surface);
+
+  box-shadow:
+    var(--shadow-sm);
+}
+
+
+.trainer-card__media {
+  position:
+    relative;
+
+  width:
+    100%;
+
+  aspect-ratio:
+    4 / 5;
+
+  overflow:
+    hidden;
+
+  background:
+    var(--bg-soft);
+}
+
+
+.trainer-card__image {
+  width:
+    100%;
+
+  height:
+    100%;
+
+  object-fit:
+    cover;
+
+  object-position:
+    center top;
+}
+
+
+.trainer-card__media::after {
+  content:
+    "";
+
+  position:
+    absolute;
+
+  z-index:
+    1;
+
+  inset:
+    32% 0 0;
+
+  pointer-events:
+    none;
+
+  background:
+    linear-gradient(
+      to top,
+      rgba(7,9,13,.94),
+      rgba(7,9,13,.42) 48%,
+      transparent
+    );
+}
+
+
+.trainer-card__content {
+  position:
+    absolute;
+
+  z-index:
+    3;
+
+  right:
+    0;
+
+  bottom:
+    0;
+
+  left:
+    0;
+
+  padding:
+    13px;
+}
+
+
+.trainer-card__name {
+  color:
+    #fff;
+
+  font-size:
+    14px;
+
+  line-height:
+    1.2;
+
+  font-weight:
+    850;
+}
+
+
+.trainer-card__specialty {
+  display:
+    block;
+
+  margin-top:
+    3px;
+
+  color:
+    rgba(255,255,255,.7);
+
+  font-size:
+    10px;
+}
+
+
+.trainer-card__action {
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  gap:
+    5px;
+
+  margin-top:
+    8px;
+
+  color:
+    var(--brand);
+
+  font-size:
+    10px;
+
+  font-weight:
+    800;
+}
+
+
+/* ============================================================
+   09. STATUS / DASHBOARD CARDS
+   ============================================================ */
+
+.status-card,
+.admin-stat-card,
+.admin-card,
+.profile-info-card,
+.settings-card,
+.platform-card,
+.favorites-shop-card {
+  min-width:
+    0;
+
+  border:
+    1px solid var(--border);
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255,255,255,.025),
+      transparent 45%
+    ),
+    var(--surface);
+
+  box-shadow:
+    var(--shadow-card);
+
+  backdrop-filter:
+    blur(18px);
+
+  -webkit-backdrop-filter:
+    blur(18px);
+}
+
+
+.status-card {
+  padding:
+    14px;
+
+  border-radius:
+    16px;
+}
+
+
+.status-card__header {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    space-between;
+
+  gap:
+    8px;
+
+  margin-bottom:
+    10px;
+}
+
+
+.status-card__label {
+  color:
+    var(--text-muted);
+
+  font-size:
+    11px;
+
+  font-weight:
+    700;
+}
+
+
+.status-card__value {
+  display:
+    block;
+
+  overflow:
+    hidden;
+
+  color:
+    var(--text);
+
+  font-size:
+    20px;
+
+  line-height:
+    1.15;
+
+  font-weight:
+    900;
+
+  text-overflow:
+    ellipsis;
+
+  white-space:
+    nowrap;
+}
+
+
+.status-card__meta {
+  display:
+    block;
+
+  margin-top:
+    4px;
+
+  overflow:
+    hidden;
+
+  color:
+    var(--text-muted);
+
+  font-size:
+    10px;
+
+  text-overflow:
+    ellipsis;
+
+  white-space:
+    nowrap;
+}
+
+
+/* ============================================================
+   10. MEMBER / PROFILE STATS
+   ============================================================ */
+
+.member-overview-grid,
+.profile-stat-grid {
+  display:
+    grid;
+
+  grid-template-columns:
+    repeat(
+      3,
+      minmax(0,1fr)
+    );
+
+  gap:
+    10px;
+}
+
+
+/* ============================================================
+   11. PRODUCT TOOLBAR OLD CLASS
+   ============================================================ */
+
+.product-toolbar {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  gap:
+    10px;
+
+  margin-bottom:
+    14px;
+}
+
+
+.product-toolbar
+.ui-search {
+  width:
+    100%;
+
+  max-width:
+    440px;
+}
+
+
+/* ============================================================
+   12. INPUT COMPATIBILITY
+   ============================================================ */
+
+.ui-search {
+  position:
+    relative;
+
+  width:
+    100%;
+
+  min-height:
+    44px;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  border:
+    1px solid var(--border);
+
+  border-radius:
+    13px;
+
+  background:
+    var(--surface);
+}
+
+
+.ui-search__icon {
+  width:
+    42px;
+
+  height:
+    42px;
+
+  flex:
+    0 0 42px;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  color:
+    var(--text-faint);
+}
+
+
+.ui-search__input {
+  width:
+    100%;
+
+  min-width:
+    0;
+
+  height:
+    42px;
+
+  padding:
+    0 12px 0 2px;
+
+  border:
+    0;
+
+  outline:
+    0;
+
+  color:
+    var(--text);
+
+  background:
+    transparent;
+
+  font-size:
+    14px;
+}
+
+
+.ui-search__clear {
+  width:
+    38px;
+
+  height:
+    38px;
+
+  flex:
+    0 0 38px;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  color:
+    var(--text-muted);
+}
+
+
+.ui-input__control {
+  padding-left:
+    14px !important;
+
+  padding-right:
+    14px !important;
+
+  text-indent:
+    0 !important;
+}
+
+
+.ui-input__icon +
+.ui-input__control {
+  padding-left:
+    2px !important;
+}
+
+
+/* ============================================================
+   13. RESPONSIVE
+   ============================================================ */
+
+@media (
+  min-width: 720px
+) {
+
+  .product-grid,
+  .products-grid,
+  .admin-product-grid,
+  .admin-products-grid {
+    gap:
+      11px;
+  }
+
+
+  .product-card__body {
+    padding:
+      10px 10px 12px;
+  }
+
+}
+
+
+@media (
+  min-width: 900px
+) {
+
+  .product-grid,
+  .products-grid,
+  .admin-product-grid,
+  .admin-products-grid {
+    grid-template-columns:
+      repeat(
+        5,
+        minmax(0,1fr)
+      );
+  }
+
+
+  .trainer-grid,
+  .trainers-grid,
+  .admin-trainers-grid {
+    grid-template-columns:
+      repeat(
+        4,
+        minmax(0,1fr)
+      );
+  }
+
+}
+
+
+@media (
+  min-width: 1200px
+) {
+
+  .trainer-grid,
+  .trainers-grid,
+  .admin-trainers-grid {
+    grid-template-columns:
+      repeat(
+        5,
+        minmax(0,1fr)
+      );
+  }
+
+}
+
+
+@media (
+  max-width: 760px
+) {
+
+  :root {
+    --content-x:
+      10px;
+  }
+
+
+  .app-header__inner {
+    padding-inline:
+      10px;
+  }
+
+
+  .brand-mark__text strong {
+    font-size:
+      14px;
+  }
+
+
+  .app-drawer__link {
+    font-size:
+      13px;
+  }
+
+
+  .app-bottom-nav__inner {
+    width:
+      calc(
+        100% -
+        14px
+      );
+
+    min-height:
+      66px;
+
+    padding:
+      5px;
+
+    border-radius:
+      20px;
+  }
+
+
+  .app-bottom-nav__item {
+    min-height:
+      54px;
+
+    border-radius:
+      14px;
+  }
+
+
+  .app-bottom-nav__icon {
+    width:
+      23px;
+
+    height:
+      23px;
+  }
+
+
+  .app-bottom-nav__icon svg {
+    width:
+      20px;
+
+    height:
+      20px;
+  }
+
+
+  .app-bottom-nav__label {
+    font-size:
+      9px;
+  }
+
+
+  .product-grid,
+  .products-grid,
+  .admin-product-grid,
+  .admin-products-grid {
+    grid-template-columns:
+      repeat(
+        3,
+        minmax(0,1fr)
+      );
+
+    gap:
+      6px;
+  }
+
+
+  .product-card {
+    border-radius:
+      13px;
+  }
+
+
+  .product-card__body {
+    padding:
+      7px;
+  }
+
+
+  .product-card__name {
+    min-height:
+      29px;
+
+    font-size:
+      10.5px;
+  }
+
+
+  .product-card__price {
+    font-size:
+      12px;
+  }
+
+
+  .product-card__stock {
+    font-size:
+      8px;
+  }
+
+
+  .trainer-grid,
+  .trainers-grid,
+  .admin-trainers-grid {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0,1fr)
+      );
+
+    gap:
+      7px;
+  }
+
+}
+
+
+@media (
+  max-width: 390px
+) {
+
+  .app-bottom-nav__label {
+    font-size:
+      8px;
+  }
+
+
+  .product-grid,
+  .products-grid,
+  .admin-product-grid,
+  .admin-products-grid {
+    gap:
+      5px;
+  }
+
+
+  .product-card__body {
+    padding:
+      6px;
+  }
+
+
+  .product-card__name {
+    font-size:
+      10px;
+  }
+
+
+  .product-card__price {
+    font-size:
+      11px;
+  }
+
+}
+
+
+/* ============================================================
+   SKY FIT PRO COMPATIBILITY REPAIR END
    ============================================================ */
