@@ -1,49 +1,55 @@
 {
   "name": "skyfit-pro-desktop",
   "version": "1.0.0",
-  "description": "SKy Fit Pro Desktop Management System",
-  "productName": "SKy Fit Pro",
   "private": true,
+  "description": "SKy Fit Pro desktop application",
+  "author": "Qərib Səfərli",
   "main": "main.js",
-  "author": "SKy Fit",
-  "license": "UNLICENSED",
+
   "scripts": {
     "start": "electron .",
     "dev": "electron .",
-    "pack": "electron-builder --dir",
     "build": "electron-builder",
-    "build:win": "electron-builder --win",
-    "build:win:x64": "electron-builder --win --x64"
+    "build:win": "electron-builder --win"
   },
+
+  "dependencies": {
+    "electron-updater": "^6.3.9"
+  },
+
   "devDependencies": {
-    "electron": "^39.0.0",
+    "electron": "^37.2.6",
     "electron-builder": "^26.0.12"
   },
+
   "build": {
     "appId": "az.skyfit.pro",
     "productName": "SKy Fit Pro",
+
     "asar": true,
-    "compression": "maximum",
+
+    "files": [
+      "main.js",
+      "preload.js",
+      "../index.html",
+      "../login.html",
+      "../register.html",
+      "../profile.html",
+      "../admin.html",
+      "../favorites.html",
+      "../reset-password.html",
+      "../update-password.html",
+      "../css/**/*",
+      "../js/**/*",
+      "../assets/**/*",
+      "../manifest.json",
+      "../service-worker.js"
+    ],
+
     "directories": {
       "output": "dist"
     },
-    "files": [
-      "main.js",
-      "preload.js"
-    ],
-    "extraResources": [
-      {
-        "from": "../",
-        "to": "app",
-        "filter": [
-          "**/*",
-          "!electron/**/*",
-          "!.git/**/*",
-          "!.github/**/*",
-          "!node_modules/**/*"
-        ]
-      }
-    ],
+
     "win": {
       "target": [
         {
@@ -53,18 +59,15 @@
           ]
         }
       ],
-      "icon": "../assets/icons/icon-512.png",
-      "artifactName": "SKy-Fit-Pro-Setup-${version}.${ext}"
+      "artifactName": "SKy-Fit-Pro-${version}-Setup.${ext}"
     },
+
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "SKy Fit Pro",
-      "uninstallDisplayName": "SKy Fit Pro",
-      "deleteAppDataOnUninstall": false,
-      "runAfterFinish": true
+      "shortcutName": "SKy Fit Pro"
     }
   }
 }
