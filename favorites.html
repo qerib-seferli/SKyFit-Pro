@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="az">
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
+  >
+
+  <meta
+    name="description"
+    content="SKy Fit Pro sevimli məhsullar."
+  >
+
+  <meta name="theme-color" content="#090b10">
+
+  <meta
+    name="apple-mobile-web-app-capable"
+    content="yes"
+  >
+
+  <meta
+    name="apple-mobile-web-app-status-bar-style"
+    content="black-translucent"
+  >
+
+  <meta
+    name="apple-mobile-web-app-title"
+    content="SKy Fit"
+  >
+
+  <title>Sevimlilər | SKy Fit Pro</title>
+
+  <link
+    rel="manifest"
+    href="./manifest.json"
+  >
+
+  <link
+    rel="icon"
+    href="./assets/icons/favicon.png"
+    type="image/png"
+  >
+
+  <link
+    rel="apple-touch-icon"
+    href="./assets/icons/apple-touch-icon.png"
+  >
+
+  <link
+    rel="stylesheet"
+    href="./css/app.css"
+  >
+</head>
+
+<body
+  class="app-body"
+  data-page="favorites"
+>
+
+  <!-- =====================================================
+       GLOBAL ROOTS
+  ====================================================== -->
+
+  <div
+    id="app-loader-root"
+    aria-live="polite"
+  ></div>
+
+  <div
+    id="app-toast-root"
+    aria-live="polite"
+    aria-atomic="true"
+  ></div>
+
+  <div
+    id="app-modal-root"
+    aria-live="polite"
+  ></div>
+
+  <div
+    id="app-drawer-root"
+  ></div>
+
+  <div
+    id="app-header-root"
+  ></div>
+
+
+  <!-- =====================================================
+       MAIN
+  ====================================================== -->
+
+  <main
+    id="app-main"
+    class="app-main"
+  >
+
+    <!-- ===================================================
+         PAGE HERO
+    ==================================================== -->
+
+    <section
+      class="page-hero page-hero--compact"
+      aria-labelledby="favorites-title"
+    >
+
+      <div class="page-hero__content">
+
+        <div>
+
+          <span class="section-heading__eyebrow">
+            Saxlanılanlar
+          </span>
+
+          <h1
+            id="favorites-title"
+            class="page-hero__title"
+          >
+            Sevimlilər
+          </h1>
+
+          <p class="page-hero__description">
+            Bəyəndiyin məhsulları bir yerdə saxla.
+          </p>
+
+        </div>
+
+
+        <div
+          id="favorites-counter"
+          class="page-hero__counter"
+          aria-live="polite"
+        >
+          <strong id="favorites-count">
+            0
+          </strong>
+
+          <span>
+            məhsul
+          </span>
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- ===================================================
+         FAVORITES
+    ==================================================== -->
+
+    <section
+      class="content-section"
+      aria-labelledby="favorites-products-title"
+    >
+
+      <div class="section-heading">
+
+        <div class="section-heading__content">
+
+          <span class="section-heading__eyebrow">
+            SKy Fit Shop
+          </span>
+
+          <h2
+            id="favorites-products-title"
+            class="section-heading__title"
+          >
+            Seçilmiş məhsullar
+          </h2>
+
+        </div>
+
+        <button
+          id="favorites-clear-button"
+          class="section-heading__action is-hidden"
+          type="button"
+        >
+          Təmizlə
+        </button>
+
+      </div>
+
+
+      <!-- SEARCH -->
+
+      <div class="product-toolbar">
+
+        <label
+          class="ui-search"
+          for="favorites-search-input"
+        >
+
+          <span
+            class="ui-search__icon"
+            aria-hidden="true"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14Z"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+
+              <path
+                d="m20 20-4.2-4.2"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              />
+            </svg>
+          </span>
+
+          <input
+            id="favorites-search-input"
+            class="ui-search__input"
+            type="search"
+            inputmode="search"
+            autocomplete="off"
+            placeholder="Sevimlilərdə axtar"
+            aria-label="Sevimli məhsullarda axtar"
+          >
+
+          <button
+            type="button"
+            id="favorites-search-clear"
+            class="ui-search__clear is-hidden"
+            aria-label="Axtarışı təmizlə"
+          >
+            ×
+          </button>
+
+        </label>
+
+      </div>
+
+
+      <!-- PRODUCTS -->
+
+      <div
+        id="favorites-grid"
+        class="product-grid"
+        aria-live="polite"
+      >
+        <!-- favorites.js -->
+      </div>
+
+
+      <!-- EMPTY STATE -->
+
+      <div
+        id="favorites-empty-state"
+        class="empty-state is-hidden"
+      >
+
+        <div class="empty-state__icon">
+
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
+          >
+            <path
+              d="M12 20.2 4.9 13.6C1 10 3.3 4.5 7.7 4.5c1.8 0 3.3 1 4.3 2.3 1-1.3 2.5-2.3 4.3-2.3 4.4 0 6.7 5.5 2.8 9.1L12 20.2Z"
+              stroke="currentColor"
+              stroke-width="1.7"
+              stroke-linejoin="round"
+            />
+          </svg>
+
+        </div>
+
+        <strong class="empty-state__title">
+          Sevimli məhsul yoxdur
+        </strong>
+
+        <p class="empty-state__description">
+          Bəyəndiyin məhsulların ürək düyməsinə toxun və
+          onları burada saxla.
+        </p>
+
+        <a
+          href="./index.html#products"
+          class="ui-button ui-button--primary"
+        >
+          <span class="ui-button__label">
+            Məhsullara bax
+          </span>
+        </a>
+
+      </div>
+
+
+      <!-- SEARCH EMPTY -->
+
+      <div
+        id="favorites-search-empty-state"
+        class="empty-state is-hidden"
+      >
+
+        <div class="empty-state__icon">
+          <span>SK</span>
+        </div>
+
+        <strong class="empty-state__title">
+          Nəticə tapılmadı
+        </strong>
+
+        <p class="empty-state__description">
+          Axtarışa uyğun sevimli məhsul yoxdur.
+        </p>
+
+      </div>
+
+    </section>
+
+
+    <!-- ===================================================
+         BACK TO SHOP
+    ==================================================== -->
+
+    <section class="content-section">
+
+      <article class="favorites-shop-card">
+
+        <div class="favorites-shop-card__content">
+
+          <span class="section-heading__eyebrow">
+            Daha çoxunu kəşf et
+          </span>
+
+          <h2 class="favorites-shop-card__title">
+            SKy Fit Shop
+          </h2>
+
+          <p class="favorites-shop-card__description">
+            Məhsullara bax və istədiklərini sevimlilərinə əlavə et.
+          </p>
+
+        </div>
+
+        <a
+          href="./index.html#products"
+          class="ui-button ui-button--glass"
+        >
+          <span class="ui-button__label">
+            Mağazaya keç
+          </span>
+        </a>
+
+      </article>
+
+    </section>
+
+
+    <!-- ===================================================
+         SAFE SPACE
+    ==================================================== -->
+
+    <div
+      class="app-bottom-spacer"
+      aria-hidden="true"
+    ></div>
+
+  </main>
+
+
+  <!-- =====================================================
+       FOOTER
+  ====================================================== -->
+
+  <div
+    id="app-footer-root"
+  ></div>
+
+
+  <!-- =====================================================
+       BOTTOM NAV
+  ====================================================== -->
+
+  <div
+    id="app-bottom-nav-root"
+  ></div>
+
+
+  <!-- =====================================================
+       NOSCRIPT
+  ====================================================== -->
+
+  <noscript>
+
+    <div class="noscript-message">
+
+      <strong>
+        JavaScript tələb olunur
+      </strong>
+
+      <p>
+        Sevimli məhsulları göstərmək üçün
+        brauzerdə JavaScript aktiv olmalıdır.
+      </p>
+
+    </div>
+
+  </noscript>
+
+
+  <!-- =====================================================
+       FAVORITES ENTRY
+  ====================================================== -->
+
+  <script
+    type="module"
+    src="./js/favorites.js"
+  ></script>
+
+</body>
+</html>
