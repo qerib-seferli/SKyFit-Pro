@@ -7049,3 +7049,183 @@ body[data-page="home"]
 
 }
 
+/* ================================================================
+   SKY FIT PRO — COMPACT FOOTER FINAL
+   ================================================================ */
+
+#app-footer-root {
+  width: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+}
+
+
+.app-footer {
+  width:
+    min(
+      calc(
+        100% -
+        var(--page-padding) * 2
+      ),
+      var(--page-width)
+    );
+
+  margin:
+    0 auto;
+
+  padding:
+    0;
+
+  border-top:
+    1px solid
+    var(--border-soft);
+
+  background:
+    transparent;
+}
+
+
+.app-footer__inner {
+  min-height: 44px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: flex-start;
+
+  padding:
+    8px 0;
+
+  margin: 0;
+}
+
+
+.app-footer__brand {
+  display: flex;
+
+  align-items: center;
+
+  flex-wrap: wrap;
+
+  gap: 8px;
+}
+
+
+.app-footer__copy {
+  color:
+    var(--text-faint);
+
+  font-size: 9px;
+
+  line-height: 1.2;
+}
+
+
+.app-footer__separator {
+  width: 1px;
+
+  height: 12px;
+
+  background:
+    var(--border);
+}
+
+
+.app-footer__developer {
+  color:
+    var(--text-faint);
+
+  font-size: 8px;
+
+  line-height: 1.2;
+}
+
+
+.app-footer__developer strong {
+  color:
+    var(--text-soft);
+
+  font-weight: 700;
+}
+
+
+/* Footer-dən sonra artıq boşluq qalmasın */
+
+.app-footer {
+  margin-bottom:
+    calc(
+      var(--bottom-nav-height) +
+      var(--safe-bottom) +
+      4px
+    );
+}
+
+
+/* HOME səhifəsində CTA ilə footer arası kompakt */
+
+body[data-page="home"]
+.home-cta-section {
+  padding-bottom: 10px;
+}
+
+
+/* ================================================================
+   MOBILE
+   ================================================================ */
+
+@media (max-width: 700px) {
+
+  .app-footer {
+    width:
+      calc(
+        100% -
+        20px
+      );
+
+    margin-bottom:
+      calc(
+        var(--bottom-nav-height) +
+        var(--safe-bottom) +
+        3px
+      );
+  }
+
+
+  .app-footer__inner {
+    min-height: 0;
+
+    padding:
+      8px 0;
+  }
+
+
+  .app-footer__brand {
+    gap: 4px 7px;
+  }
+
+
+  .app-footer__separator {
+    display: none;
+  }
+
+
+  .app-footer__copy,
+  .app-footer__developer {
+    white-space: normal;
+  }
+
+
+  .app-footer__copy {
+    font-size: 8px;
+  }
+
+
+  .app-footer__developer {
+    font-size: 7px;
+  }
+
+}
+
+
