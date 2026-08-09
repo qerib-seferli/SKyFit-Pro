@@ -6725,3 +6725,327 @@ body[data-page="home"] .products-grid:empty {
 /* ================================================================
    HOME STEP 4 END
    ================================================================ */
+
+/* ================================================================
+   SKY FIT PRO — COMPACT FOOTER FINAL
+
+   Senior Full Stack Developer: Qərib Səfərli
+   ================================================================ */
+
+#app-footer-root {
+  width: 100%;
+  min-height: 0;
+}
+
+
+.app-footer {
+  width:
+    min(
+      calc(
+        100% -
+        var(--page-padding) * 2
+      ),
+      var(--page-width)
+    );
+
+  margin:
+    0 auto;
+
+  padding:
+    0;
+
+  border-top:
+    1px solid
+    var(--border-soft);
+
+  background:
+    transparent;
+}
+
+
+.app-footer__inner {
+  width: 100%;
+
+  min-height: 58px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 18px;
+
+  padding:
+    10px 0;
+
+}
+
+
+/* ================================================================
+   LEFT SIDE
+   ================================================================ */
+
+.app-footer__brand {
+  min-width: 0;
+
+  display: flex;
+
+  align-items: center;
+
+  flex-wrap: wrap;
+
+  gap: 9px;
+}
+
+
+.app-footer__copy {
+  color:
+    var(--text-faint);
+
+  font-size: 10px;
+
+  line-height: 1.2;
+
+  white-space: nowrap;
+}
+
+
+.app-footer__separator {
+  width: 1px;
+
+  height: 13px;
+
+  flex: 0 0 1px;
+
+  background:
+    var(--border);
+}
+
+
+.app-footer__developer {
+  color:
+    var(--text-faint);
+
+  font-size: 9px;
+
+  line-height: 1.2;
+
+  white-space: nowrap;
+}
+
+
+.app-footer__developer strong {
+  color:
+    var(--text-soft);
+
+  font-weight: 700;
+}
+
+
+/* ================================================================
+   LINKS
+   ================================================================ */
+
+.app-footer__links {
+  flex: 0 0 auto;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: flex-end;
+
+  flex-wrap: wrap;
+
+  gap: 5px;
+}
+
+
+.app-footer__links a {
+  min-height: 29px;
+
+  display: inline-flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  padding:
+    0 8px;
+
+  border:
+    1px solid transparent;
+
+  border-radius: 8px;
+
+  color:
+    var(--text-muted);
+
+  background:
+    transparent;
+
+  font-size: 9px;
+
+  font-weight: 600;
+
+  transition:
+    color 150ms ease,
+    border-color 150ms ease,
+    background 150ms ease;
+}
+
+
+.app-footer__links a:hover {
+  color:
+    var(--yellow);
+
+  border-color:
+    var(--yellow-border);
+
+  background:
+    var(--yellow-soft);
+}
+
+
+/* ================================================================
+   HOME PAGE — REMOVE LARGE GAP BEFORE FOOTER
+   ================================================================ */
+
+body[data-page="home"]
+.home-cta-section {
+  padding-bottom:
+    16px;
+}
+
+
+body[data-page="home"]
+#app-footer-root {
+  margin-top:
+    0;
+}
+
+
+/* ================================================================
+   DESKTOP BOTTOM SPACE
+
+   Bottom navigation footer-i örtməsin,
+   amma əvvəlki kimi nəhəng boşluq da qalmasın.
+   ================================================================ */
+
+.app-footer {
+  margin-bottom:
+    calc(
+      var(--bottom-nav-height) +
+      var(--safe-bottom) +
+      8px
+    );
+}
+
+
+/* ================================================================
+   MOBILE
+   ================================================================ */
+
+@media (max-width: 700px) {
+
+  .app-footer {
+    width:
+      calc(
+        100% -
+        22px
+      );
+
+    margin-bottom:
+      calc(
+        var(--bottom-nav-height) +
+        var(--safe-bottom) +
+        6px
+      );
+  }
+
+
+  .app-footer__inner {
+    min-height: 0;
+
+    align-items: flex-start;
+
+    flex-direction: column;
+
+    gap: 7px;
+
+    padding:
+      10px 0;
+  }
+
+
+  .app-footer__brand {
+    width: 100%;
+
+    gap: 5px 8px;
+  }
+
+
+  .app-footer__separator {
+    display: none;
+  }
+
+
+  .app-footer__copy,
+  .app-footer__developer {
+    white-space: normal;
+  }
+
+
+  .app-footer__developer {
+    font-size: 8px;
+  }
+
+
+  .app-footer__links {
+    width: 100%;
+
+    justify-content: flex-start;
+
+    gap: 3px;
+  }
+
+
+  .app-footer__links a {
+    min-height: 27px;
+
+    padding:
+      0 6px;
+
+    font-size: 8px;
+  }
+
+}
+
+
+/* ================================================================
+   VERY SMALL PHONE
+   ================================================================ */
+
+@media (max-width: 390px) {
+
+  .app-footer__links {
+    display: grid;
+
+    grid-template-columns:
+      repeat(
+        3,
+        minmax(
+          0,
+          1fr
+        )
+      );
+  }
+
+
+  .app-footer__links a {
+    width: 100%;
+  }
+
+}
+
