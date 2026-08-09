@@ -5962,3 +5962,766 @@ html[data-theme="light"]
 /* ================================================================
    MODAL FINAL END
    ================================================================ */
+
+/* ================================================================
+   SKY FIT PRO
+   HOME PAGE — STEP 4
+
+   Compact Section Rhythm
+   Trainers / Products Grid Final Sizing
+   Empty States
+   Show More
+   Search Polish
+
+   Senior Full Stack Developer: Qərib Səfərli
+   ================================================================ */
+
+
+/* ================================================================
+   45. HOME SECTION RHYTHM
+
+   Bölmələr arasında əvvəlki böyük boşluqları azaldırıq.
+   ================================================================ */
+
+body[data-page="home"] .home-section {
+  padding-block: 24px;
+}
+
+
+body[data-page="home"] .home-experience {
+  padding-bottom: 28px;
+}
+
+
+body[data-page="home"] .home-trainers {
+  padding-top: 28px;
+  padding-bottom: 26px;
+}
+
+
+body[data-page="home"] .home-products {
+  padding-top: 26px;
+  padding-bottom: 28px;
+}
+
+
+body[data-page="home"] .home-cta-section {
+  padding-top: 20px;
+  padding-bottom: 26px;
+}
+
+
+/* ================================================================
+   46. SECTION HEADING FINAL
+
+   Başlıq və sağdakı açıqlama artıq ekranın iki ucunda
+   "itmiş" kimi görünməyəcək.
+   ================================================================ */
+
+body[data-page="home"] .section-heading {
+  width: 100%;
+
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(220px, 420px);
+
+  align-items: end;
+
+  gap: 22px;
+
+  margin-bottom: 14px;
+}
+
+
+body[data-page="home"] .section-heading > div {
+  min-width: 0;
+}
+
+
+body[data-page="home"] .section-eyebrow {
+  margin-bottom: 5px;
+
+  font-size: 10px;
+}
+
+
+body[data-page="home"] .section-title {
+  font-size:
+    clamp(
+      27px,
+      2.7vw,
+      38px
+    );
+
+  line-height: 0.98;
+}
+
+
+body[data-page="home"] .section-description {
+  max-width: 420px;
+
+  justify-self: end;
+
+  margin: 0;
+
+  color: var(--text-muted);
+
+  font-size: 12px;
+
+  line-height: 1.5;
+
+  text-align: right;
+}
+
+
+/* ================================================================
+   47. TRAINER GRID — FINAL DESKTOP SIZE
+
+   Tək məşqçi olanda belə 300px nəhəng kart olmayacaq.
+   ================================================================ */
+
+body[data-page="home"] .trainers-grid,
+body[data-page="home"] .trainer-grid {
+  width: 100%;
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      auto-fill,
+      minmax(
+        190px,
+        220px
+      )
+    );
+
+  justify-content: start;
+
+  align-items: start;
+
+  gap: 10px;
+}
+
+
+body[data-page="home"] .trainer-card {
+  width: 100%;
+
+  max-width: 220px;
+
+  aspect-ratio: 1 / 1;
+}
+
+
+/* ================================================================
+   TRAINER CARD FINAL POLISH
+   ================================================================ */
+
+body[data-page="home"] .trainer-card__content {
+  padding: 11px;
+}
+
+
+body[data-page="home"] .trainer-card__name {
+  font-size: 14px;
+}
+
+
+body[data-page="home"] .trainer-card__specialty {
+  font-size: 9px;
+}
+
+
+body[data-page="home"] .trainer-card__action {
+  margin-top: 2px;
+
+  font-size: 8px;
+}
+
+
+/* ================================================================
+   48. PRODUCTS TOOLBAR
+   ================================================================ */
+
+body[data-page="home"] .product-toolbar {
+  width: 100%;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: flex-start;
+
+  gap: 8px;
+
+  margin:
+    -2px
+    0
+    12px;
+}
+
+
+body[data-page="home"] .product-toolbar .search-control {
+  width: min(
+    100%,
+    400px
+  );
+
+  max-width: 400px;
+
+  height: 40px;
+}
+
+
+body[data-page="home"] .product-toolbar .search-control__icon {
+  width: 38px;
+  height: 38px;
+
+  flex-basis: 38px;
+}
+
+
+body[data-page="home"] .product-toolbar .search-control__input {
+  height: 38px;
+
+  font-size: 11px;
+}
+
+
+/* ================================================================
+   49. PRODUCT GRID — FINAL DESKTOP SIZE
+
+   Trainer ilə eyni vizual ritm.
+   ================================================================ */
+
+body[data-page="home"] .products-grid,
+body[data-page="home"] .product-grid {
+  width: 100%;
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      auto-fill,
+      minmax(
+        190px,
+        220px
+      )
+    );
+
+  justify-content: start;
+
+  align-items: start;
+
+  gap: 10px;
+}
+
+
+body[data-page="home"] .product-card {
+  width: 100%;
+
+  max-width: 220px;
+
+  aspect-ratio: 1 / 1;
+
+  grid-template-rows:
+    minmax(0, 1fr)
+    58px;
+}
+
+
+/* ================================================================
+   PRODUCT CARD FINAL POLISH
+   ================================================================ */
+
+body[data-page="home"] .product-card__image {
+  padding: 8px;
+}
+
+
+body[data-page="home"] .product-card__body {
+  min-height: 58px;
+
+  gap: 3px;
+
+  padding: 6px 8px;
+}
+
+
+body[data-page="home"] .product-card__name {
+  font-size: 10px;
+
+  line-height: 1.2;
+}
+
+
+body[data-page="home"] .product-card__price {
+  font-size: 14px;
+}
+
+
+body[data-page="home"] .product-card__unit {
+  font-size: 7.5px;
+}
+
+
+body[data-page="home"] .product-card__stock-line {
+  font-size: 7px;
+}
+
+
+/* ================================================================
+   FAVORITE + STOCK BADGE COMPACT
+   ================================================================ */
+
+body[data-page="home"] .product-card__favorite {
+  top: 6px;
+  right: 6px;
+
+  width: 29px;
+  height: 29px;
+
+  border-radius: 9px;
+}
+
+
+body[data-page="home"] .product-card__favorite svg {
+  width: 14px;
+  height: 14px;
+}
+
+
+body[data-page="home"] .product-card__stock-badge {
+  top: 6px;
+  left: 6px;
+
+  min-height: 20px;
+
+  max-width:
+    calc(
+      100% - 45px
+    );
+
+  padding:
+    0 6px;
+
+  font-size: 6.5px;
+}
+
+
+/* ================================================================
+   50. EMPTY STATE
+
+   Heç bir data yoxdursa nəhəng boş section yaratmır.
+   ================================================================ */
+
+body[data-page="home"] .ui-empty-state {
+  width: 100%;
+
+  min-height: 130px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 5px;
+
+  padding: 18px;
+
+  border:
+    1px dashed
+    var(--border);
+
+  border-radius: 14px;
+
+  color:
+    var(--text-muted);
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.018
+    );
+
+  text-align: center;
+}
+
+
+body[data-page="home"] .ui-empty-state[hidden],
+body[data-page="home"] .ui-empty-state.is-hidden {
+  display: none !important;
+}
+
+
+body[data-page="home"] .ui-empty-state__icon {
+  width: 36px;
+  height: 36px;
+
+  display: grid;
+
+  place-items: center;
+
+  margin-bottom: 3px;
+
+  border:
+    1px solid
+    var(--yellow-border);
+
+  border-radius: 10px;
+
+  color:
+    var(--yellow);
+
+  background:
+    var(--yellow-soft);
+}
+
+
+body[data-page="home"] .ui-empty-state__icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+
+body[data-page="home"] .ui-empty-state strong {
+  color:
+    var(--text-soft);
+
+  font-size: 12px;
+}
+
+
+body[data-page="home"] .ui-empty-state > span:last-child {
+  max-width: 360px;
+
+  color:
+    var(--text-faint);
+
+  font-size: 9px;
+
+  line-height: 1.45;
+}
+
+
+/* ================================================================
+   51. SHOW ALL
+   ================================================================ */
+
+body[data-page="home"] .section-more {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: flex-start;
+
+  margin-top: 11px;
+}
+
+
+body[data-page="home"] .section-more:empty {
+  display: none;
+}
+
+
+body[data-page="home"] .section-more .ui-button {
+  min-height: 36px;
+
+  padding:
+    0 13px;
+
+  border-radius: 9px;
+
+  font-size: 9px;
+}
+
+
+body[data-page="home"] .section-more .ui-button[hidden],
+body[data-page="home"] .section-more .ui-button.is-hidden {
+  display: none !important;
+}
+
+
+/* ================================================================
+   52. HOME CTA COMPACT
+
+   Məhsul bölməsindən sonra həddindən artıq nəhəng blok olmasın.
+   ================================================================ */
+
+body[data-page="home"] .home-cta {
+  min-height: 130px;
+
+  padding: 20px 22px;
+
+  border-radius: 16px;
+}
+
+
+body[data-page="home"] .home-cta__title {
+  font-size:
+    clamp(
+      25px,
+      2.6vw,
+      34px
+    );
+}
+
+
+body[data-page="home"] .home-cta__description {
+  margin-top: 6px;
+
+  font-size: 11px;
+}
+
+
+body[data-page="home"] .home-cta__actions {
+  gap: 6px;
+}
+
+
+body[data-page="home"] .home-cta__actions .ui-button {
+  min-height: 39px;
+
+  padding:
+    0 14px;
+
+  font-size: 10px;
+}
+
+
+/* ================================================================
+   53. REMOVE EMPTY VERTICAL SPACE
+
+   Hidden elementlər heç bir layout hündürlüyü saxlamasın.
+   ================================================================ */
+
+body[data-page="home"] [hidden],
+body[data-page="home"] .is-hidden {
+  display: none !important;
+}
+
+
+body[data-page="home"] .trainers-grid:empty,
+body[data-page="home"] .products-grid:empty {
+  min-height: 0;
+}
+
+
+/* ================================================================
+   54. TABLET
+   ================================================================ */
+
+@media (max-width: 950px) {
+
+  body[data-page="home"] .section-heading {
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(190px, 330px);
+
+    gap: 14px;
+  }
+
+
+  body[data-page="home"] .trainers-grid,
+  body[data-page="home"] .trainer-grid,
+  body[data-page="home"] .products-grid,
+  body[data-page="home"] .product-grid {
+    grid-template-columns:
+      repeat(
+        auto-fill,
+        minmax(
+          170px,
+          1fr
+        )
+      );
+  }
+
+
+  body[data-page="home"] .trainer-card,
+  body[data-page="home"] .product-card {
+    max-width: none;
+  }
+
+}
+
+
+/* ================================================================
+   55. MOBILE
+   ================================================================ */
+
+@media (max-width: 700px) {
+
+  body[data-page="home"] .home-section {
+    padding-block: 20px;
+  }
+
+
+  body[data-page="home"] .home-trainers,
+  body[data-page="home"] .home-products {
+    padding-top: 21px;
+    padding-bottom: 21px;
+  }
+
+
+  body[data-page="home"] .section-heading {
+    display: block;
+
+    margin-bottom: 11px;
+  }
+
+
+  body[data-page="home"] .section-description {
+    max-width: none;
+
+    margin-top: 6px;
+
+    font-size: 10px;
+
+    line-height: 1.4;
+
+    text-align: left;
+  }
+
+
+  body[data-page="home"] .section-title {
+    font-size: 25px;
+  }
+
+
+  /* ---------------- PRODUCTS 3 COLUMN ---------------- */
+
+  body[data-page="home"] .products-grid,
+  body[data-page="home"] .product-grid {
+    grid-template-columns:
+      repeat(
+        3,
+        minmax(
+          0,
+          1fr
+        )
+      );
+
+    gap: 5px;
+  }
+
+
+  body[data-page="home"] .product-card {
+    max-width: none;
+
+    grid-template-rows:
+      minmax(0, 1fr)
+      46px;
+  }
+
+
+  body[data-page="home"] .product-card__body {
+    min-height: 46px;
+
+    padding: 4px 5px;
+  }
+
+
+  body[data-page="home"] .product-card__name {
+    font-size: 7.5px;
+  }
+
+
+  body[data-page="home"] .product-card__price {
+    font-size: 10px;
+  }
+
+
+  body[data-page="home"] .product-card__stock-line {
+    display: none;
+  }
+
+
+  /* ---------------- TRAINERS 2 COLUMN ---------------- */
+
+  body[data-page="home"] .trainers-grid,
+  body[data-page="home"] .trainer-grid {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(
+          0,
+          1fr
+        )
+      );
+
+    gap: 6px;
+  }
+
+
+  body[data-page="home"] .trainer-card {
+    max-width: none;
+  }
+
+
+  body[data-page="home"] .trainer-card__name {
+    font-size: 11px;
+  }
+
+
+  body[data-page="home"] .trainer-card__specialty {
+    font-size: 7px;
+  }
+
+
+  /* SEARCH */
+
+  body[data-page="home"] .product-toolbar {
+    margin-bottom: 9px;
+  }
+
+
+  body[data-page="home"] .product-toolbar .search-control {
+    width: 100%;
+
+    max-width: none;
+
+    height: 38px;
+  }
+
+
+  /* CTA */
+
+  body[data-page="home"] .home-cta {
+    min-height: 0;
+
+    padding: 15px;
+  }
+
+}
+
+
+/* ================================================================
+   56. VERY SMALL PHONE
+   ================================================================ */
+
+@media (max-width: 360px) {
+
+  body[data-page="home"] .products-grid,
+  body[data-page="home"] .product-grid {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(
+          0,
+          1fr
+        )
+      );
+  }
+
+}
+
+
+/* ================================================================
+   HOME STEP 4 END
+   ================================================================ */
