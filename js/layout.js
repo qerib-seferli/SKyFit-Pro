@@ -1589,6 +1589,7 @@ function renderBottomNavigation(
 // ============================================================
 
 function renderFooter() {
+
   const root =
     ensureRoot(
       'app-footer-root'
@@ -1598,10 +1599,12 @@ function renderFooter() {
   if (
     isAuthPage()
   ) {
+
     root.innerHTML =
       '';
 
     return;
+
   }
 
 
@@ -1615,12 +1618,31 @@ function renderFooter() {
 
       <div class="app-footer__inner">
 
-        <span class="app-footer__copy">
-          © ${year} SKy Fit Pro
-        </span>
+        <div class="app-footer__brand">
+
+          <span class="app-footer__copy">
+            © ${year} SKy Fit Pro
+          </span>
+
+          <span
+            class="app-footer__separator"
+            aria-hidden="true"
+          ></span>
+
+          <span class="app-footer__developer">
+            Senior Full Stack Developer:
+            <strong>
+              Qərib Səfərli
+            </strong>
+          </span>
+
+        </div>
 
 
-        <div class="app-footer__links">
+        <nav
+          class="app-footer__links"
+          aria-label="Footer naviqasiyası"
+        >
 
           <a
             href="${APP_CONFIG.routes.home}"
@@ -1640,7 +1662,7 @@ function renderFooter() {
             Məhsullar
           </a>
 
-        </div>
+        </nav>
 
       </div>
 
