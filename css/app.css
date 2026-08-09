@@ -7103,3 +7103,274 @@ body {
   }
 
 }
+
+
+/* =========================================================
+   SKY FIT PRO — STOREFRONT CARD POLISH
+   Senior Full Stack Developer: Qərib Səfərli
+   ========================================================= */
+
+/* PRODUCT PRICE */
+
+.product-card__price {
+  width: fit-content;
+
+  display: inline-flex;
+  align-items: center;
+
+  min-height: 30px;
+
+  padding:
+    0 9px;
+
+  border:
+    1px solid rgba(255, 223, 0, .20);
+
+  border-radius: 8px;
+
+  color: var(--accent);
+
+  background:
+    rgba(255, 223, 0, .07);
+
+  font-size: 16px;
+  line-height: 1;
+  font-weight: 900;
+
+  letter-spacing: -.025em;
+}
+
+.product-card:hover
+.product-card__price {
+  border-color:
+    rgba(255, 223, 0, .34);
+
+  background:
+    rgba(255, 223, 0, .10);
+}
+
+
+/* PRODUCT MODAL PRICE */
+
+.product-modal__purchase {
+  width: fit-content;
+
+  display: inline-flex;
+  align-items: baseline;
+
+  gap: 6px;
+
+  margin-top: 5px;
+
+  padding:
+    10px 13px;
+
+  border:
+    1px solid rgba(255, 223, 0, .22);
+
+  border-radius: 11px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 223, 0, .10),
+      rgba(255, 223, 0, .035)
+    );
+}
+
+.product-modal__price {
+  margin: 0;
+
+  color: var(--accent);
+
+  font-size: 28px;
+  line-height: 1;
+
+  font-weight: 950;
+
+  letter-spacing: -.035em;
+}
+
+.product-modal__unit {
+  color: var(--text-muted);
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+
+/* =========================================================
+   TRAINER FRONTEND CARD
+   ========================================================= */
+
+.trainer-card__media {
+  position: relative;
+
+  aspect-ratio:
+    4 / 5;
+
+  overflow: hidden;
+}
+
+.trainer-card__image {
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+  object-position: center top;
+}
+
+.trainer-card__media::after {
+  content: "";
+
+  position: absolute;
+  z-index: 1;
+
+  inset: 0;
+
+  pointer-events: none;
+
+  background:
+    linear-gradient(
+      to top,
+      rgba(6, 8, 11, .96) 0%,
+      rgba(6, 8, 11, .76) 20%,
+      rgba(6, 8, 11, .20) 48%,
+      transparent 67%
+    );
+}
+
+.trainer-card__content {
+  position: absolute;
+  z-index: 3;
+
+  right: 0;
+  bottom: 0;
+  left: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 3px;
+
+  padding:
+    13px 12px;
+}
+
+.trainer-card__name {
+  display: block;
+
+  color: #fff;
+
+  font-size: 16px;
+  line-height: 1.15;
+
+  font-weight: 850;
+
+  letter-spacing: -.025em;
+
+  text-shadow:
+    0 2px 10px rgba(0, 0, 0, .5);
+}
+
+.trainer-card__specialty {
+  display: block;
+
+  color:
+    rgba(255, 255, 255, .70);
+
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.trainer-card__action {
+  display: none;
+}
+
+
+/* Kiçik premium accent */
+
+.trainer-card__content::before {
+  content: "";
+
+  width: 24px;
+  height: 3px;
+
+  margin-bottom: 3px;
+
+  border-radius: 999px;
+
+  background:
+    var(--accent);
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 700px) {
+
+  .product-card__price {
+    min-height: 27px;
+
+    padding:
+      0 7px;
+
+    border-radius: 7px;
+
+    font-size: 14px;
+  }
+
+  .product-modal__purchase {
+    padding:
+      9px 11px;
+
+    border-radius: 10px;
+  }
+
+  .product-modal__price {
+    font-size: 24px;
+  }
+
+  .product-modal__unit {
+    font-size: 10px;
+  }
+
+
+  .trainer-card__media {
+    aspect-ratio:
+      4 / 5.15;
+  }
+
+  .trainer-card__content {
+    padding:
+      10px 9px;
+  }
+
+  .trainer-card__name {
+    font-size: 13px;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+  }
+
+  .trainer-card__specialty {
+    font-size: 9px;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+  }
+
+  .trainer-card__content::before {
+    width: 19px;
+    height: 2px;
+  }
+
+}
