@@ -7374,3 +7374,12 @@ body {
   }
 
 }
+
+
+/* Frontend məhsul kartında stok sətrini gizlət */
+.product-card__stock-line {
+  display: none !important;
+}
+
+
+
