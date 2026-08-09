@@ -1390,31 +1390,74 @@ export function openProductModal(product, options = {}) {
   const name = productName(product);
   const image = productImage(product);
   const description = productDescription(product);
-  const category = productCategory(product);
-  const sku = productSku(product);
-  const content = createElement('div', { className: 'product-modal' });
+  const price = productPrice(product);
+  const unit = productUnitLabel(product);
+
+  const content = createElement('div', {
+    className: 'product-modal',
+  });
 
   content.innerHTML = `
     <div class="product-modal__media">
-      ${image ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(name)}">` : '<span class="product-modal__fallback">SK</span>'}
+      ${
+        image
+          ? `
+            <img
+              src="${escapeHtml(image)}"
+              alt="${escapeHtml(name)}"
+            >
+          `
+          : `
+            <span class="product-modal__fallback">
+              SK
+            </span>
+          `
+      }
     </div>
+
     <div class="product-modal__content">
-      <h3 class="product-modal__name">${escapeHtml(name)}</h3>
-      ${description ? `<p class="product-modal__description">${escapeHtml(description)}</p>` : ''}
-      <div class="product-modal__meta">
-        <strong class="product-modal__price">${escapeHtml(money(productPrice(product)))}</strong>
-        <span class="product-modal__unit">${escapeHtml(productUnitLabel(product))}</span>
-      </div>
-      <div class="product-modal__facts">
-        <div><span>Stok</span><strong>${escapeHtml(String(productStock(product)))}</strong></div>
-        ${category ? `<div><span>Kateqoriya</span><strong>${escapeHtml(category)}</strong></div>` : ''}
-        ${sku ? `<div><span>SKU</span><strong>${escapeHtml(sku)}</strong></div>` : ''}
+      <h3 class="product-modal__name">
+        ${escapeHtml(name)}
+      </h3>
+
+      ${
+        description
+          ? `
+            <p class="product-modal__description">
+              ${escapeHtml(description)}
+            </p>
+          `
+          : ''
+      }
+
+      <div class="product-modal__purchase">
+        <strong class="product-modal__price">
+          ${escapeHtml(money(price))}
+        </strong>
+
+        ${
+          unit
+            ? `
+              <span class="product-modal__unit">
+                / ${escapeHtml(unit)}
+              </span>
+            `
+            : ''
+        }
       </div>
     </div>
   `;
 
-  setImageFallback($('img', content));
-  return openModal({ eyebrow: 'SKy Fit Shop', title: name, content, trigger: options.trigger });
+  setImageFallback(
+    $('img', content)
+  );
+
+  return openModal({
+    eyebrow: 'SKy Fit Shop',
+    title: name,
+    content,
+    trigger: options.trigger,
+  });
 }
 
 export function openTrainerModal(trainer, options = {}) {
