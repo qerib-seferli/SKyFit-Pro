@@ -836,8 +836,6 @@ function bindAuthEvents() {
             true,
         });
 
-
-      await loadMemberOverview();
     }
   );
 }
@@ -921,7 +919,6 @@ async function loadInitialData() {
   await Promise.all([
     loadProducts(),
     loadTrainers(),
-    loadMemberOverview(),
   ]);
 }
 
