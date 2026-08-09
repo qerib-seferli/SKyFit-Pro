@@ -1,21 +1,15 @@
-// ============================================================
-// SKY FIT PRO
-// Profile Page Controller
-// File: js/profile.js
-//
-// PART 1 / 2
-// Real Supabase Schema
-// ============================================================
+// SKy Fit Pro — profil səhifəsi controller-i
+// Senior Full Stack Developer: Qərib Səfərli
 
 import {
   supabase,
   APP_CONFIG,
   TABLES,
+  UI_CONFIG,
 } from './config.js';
 
 import {
   SKYFIT_EVENTS,
-
   $,
   byId,
   createElement,
@@ -23,677 +17,297 @@ import {
   showElement,
   hideElement,
   setText,
-
   normalizeString,
   escapeHtml,
-
   formatDate,
   formatTime,
-  formatDateTime,
-
+  todayIso,
   getCurrentIdentity,
   getProfileName,
   getProfileInitials,
   getProfileAvatar,
-
   roleLabel,
-
   membershipIsActive,
   membershipDaysRemaining,
   membershipStatusLabel,
-
   attendanceDate,
   attendanceTypeLabel,
   attendanceAmount,
-
   money,
-
   openModal,
   closeModal,
   confirmDialog,
-
   notify,
   getErrorMessage,
-
   validatePhone,
   setFieldError,
   clearFormErrors,
   setButtonLoading,
-
   getStoredTheme,
   cycleTheme,
-
   signOut,
   asyncHandler,
 } from './core.js';
 
-import {
-  initLayout,
-  refreshLayoutIdentity,
-} from './layout.js';
+import { initLayout } from './layout.js';
 
+const AVATAR_TYPES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+]);
 
-// ============================================================
-// 01. STATE
-// ============================================================
+const AVATAR_MAX_SIZE = 5 * 1024 * 1024;
 
 const state = {
-
-  identity:
-    null,
-
-  profile:
-    null,
-
-  membership:
-    null,
-
-  memberships:
-    [],
-
-  attendance:
-    [],
-
-  attendanceExpanded:
-    false,
-
-  avatarUploading:
-    false,
-
-  savingProfile:
-    false,
+  identity: null,
+  profile: null,
+  membership: null,
+  memberships: [],
+  attendance: [],
+  attendanceExpanded: false,
+  avatarUploading: false,
+  savingProfile: false,
 };
-
-
-// ============================================================
-// 02. DOM
-// ============================================================
 
 function getElements() {
   return {
+    avatarButton: byId('profile-avatar-button'),
+    avatarInput: byId('profile-avatar-input'),
+    avatarImage: byId('profile-avatar-image'),
+    avatarFallback: byId('profile-avatar-fallback'),
+    profileTitle: byId('profile-title'),
+    profileEmail: byId('profile-email'),
+    roleBadge: byId('profile-role-badge'),
+    editButton: byId('profile-edit-button'),
 
-    // --------------------------------------------------------
-    // Main profile identity
-    // --------------------------------------------------------
+    fullName: byId('profile-full-name'),
+    phone: byId('profile-phone'),
+    emailDetail: byId('profile-email-detail'),
+    birthDate: byId('profile-birth-date'),
+    address: byId('profile-address'),
 
-    avatarButton:
-      byId(
-        'profile-avatar-button'
-      ),
+    membershipStatus: byId('profile-membership-status'),
+    membershipPlan: byId('profile-membership-plan'),
+    membershipExpiry: byId('profile-membership-expiry'),
+    membershipDays: byId('profile-membership-days'),
 
-    avatarInput:
-      byId(
-        'profile-avatar-input'
-      ),
+    attendanceCount: byId('profile-attendance-count'),
+    lastAttendanceDate: byId('profile-last-attendance-date'),
+    lastAttendanceTime: byId('profile-last-attendance-time'),
 
-    avatarImage:
-      byId(
-        'profile-avatar-image'
-      ),
+    membershipCard: byId('profile-membership-card'),
+    membershipEmpty: byId('profile-membership-empty'),
+    membershipCardStatus: byId('membership-card-status'),
+    membershipCardPlan: byId('membership-card-plan'),
+    membershipCardStart: byId('membership-card-start'),
+    membershipCardEnd: byId('membership-card-end'),
+    membershipCardDaysLeft: byId('membership-card-days-left'),
+    membershipCardPrice: byId('membership-card-price'),
+    membershipCardProgress: byId('membership-card-progress'),
 
-    avatarFallback:
-      byId(
-        'profile-avatar-fallback'
-      ),
+    attendanceList: byId('profile-attendance-list'),
+    attendanceEmpty: byId('profile-attendance-empty'),
+    attendanceShowAll: byId('attendance-show-all-button'),
 
-    profileTitle:
-      byId(
-        'profile-title'
-      ),
-
-    profileEmail:
-      byId(
-        'profile-email'
-      ),
-
-    roleBadge:
-      byId(
-        'profile-role-badge'
-      ),
-
-    editButton:
-      byId(
-        'profile-edit-button'
-      ),
-
-
-    // --------------------------------------------------------
-    // Detail fields
-    // --------------------------------------------------------
-
-    fullName:
-      byId(
-        'profile-full-name'
-      ),
-
-    phone:
-      byId(
-        'profile-phone'
-      ),
-
-    emailDetail:
-      byId(
-        'profile-email-detail'
-      ),
-
-    birthDate:
-      byId(
-        'profile-birth-date'
-      ),
-
-    address:
-      byId(
-        'profile-address'
-      ),
-
-
-    // --------------------------------------------------------
-    // Overview
-    // --------------------------------------------------------
-
-    membershipStatus:
-      byId(
-        'profile-membership-status'
-      ),
-
-    membershipPlan:
-      byId(
-        'profile-membership-plan'
-      ),
-
-    membershipExpiry:
-      byId(
-        'profile-membership-expiry'
-      ),
-
-    membershipDays:
-      byId(
-        'profile-membership-days'
-      ),
-
-    attendanceCount:
-      byId(
-        'profile-attendance-count'
-      ),
-
-    lastAttendanceDate:
-      byId(
-        'profile-last-attendance-date'
-      ),
-
-    lastAttendanceTime:
-      byId(
-        'profile-last-attendance-time'
-      ),
-
-
-    // --------------------------------------------------------
-    // Membership card
-    // --------------------------------------------------------
-
-    membershipCard:
-      byId(
-        'profile-membership-card'
-      ),
-
-    membershipEmpty:
-      byId(
-        'profile-membership-empty'
-      ),
-
-    membershipCardStatus:
-      byId(
-        'membership-card-status'
-      ),
-
-    membershipCardPlan:
-      byId(
-        'membership-card-plan'
-      ),
-
-    membershipCardStart:
-      byId(
-        'membership-card-start'
-      ),
-
-    membershipCardEnd:
-      byId(
-        'membership-card-end'
-      ),
-
-    membershipCardDaysLeft:
-      byId(
-        'membership-card-days-left'
-      ),
-
-    membershipCardPrice:
-      byId(
-        'membership-card-price'
-      ),
-
-    membershipCardProgress:
-      byId(
-        'membership-card-progress'
-      ),
-
-
-    // --------------------------------------------------------
-    // Attendance history
-    // --------------------------------------------------------
-
-    attendanceList:
-      byId(
-        'profile-attendance-list'
-      ),
-
-    attendanceEmpty:
-      byId(
-        'profile-attendance-empty'
-      ),
-
-    attendanceShowAll:
-      byId(
-        'attendance-show-all-button'
-      ),
-
-
-    // --------------------------------------------------------
-    // Settings/actions
-    // --------------------------------------------------------
-
-    changePasswordButton:
-      byId(
-        'profile-change-password-button'
-      ),
-
-    themeButton:
-      byId(
-        'profile-theme-button'
-      ),
-
-    themeLabel:
-      byId(
-        'profile-theme-label'
-      ),
-
-    logoutButton:
-      byId(
-        'profile-logout-button'
-      ),
+    changePasswordButton: byId('profile-change-password-button'),
+    themeButton: byId('profile-theme-button'),
+    themeLabel: byId('profile-theme-label'),
+    logoutButton: byId('profile-logout-button'),
   };
 }
 
-
-// ============================================================
-// 03. REQUIRE PROFILE
-// ============================================================
-
 async function loadIdentity() {
   const identity =
-    await getCurrentIdentity({
-      force:
-        true,
-    });
+    await getCurrentIdentity({ force: true });
 
+  if (!identity?.authenticated) {
+    window.location.replace(APP_CONFIG.routes.login);
+    return null;
+  }
 
-  if (
-    !identity
-      ?.authenticated
-  ) {
-    window.location.replace(
-      APP_CONFIG.routes.login
+  if (!identity.profile) {
+    notify.error('Profil məlumatı tapılmadı.');
+    return null;
+  }
+
+  if (identity.profile.is_active === false) {
+    notify.error(
+      'Hesab deaktiv edilib. Administrasiya ilə əlaqə saxla.'
     );
+
+    await signOut({
+      redirect: true,
+      redirectTo: APP_CONFIG.routes.login,
+      notify: false,
+    });
 
     return null;
   }
 
-
-  state.identity =
-    identity;
-
-
-  state.profile =
-    identity.profile;
-
+  state.identity = identity;
+  state.profile = identity.profile;
 
   return identity;
 }
 
-
-// ============================================================
-// 04. PROFILE RENDER
-// ============================================================
-
 function renderProfile() {
-  const elements =
-    getElements();
+  const elements = getElements();
+  const profile = state.profile;
+  const identity = state.identity;
 
+  if (!profile || !identity) return;
 
-  const profile =
-    state.profile;
-
-
-  const identity =
-    state.identity;
-
-
-  if (
-    !profile ||
-    !identity
-  ) {
-    return;
-  }
-
-
-  const name =
-    getProfileName(
-      profile,
-      identity.email
-    );
-
-
-  const avatar =
-    getProfileAvatar(
-      profile
-    );
-
-
-  const initials =
-    getProfileInitials(
-      profile
-    );
-
-
-  // ----------------------------------------------------------
-  // Main identity
-  // ----------------------------------------------------------
-
-  setText(
-    elements.profileTitle,
-    name
+  const name = getProfileName(
+    profile,
+    identity.email
   );
 
-
-  setText(
-    elements.profileEmail,
+  const avatar = getProfileAvatar(profile);
+  const fallback = getProfileInitials(profile);
+  const email =
     profile.email ||
     identity.email ||
-    '—'
-  );
+    '—';
 
-
-  setText(
-    elements.fullName,
-    name
-  );
-
-
-  setText(
-    elements.emailDetail,
-    profile.email ||
-    identity.email ||
-    '—'
-  );
-
-
+  setText(elements.profileTitle, name);
+  setText(elements.profileEmail, email);
+  setText(elements.fullName, name);
+  setText(elements.emailDetail, email);
   setText(
     elements.phone,
-    profile.phone ||
-    'Əlavə edilməyib'
+    profile.phone || 'Əlavə edilməyib'
   );
-
-
   setText(
     elements.birthDate,
     profile.birth_date
-      ? formatDate(
-          profile.birth_date
-        )
+      ? formatDate(profile.birth_date)
       : 'Əlavə edilməyib'
   );
-
-
   setText(
     elements.address,
-    profile.address ||
-    'Əlavə edilməyib'
+    profile.address || 'Əlavə edilməyib'
   );
 
-
-  // ----------------------------------------------------------
-  // Role
-  // ----------------------------------------------------------
-
-  if (
-    elements.roleBadge
-  ) {
-    elements.roleBadge
-      .className =
-        roleClass(
-          profile.role
-        );
-
+  if (elements.roleBadge) {
+    elements.roleBadge.className =
+      roleClass(profile.role);
 
     setText(
       elements.roleBadge,
-      roleLabel(
-        profile.role
-      )
+      roleLabel(profile.role)
     );
   }
 
-
-  // ----------------------------------------------------------
-  // Avatar
-  // ----------------------------------------------------------
-
-  if (avatar) {
-    if (
-      elements.avatarImage
-    ) {
-      elements.avatarImage.src =
-        avatar;
-
-
-      elements.avatarImage.alt =
-        `${name} profil şəkli`;
-
-
-      elements.avatarImage.hidden =
-        false;
-
-
-      elements.avatarImage.onload =
-        () => {
-          hideElement(
-            elements.avatarFallback
-          );
-        };
-
-
-      elements.avatarImage.onerror =
-        () => {
-          elements.avatarImage.hidden =
-            true;
-
-
-          renderAvatarFallback(
-            initials
-          );
-        };
-    }
-
-
-    hideElement(
-      elements.avatarFallback
-    );
-  } else {
-    if (
-      elements.avatarImage
-    ) {
-      elements.avatarImage.hidden =
-        true;
-    }
-
-
-    renderAvatarFallback(
-      initials
-    );
-  }
+  renderProfileAvatar({
+    image: elements.avatarImage,
+    fallback: elements.avatarFallback,
+    avatar,
+    name,
+    initials: fallback,
+  });
 }
 
+function renderProfileAvatar({
+  image,
+  fallback,
+  avatar,
+  name,
+  initials,
+}) {
+  setText(fallback, initials || 'SK');
 
-// ============================================================
-// 05. AVATAR FALLBACK
-// ============================================================
-
-function renderAvatarFallback(
-  initials
-) {
-  const elements =
-    getElements();
-
-
-  if (
-    !elements.avatarFallback
-  ) {
+  if (!image) {
+    showElement(fallback);
     return;
   }
 
+  image.onload = null;
+  image.onerror = null;
 
-  setText(
-    elements.avatarFallback,
-    initials ||
-    'SK'
-  );
+  if (!avatar) {
+    image.removeAttribute('src');
+    hideElement(image);
+    showElement(fallback);
+    return;
+  }
 
+  image.alt = `${name} profil şəkli`;
+  image.src = avatar;
+  showElement(image);
+  hideElement(fallback);
 
-  showElement(
-    elements.avatarFallback
-  );
+  image.onload = () => {
+    hideElement(fallback);
+  };
+
+  image.onerror = () => {
+    image.removeAttribute('src');
+    hideElement(image);
+    showElement(fallback);
+  };
 }
 
-
-// ============================================================
-// 06. ROLE STYLE
-// ============================================================
-
-function roleClass(
-  role
-) {
-  switch (
-    normalizeString(
-      role
-    )
-  ) {
+function roleClass(role) {
+  switch (normalizeString(role)) {
     case 'admin':
-      return (
-        'ui-badge ui-badge--danger'
-      );
-
-
+      return 'ui-badge ui-badge--danger';
     case 'staff':
-      return (
-        'ui-badge ui-badge--warning'
-      );
-
-
+      return 'ui-badge ui-badge--warning';
     case 'member':
-      return (
-        'ui-badge ui-badge--success'
-      );
-
-
+      return 'ui-badge ui-badge--success';
     default:
-      return (
-        'ui-badge ui-badge--neutral'
-      );
+      return 'ui-badge ui-badge--neutral';
   }
 }
-
-
-// ============================================================
-// 07. LOAD MEMBERSHIPS
-//
-// Explicit FK aliases.
-// PGRST201 burada baş verməməlidir.
-// ============================================================
 
 async function loadMemberships() {
-  const profileId =
-    state.identity
-      ?.profileId;
-
+  const profileId = state.identity?.profileId;
 
   if (!profileId) {
-    state.memberships =
-      [];
-
-    state.membership =
-      null;
-
+    state.memberships = [];
+    state.membership = null;
     renderMembership();
-
     return;
   }
 
-
-  const {
-    data,
-    error,
-  } =
-    await supabase
-      .from(
-        TABLES.memberships
-      )
-      .select(`
+  const { data, error } = await supabase
+    .from(TABLES.memberships)
+    .select(`
+      id,
+      member_id,
+      plan_id,
+      start_date,
+      end_date,
+      price,
+      status,
+      payment_status,
+      created_by,
+      updated_by,
+      operator_shift_id,
+      membership_plan:membership_plans!memberships_plan_id_fkey (
         id,
-        member_id,
-        plan_id,
-        start_date,
-        end_date,
+        name,
         price,
-        status,
-        payment_status,
-        created_by,
-        updated_by,
-        operator_shift_id,
-
-        membership_plan:membership_plans!memberships_plan_id_fkey (
-          id,
-          name,
-          price,
-          duration_days,
-          is_daily,
-          is_active
-        ),
-
-        created_by_profile:profiles!memberships_created_by_fkey (
-          id,
-          full_name,
-          role,
-          avatar_url
-        ),
-
-        updated_by_profile:profiles!memberships_updated_by_fkey (
-          id,
-          full_name,
-          role,
-          avatar_url
-        )
-      `)
-      .eq(
-        'member_id',
-        profileId
+        duration_days,
+        is_daily,
+        is_active
+      ),
+      created_by_profile:profiles!memberships_created_by_fkey (
+        id,
+        full_name,
+        role,
+        avatar_url
+      ),
+      updated_by_profile:profiles!memberships_updated_by_fkey (
+        id,
+        full_name,
+        role,
+        avatar_url
       )
-      .order(
-        'end_date',
-        {
-          ascending:
-            false,
-        }
-      );
-
+    `)
+    .eq('member_id', profileId)
+    .order('end_date', { ascending: false });
 
   if (error) {
     console.error(
@@ -701,285 +315,169 @@ async function loadMemberships() {
       error
     );
 
-
-    state.memberships =
-      [];
-
-    state.membership =
-      null;
-
-
+    state.memberships = [];
+    state.membership = null;
     renderMembership();
 
+    notify.error(
+      getErrorMessage(
+        error,
+        'Üzvlük məlumatları yüklənmədi.'
+      )
+    );
 
     return;
   }
 
-
   state.memberships =
-    Array.isArray(data)
-      ? data
-      : [];
-
+    Array.isArray(data) ? data : [];
 
   state.membership =
-    findCurrentMembership(
-      state.memberships
-    );
-
+    findCurrentMembership(state.memberships);
 
   renderMembership();
 }
 
-
-// ============================================================
-// 08. CURRENT MEMBERSHIP
-// ============================================================
-
-function findCurrentMembership(
-  memberships
-) {
-  if (
-    !Array.isArray(
-      memberships
-    )
-  ) {
+function findCurrentMembership(memberships) {
+  if (!Array.isArray(memberships)) {
     return null;
   }
 
-
-  const active =
-    memberships.find(
-      membership =>
-        membershipIsActive(
-          membership
-        )
-    );
-
-
-  if (active) {
-    return active;
-  }
-
-
   return (
+    memberships.find(membership =>
+      membershipIsActive(membership)
+    ) ||
     memberships[0] ||
     null
   );
 }
 
+function membershipVisualState(membership) {
+  if (!membership) {
+    return {
+      label: 'Üzvlük yoxdur',
+      className: 'ui-badge ui-badge--neutral',
+      active: false,
+    };
+  }
 
-// ============================================================
-// 09. MEMBERSHIP RENDER
-// ============================================================
+  const active = membershipIsActive(membership);
+
+  if (active) {
+    return {
+      label: membershipStatusLabel(membership),
+      className: 'ui-badge ui-badge--success',
+      active: true,
+    };
+  }
+
+  if (membership.status === 'cancelled') {
+    return {
+      label: membershipStatusLabel(membership),
+      className: 'ui-badge ui-badge--danger',
+      active: false,
+    };
+  }
+
+  return {
+    label: membershipStatusLabel(membership),
+    className: 'ui-badge ui-badge--warning',
+    active: false,
+  };
+}
 
 function renderMembership() {
-  const elements =
-    getElements();
-
-
-  const membership =
-    state.membership;
-
+  const elements = getElements();
+  const membership = state.membership;
 
   if (!membership) {
-    hideElement(
-      elements.membershipCard
-    );
+    hideElement(elements.membershipCard);
+    showElement(elements.membershipEmpty);
 
-
-    showElement(
-      elements.membershipEmpty
-    );
-
-
-    if (
-      elements.membershipStatus
-    ) {
-      elements
-        .membershipStatus
-        .className =
-          'ui-badge ui-badge--neutral';
-
+    if (elements.membershipStatus) {
+      elements.membershipStatus.className =
+        'ui-badge ui-badge--neutral';
 
       setText(
-        elements
-          .membershipStatus,
+        elements.membershipStatus,
         'Üzvlük yoxdur'
       );
     }
 
-
-    setText(
-      elements.membershipPlan,
-      '—'
-    );
-
-
-    setText(
-      elements.membershipExpiry,
-      '—'
-    );
-
-
-    setText(
-      elements.membershipDays,
-      '—'
-    );
-
-
+    setText(elements.membershipPlan, '—');
+    setText(elements.membershipExpiry, '—');
+    setText(elements.membershipDays, '—');
+    resetMembershipProgress();
     return;
   }
 
+  showElement(elements.membershipCard);
+  hideElement(elements.membershipEmpty);
 
-  showElement(
-    elements.membershipCard
-  );
-
-
-  hideElement(
-    elements.membershipEmpty
-  );
-
-
-  const plan =
-    membership
-      .membership_plan;
-
-
-  const active =
-    membershipIsActive(
-      membership
-    );
-
-
+  const plan = membership.membership_plan;
+  const visual = membershipVisualState(membership);
   const days =
-    membershipDaysRemaining(
-      membership
-    );
+    membershipDaysRemaining(membership);
 
-
-  const statusLabel =
-    membershipStatusLabel(
-      membership
-    );
-
-
-  const statusClass =
-    active
-      ? 'ui-badge ui-badge--success'
-      : membership.status ===
-          'cancelled'
-        ? 'ui-badge ui-badge--danger'
-        : 'ui-badge ui-badge--warning';
-
-
-  // ----------------------------------------------------------
-  // Overview
-  // ----------------------------------------------------------
-
-  if (
-    elements.membershipStatus
-  ) {
-    elements
-      .membershipStatus
-      .className =
-        statusClass;
-
+  if (elements.membershipStatus) {
+    elements.membershipStatus.className =
+      visual.className;
 
     setText(
-      elements
-        .membershipStatus,
-      statusLabel
+      elements.membershipStatus,
+      visual.label
     );
   }
 
-
   setText(
     elements.membershipPlan,
-    plan?.name ||
-    'Üzvlük'
+    plan?.name || 'Üzvlük'
   );
-
 
   setText(
     elements.membershipExpiry,
     membership.end_date
-      ? formatDate(
-          membership.end_date
-        )
+      ? formatDate(membership.end_date)
       : '—'
   );
 
-
   setText(
     elements.membershipDays,
-    active
-      ? `${days} gün`
-      : 'Bitib'
+    visual.active ? `${days} gün` : 'Bitib'
   );
 
-
-  // ----------------------------------------------------------
-  // Detail card
-  // ----------------------------------------------------------
-
-  if (
-    elements
-      .membershipCardStatus
-  ) {
-    elements
-      .membershipCardStatus
-      .className =
-        statusClass;
-
+  if (elements.membershipCardStatus) {
+    elements.membershipCardStatus.className =
+      visual.className;
 
     setText(
-      elements
-        .membershipCardStatus,
-      statusLabel
+      elements.membershipCardStatus,
+      visual.label
     );
   }
 
-
   setText(
-    elements
-      .membershipCardPlan,
-    plan?.name ||
-    'Üzvlük'
+    elements.membershipCardPlan,
+    plan?.name || 'Üzvlük'
   );
 
-
   setText(
-    elements
-      .membershipCardStart,
-    formatDate(
-      membership.start_date
-    )
+    elements.membershipCardStart,
+    formatDate(membership.start_date)
   );
 
-
   setText(
-    elements
-      .membershipCardEnd,
-    formatDate(
-      membership.end_date
-    )
+    elements.membershipCardEnd,
+    formatDate(membership.end_date)
   );
 
-
   setText(
-    elements
-      .membershipCardDaysLeft,
-    active
-      ? `${days} gün`
-      : 'Bitib'
+    elements.membershipCardDaysLeft,
+    visual.active ? `${days} gün` : 'Bitib'
   );
 
-
   setText(
-    elements
-      .membershipCardPrice,
+    elements.membershipCardPrice,
     money(
       membership.price ??
       plan?.price ??
@@ -987,162 +485,143 @@ function renderMembership() {
     )
   );
 
+  renderMembershipProgress(membership);
+}
 
-  renderMembershipProgress(
-    membership
+function membershipProgressPercent(membership) {
+  const start = Date.parse(
+    `${membership?.start_date || ''}T00:00:00`
+  );
+
+  const end = Date.parse(
+    `${membership?.end_date || ''}T23:59:59`
+  );
+
+  if (
+    !Number.isFinite(start) ||
+    !Number.isFinite(end)
+  ) {
+    return 0;
+  }
+
+  if (end <= start) return 100;
+
+  const percent =
+    ((Date.now() - start) / (end - start)) * 100;
+
+  return Math.max(
+    0,
+    Math.min(100, Math.round(percent))
   );
 }
 
-
-// ============================================================
-// 10. MEMBERSHIP PROGRESS
-// ============================================================
-
-function renderMembershipProgress(
-  membership
-) {
-  const elements =
-    getElements();
-
-
-  const progress =
-    elements
-      .membershipCardProgress;
-
-
-  if (!progress) {
-    return;
-  }
-
-
-  const start =
-    new Date(
-      membership.start_date
-    );
-
-
-  const end =
-    new Date(
-      membership.end_date
-    );
-
-
-  if (
-    Number.isNaN(
-      start.getTime()
-    ) ||
-    Number.isNaN(
-      end.getTime()
-    )
-  ) {
-    progress.style.width =
-      '0%';
-
-    return;
-  }
-
-
-  const total =
-    end.getTime() -
-    start.getTime();
-
-
-  if (
-    total <= 0
-  ) {
-    progress.style.width =
-      '100%';
-
-    return;
-  }
-
-
-  const elapsed =
-    Date.now() -
-    start.getTime();
-
-
-  const percent =
-    Math.max(
-      0,
-      Math.min(
-        100,
-        elapsed /
-        total *
-        100
-      )
-    );
-
-
-  progress.style.width =
-    `${percent}%`;
+function progressBucket(percent) {
+  return Math.round(percent / 5) * 5;
 }
 
+function resetMembershipProgress() {
+  const progress =
+    getElements().membershipCardProgress;
 
-// ============================================================
-// 11. LOAD ATTENDANCE
-//
-// Real timestamp:
-// checked_in_at
-//
-// Explicit member/operator aliases də var.
-// ============================================================
+  if (!progress) return;
 
-async function loadAttendance() {
-  const profileId =
-    state.identity
-      ?.profileId;
+  applyMembershipProgress(progress, 0);
+}
 
+function applyMembershipProgress(
+  progress,
+  percent
+) {
+  const safePercent = Math.max(
+    0,
+    Math.min(100, Math.round(percent))
+  );
 
-  if (!profileId) {
-    state.attendance =
-      [];
+  progress.setAttribute(
+    'aria-valuemin',
+    '0'
+  );
+  progress.setAttribute(
+    'aria-valuemax',
+    '100'
+  );
+  progress.setAttribute(
+    'aria-valuenow',
+    String(safePercent)
+  );
 
-    renderAttendance();
+  progress.dataset.progress =
+    String(safePercent);
 
+  if (
+    typeof HTMLProgressElement !== 'undefined' &&
+    progress instanceof HTMLProgressElement
+  ) {
+    progress.max = 100;
+    progress.value = safePercent;
     return;
   }
 
-
-  const {
-    data,
-    error,
-  } =
-    await supabase
-      .from(
-        TABLES.attendance
+  Array.from(progress.classList)
+    .filter(className =>
+      className.startsWith(
+        'membership-progress--'
       )
-      .select(`
+    )
+    .forEach(className =>
+      progress.classList.remove(className)
+    );
+
+  progress.classList.add(
+    `membership-progress--${progressBucket(
+      safePercent
+    )}`
+  );
+}
+
+function renderMembershipProgress(membership) {
+  const progress =
+    getElements().membershipCardProgress;
+
+  if (!progress) return;
+
+  applyMembershipProgress(
+    progress,
+    membershipProgressPercent(membership)
+  );
+}
+
+async function loadAttendance() {
+  const profileId = state.identity?.profileId;
+
+  if (!profileId) {
+    state.attendance = [];
+    renderAttendance();
+    return;
+  }
+
+  const { data, error } = await supabase
+    .from(TABLES.attendance)
+    .select(`
+      id,
+      member_id,
+      membership_id,
+      attendance_type,
+      amount,
+      checked_in_at,
+      created_by,
+      updated_by,
+      operator_shift_id,
+      operator:profiles!attendance_created_by_fkey (
         id,
-        member_id,
-        membership_id,
-        attendance_type,
-        amount,
-        checked_in_at,
-        created_by,
-        updated_by,
-        operator_shift_id,
-
-        operator:profiles!attendance_created_by_fkey (
-          id,
-          full_name,
-          role,
-          avatar_url
-        )
-      `)
-      .eq(
-        'member_id',
-        profileId
+        full_name,
+        role,
+        avatar_url
       )
-      .order(
-        'checked_in_at',
-        {
-          ascending:
-            false,
-        }
-      )
-      .limit(200);
-
+    `)
+    .eq('member_id', profileId)
+    .order('checked_in_at', { ascending: false })
+    .limit(UI_CONFIG.attendance.adminHistoryLimit);
 
   if (error) {
     console.error(
@@ -1150,242 +629,130 @@ async function loadAttendance() {
       error
     );
 
-
-    state.attendance =
-      [];
-
-
+    state.attendance = [];
     renderAttendance();
 
+    notify.error(
+      getErrorMessage(
+        error,
+        'Giriş tarixçəsi yüklənmədi.'
+      )
+    );
 
     return;
   }
 
-
   state.attendance =
-    Array.isArray(data)
-      ? data
-      : [];
-
+    Array.isArray(data) ? data : [];
 
   renderAttendance();
 }
 
-
-// ============================================================
-// 12. ATTENDANCE SUMMARY
-// ============================================================
-
 function renderAttendanceSummary() {
-  const elements =
-    getElements();
-
+  const elements = getElements();
 
   setText(
     elements.attendanceCount,
     state.attendance.length
   );
 
-
-  const latest =
-    state.attendance[0];
-
+  const latest = state.attendance[0];
 
   if (!latest) {
     setText(
-      elements
-        .lastAttendanceDate,
+      elements.lastAttendanceDate,
       'Giriş yoxdur'
     );
-
-
-    setText(
-      elements
-        .lastAttendanceTime,
-      '—'
-    );
-
-
+    setText(elements.lastAttendanceTime, '—');
     return;
   }
 
-
-  const date =
-    attendanceDate(
-      latest
-    );
-
+  const date = attendanceDate(latest);
 
   setText(
-    elements
-      .lastAttendanceDate,
+    elements.lastAttendanceDate,
     formatDate(date)
   );
 
-
   setText(
-    elements
-      .lastAttendanceTime,
+    elements.lastAttendanceTime,
     formatTime(date)
   );
 }
 
-
-// ============================================================
-// 13. ATTENDANCE RENDER
-// ============================================================
-
 function renderAttendance() {
-  const elements =
-    getElements();
-
-
+  const elements = getElements();
   renderAttendanceSummary();
 
+  if (!elements.attendanceList) return;
 
-  if (
-    !elements.attendanceList
-  ) {
+  clearElement(elements.attendanceList);
+
+  if (state.attendance.length === 0) {
+    showElement(elements.attendanceEmpty);
+    hideElement(elements.attendanceShowAll);
     return;
   }
 
+  hideElement(elements.attendanceEmpty);
 
-  clearElement(
-    elements.attendanceList
-  );
-
-
-  if (
-    state.attendance.length ===
-    0
-  ) {
-    showElement(
-      elements
-        .attendanceEmpty
-    );
-
-
-    hideElement(
-      elements
-        .attendanceShowAll
-    );
-
-
-    return;
-  }
-
-
-  hideElement(
-    elements.attendanceEmpty
-  );
-
+  const limit =
+    UI_CONFIG.attendance.profileHistoryLimit;
 
   const visible =
     state.attendanceExpanded
       ? state.attendance
-      : state.attendance.slice(
-          0,
-          10
-        );
+      : state.attendance.slice(0, limit);
 
+  const fragment =
+    document.createDocumentFragment();
 
-  visible.forEach(
-    attendance => {
-      elements
-        .attendanceList
-        .append(
-          createAttendanceRow(
-            attendance
-          )
-        );
-    }
-  );
+  visible.forEach(attendance => {
+    fragment.append(
+      createAttendanceRow(attendance)
+    );
+  });
 
+  elements.attendanceList.append(fragment);
 
-  if (
-    elements
-      .attendanceShowAll
-  ) {
-    if (
-      state.attendance.length >
-      10
-    ) {
-      showElement(
-        elements
-          .attendanceShowAll
-      );
+  if (!elements.attendanceShowAll) return;
 
+  if (state.attendance.length > limit) {
+    showElement(elements.attendanceShowAll);
 
-      setText(
-        elements
-          .attendanceShowAll,
-        state
-          .attendanceExpanded
-          ? 'Daha az göstər'
-          : 'Hamısını göstər'
-      );
-    } else {
-      hideElement(
-        elements
-          .attendanceShowAll
-      );
-    }
+    setText(
+      elements.attendanceShowAll,
+      state.attendanceExpanded
+        ? 'Daha az göstər'
+        : 'Hamısını göstər'
+    );
+  } else {
+    hideElement(elements.attendanceShowAll);
   }
 }
 
+function createAttendanceRow(attendance) {
+  const date = attendanceDate(attendance);
 
-// ============================================================
-// 14. ATTENDANCE ROW
-// ============================================================
+  const operatorName = normalizeString(
+    attendance?.operator?.full_name,
+    'Sistem'
+  );
 
-function createAttendanceRow(
-  attendance
-) {
-  const date =
-    attendanceDate(
-      attendance
-    );
+  const amount = attendanceAmount(attendance);
 
-
-  const operatorName =
-    normalizeString(
-      attendance
-        ?.operator
-        ?.full_name,
-      'Sistem'
-    );
-
-
-  const amount =
-    attendanceAmount(
-      attendance
-    );
-
-
-  const item =
-    createElement(
-      'article',
-      {
-        className:
-          'history-item',
-      }
-    );
-
+  const item = createElement('article', {
+    className: 'history-item',
+  });
 
   item.innerHTML = `
-    <span class="history-item__icon">
-
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        aria-hidden="true"
-      >
+    <span class="history-item__icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none">
         <path
           d="M5 4h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5V4Z"
           stroke="currentColor"
           stroke-width="1.7"
         />
-
         <path
           d="m13 12 6-4v8l-6-4Z"
           stroke="currentColor"
@@ -1393,68 +760,35 @@ function createAttendanceRow(
           stroke-linejoin="round"
         />
       </svg>
-
     </span>
-
 
     <span class="history-item__content">
-
       <strong class="history-item__title">
         ${escapeHtml(
-          attendanceTypeLabel(
-            attendance
-          )
+          attendanceTypeLabel(attendance)
         )}
       </strong>
-
       <span class="history-item__meta">
-
         ${
           amount > 0
-            ? `${escapeHtml(
-                money(amount)
-              )} · `
+            ? `${escapeHtml(money(amount))} · `
             : ''
         }
-
-        Operator:
-        ${escapeHtml(
-          operatorName
-        )}
-
+        Operator: ${escapeHtml(operatorName)}
       </span>
-
     </span>
-
 
     <span class="history-item__side">
-
-      <strong>
-        ${formatDate(date)}
-      </strong>
-
-      <span>
-        ${formatTime(date)}
-      </span>
-
+      <strong>${escapeHtml(formatDate(date))}</strong>
+      <span>${escapeHtml(formatTime(date))}</span>
     </span>
   `;
-
 
   return item;
 }
 
-
-// ============================================================
-// 15. ATTENDANCE EVENTS
-// ============================================================
-
 function bindAttendanceEvents() {
-  const elements =
-    getElements();
-
-
-  elements
+  getElements()
     .attendanceShowAll
     ?.addEventListener(
       'click',
@@ -1462,371 +796,215 @@ function bindAttendanceEvents() {
         state.attendanceExpanded =
           !state.attendanceExpanded;
 
-
         renderAttendance();
       }
     );
 }
 
-
-// ============================================================
-// 16. PROFILE EDIT MODAL
-// ============================================================
-
 function openProfileEditor() {
-  const profile =
-    state.profile;
+  const profile = state.profile;
+  if (!profile) return;
 
-
-  if (!profile) {
-    return;
-  }
-
-
-  const content =
-    createElement(
-      'form',
-      {
-        className:
-          'modal-form',
-
-        attrs: {
-          id:
-            'profile-edit-form',
-
-          novalidate:
-            '',
-        },
-      }
-    );
-
+  const content = createElement('form', {
+    className: 'modal-form',
+    attrs: {
+      id: 'profile-edit-form',
+      novalidate: '',
+    },
+  });
 
   content.innerHTML = `
     <div class="ui-field">
-
       <label
         class="ui-field__label"
         for="profile-edit-full-name"
       >
         Ad və soyad
       </label>
-
       <div class="ui-input">
-
         <input
           id="profile-edit-full-name"
           class="ui-input__control"
           type="text"
           autocomplete="name"
           maxlength="150"
-          value="${escapeHtml(
-            profile.full_name ||
-            ''
-          )}"
+          value="${escapeHtml(profile.full_name || '')}"
           placeholder="Ad Soyad"
         >
-
       </div>
-
       <span
         id="profile-edit-full-name-error"
         class="ui-field__error is-hidden"
       ></span>
-
     </div>
 
-
     <div class="ui-field">
-
       <label
         class="ui-field__label"
         for="profile-edit-phone"
       >
         Telefon
       </label>
-
       <div class="ui-input">
-
         <input
           id="profile-edit-phone"
           class="ui-input__control"
           type="tel"
           autocomplete="tel"
-          value="${escapeHtml(
-            profile.phone ||
-            ''
-          )}"
+          value="${escapeHtml(profile.phone || '')}"
           placeholder="+994..."
         >
-
       </div>
-
       <span
         id="profile-edit-phone-error"
         class="ui-field__error is-hidden"
       ></span>
-
     </div>
 
-
     <div class="ui-field">
-
       <label
         class="ui-field__label"
         for="profile-edit-birth-date"
       >
         Doğum tarixi
       </label>
-
       <div class="ui-input">
-
         <input
           id="profile-edit-birth-date"
           class="ui-input__control"
           type="date"
-          value="${escapeHtml(
-            profile.birth_date ||
-            ''
-          )}"
+          max="${todayIso()}"
+          value="${escapeHtml(profile.birth_date || '')}"
         >
-
       </div>
-
     </div>
 
-
     <div class="ui-field">
-
       <label
         class="ui-field__label"
         for="profile-edit-address"
       >
         Ünvan
       </label>
-
       <div class="ui-input">
-
         <input
           id="profile-edit-address"
           class="ui-input__control"
           type="text"
           maxlength="300"
-          value="${escapeHtml(
-            profile.address ||
-            ''
-          )}"
+          value="${escapeHtml(profile.address || '')}"
           placeholder="Ünvan"
         >
-
       </div>
-
     </div>
-
 
     <button
       id="profile-edit-submit"
       class="ui-button ui-button--primary ui-button--full"
       type="submit"
     >
-
-      <span class="ui-button__label">
-        Yadda saxla
-      </span>
-
+      <span class="ui-button__label">Yadda saxla</span>
       <span
         class="ui-button__spinner is-hidden"
         aria-hidden="true"
       ></span>
-
     </button>
   `;
 
-
   openModal({
-    eyebrow:
-      'Profil',
-
-    title:
-      'Məlumatları redaktə et',
-
+    eyebrow: 'Profil',
+    title: 'Məlumatları redaktə et',
     content,
-
-    trigger:
-      getElements()
-        .editButton,
-
-    onOpen:
-      () => {
-        bindProfileEditForm(
-          content
-        );
-      },
+    trigger: getElements().editButton,
+    onOpen: () => bindProfileEditForm(content),
   });
 }
 
-
-// ============================================================
-
-// ============================================================
-// 17. PROFILE EDIT FORM
-// ============================================================
-
-function bindProfileEditForm(
-  form
-) {
+function bindProfileEditForm(form) {
   const fullNameInput =
-    $(
-      '#profile-edit-full-name',
-      form
-    );
+    $('#profile-edit-full-name', form);
 
   const phoneInput =
-    $(
-      '#profile-edit-phone',
-      form
-    );
+    $('#profile-edit-phone', form);
 
   const birthDateInput =
-    $(
-      '#profile-edit-birth-date',
-      form
-    );
+    $('#profile-edit-birth-date', form);
 
   const addressInput =
-    $(
-      '#profile-edit-address',
-      form
-    );
+    $('#profile-edit-address', form);
 
   const fullNameError =
-    $(
-      '#profile-edit-full-name-error',
-      form
-    );
+    $('#profile-edit-full-name-error', form);
 
   const phoneError =
-    $(
-      '#profile-edit-phone-error',
-      form
-    );
+    $('#profile-edit-phone-error', form);
 
   const submit =
-    $(
-      '#profile-edit-submit',
-      form
-    );
-
+    $('#profile-edit-submit', form);
 
   form.addEventListener(
     'submit',
     async event => {
       event.preventDefault();
 
+      if (state.savingProfile) return;
 
-      if (
-        state.savingProfile
-      ) {
-        return;
-      }
-
-
-      clearFormErrors(
-        form
-      );
-
+      clearFormErrors(form);
 
       const fullName =
-        normalizeString(
-          fullNameInput?.value
-        );
-
+        normalizeString(fullNameInput?.value);
 
       const phone =
-        normalizeString(
-          phoneInput?.value
-        );
-
+        normalizeString(phoneInput?.value);
 
       const birthDate =
-        normalizeString(
-          birthDateInput?.value
-        );
-
+        normalizeString(birthDateInput?.value);
 
       const address =
-        normalizeString(
-          addressInput?.value
-        );
+        normalizeString(addressInput?.value);
 
+      let valid = true;
 
-      let valid =
-        true;
-
-
-      // ------------------------------------------------------
-      // Full name
-      // ------------------------------------------------------
-
-      if (
-        fullName.length < 2
-      ) {
+      if (fullName.length < 2) {
         setFieldError(
           fullNameInput,
           fullNameError,
           'Ad və soyad minimum 2 simvol olmalıdır.'
         );
-
-
-        valid =
-          false;
+        valid = false;
       }
 
-
-      // ------------------------------------------------------
-      // Phone
-      // ------------------------------------------------------
-
-      if (
-        phone &&
-        !validatePhone(
-          phone
-        )
-      ) {
+      if (phone && !validatePhone(phone)) {
         setFieldError(
           phoneInput,
           phoneError,
           'Telefon nömrəsi düzgün deyil.'
         );
-
-
-        valid =
-          false;
+        valid = false;
       }
 
-
-      if (!valid) {
-        return;
+      if (
+        birthDate &&
+        birthDate > todayIso()
+      ) {
+        notify.warning(
+          'Doğum tarixi gələcək tarix ola bilməz.'
+        );
+        valid = false;
       }
 
+      if (!valid) return;
 
-      state.savingProfile =
-        true;
-
+      state.savingProfile = true;
 
       setButtonLoading(
         submit,
         true,
-        {
-          loadingText:
-            'Yadda saxlanılır...',
-        }
+        { loadingText: 'Yadda saxlanılır...' }
       );
 
-
       try {
-        const profileId =
-          state.profile?.id;
-
+        const profileId = state.profile?.id;
 
         if (!profileId) {
           throw new Error(
@@ -1834,41 +1012,18 @@ function bindProfileEditForm(
           );
         }
 
-
         const payload = {
-
-          full_name:
-            fullName,
-
-          phone:
-            phone ||
-            null,
-
-          birth_date:
-            birthDate ||
-            null,
-
-          address:
-            address ||
-            null,
+          full_name: fullName,
+          phone: phone || null,
+          birth_date: birthDate || null,
+          address: address || null,
         };
 
-
-        const {
-          data,
-          error,
-        } =
+        const { data, error } =
           await supabase
-            .from(
-              TABLES.profiles
-            )
-            .update(
-              payload
-            )
-            .eq(
-              'id',
-              profileId
-            )
+            .from(TABLES.profiles)
+            .update(payload)
+            .eq('id', profileId)
             .select(`
               id,
               auth_user_id,
@@ -1886,62 +1041,16 @@ function bindProfileEditForm(
             `)
             .single();
 
+        if (error) throw error;
 
-        if (error) {
-          throw error;
-        }
-
-
-        state.profile =
-          data;
-
-
-        if (
-          state.identity
-        ) {
-          state.identity.profile =
-            data;
-
-
-          state.identity.name =
-            getProfileName(
-              data,
-              state.identity.email
-            );
-
-
-          state.identity.avatar =
-            getProfileAvatar(
-              data
-            );
-        }
-
-
+        applyUpdatedProfile(data);
         renderProfile();
-
-
         closeModal();
 
-
-        await refreshLayoutIdentity();
-
-
-        window.dispatchEvent(
-          new CustomEvent(
-            SKYFIT_EVENTS
-              .profileChange,
-            {
-              detail: {
-                profile:
-                  data,
-
-                type:
-                  'profile-update',
-              },
-            }
-          )
+        dispatchProfileChange(
+          data,
+          'profile-update'
         );
-
 
         notify.success(
           'Profil məlumatları yeniləndi.'
@@ -1952,7 +1061,6 @@ function bindProfileEditForm(
           error
         );
 
-
         notify.error(
           getErrorMessage(
             error,
@@ -1960,23 +1068,43 @@ function bindProfileEditForm(
           )
         );
       } finally {
-        state.savingProfile =
-          false;
-
-
-        setButtonLoading(
-          submit,
-          false
-        );
+        state.savingProfile = false;
+        setButtonLoading(submit, false);
       }
     }
   );
 }
 
+function applyUpdatedProfile(profile) {
+  state.profile = profile;
 
-// ============================================================
-// 18. EDIT BUTTON
-// ============================================================
+  if (!state.identity) return;
+
+  state.identity.profile = profile;
+  state.identity.name = getProfileName(
+    profile,
+    state.identity.email
+  );
+  state.identity.avatar =
+    getProfileAvatar(profile);
+}
+
+function dispatchProfileChange(
+  profile,
+  type
+) {
+  window.dispatchEvent(
+    new CustomEvent(
+      SKYFIT_EVENTS.profileChange,
+      {
+        detail: {
+          profile,
+          type,
+        },
+      }
+    )
+  );
+}
 
 function bindEditAction() {
   getElements()
@@ -1987,161 +1115,68 @@ function bindEditAction() {
     );
 }
 
-
-// ============================================================
-// 19. AVATAR EVENTS
-// ============================================================
-
 function bindAvatarEvents() {
-  const elements =
-    getElements();
+  const elements = getElements();
 
-
-  elements.avatarButton
-    ?.addEventListener(
-      'click',
-      () => {
-        if (
-          state.avatarUploading
-        ) {
-          return;
-        }
-
-
-        elements
-          .avatarInput
-          ?.click();
+  elements.avatarButton?.addEventListener(
+    'click',
+    () => {
+      if (!state.avatarUploading) {
+        elements.avatarInput?.click();
       }
-    );
+    }
+  );
 
+  elements.avatarInput?.addEventListener(
+    'change',
+    async event => {
+      const input = event.currentTarget;
+      const file = input?.files?.[0];
 
-  elements.avatarInput
-    ?.addEventListener(
-      'change',
-      async event => {
-        const file =
-          event.target
-            ?.files
-            ?.[0];
+      if (input) input.value = '';
+      if (!file) return;
 
-
-        // Eyni faylı ardıcıl seçməyə imkan verir.
-        event.target.value =
-          '';
-
-
-        if (!file) {
-          return;
-        }
-
-
-        await uploadAvatar(
-          file
-        );
-      }
-    );
+      await uploadAvatar(file);
+    }
+  );
 }
 
-
-// ============================================================
-// 20. AVATAR VALIDATION
-// ============================================================
-
-function validateAvatarFile(
-  file
-) {
-  const allowed =
-    new Set([
-      'image/jpeg',
-      'image/png',
-      'image/webp',
-    ]);
-
-
-  if (
-    !allowed.has(
-      file.type
-    )
-  ) {
+function validateAvatarFile(file) {
+  if (!AVATAR_TYPES.has(file?.type)) {
     return {
-      valid:
-        false,
-
+      valid: false,
       message:
         'Profil şəkli JPG, PNG və ya WEBP formatında olmalıdır.',
     };
   }
 
-
-  const maxSize =
-    5 *
-    1024 *
-    1024;
-
-
-  if (
-    file.size >
-    maxSize
-  ) {
+  if (file.size > AVATAR_MAX_SIZE) {
     return {
-      valid:
-        false,
-
+      valid: false,
       message:
         'Profil şəkli maksimum 5 MB ola bilər.',
     };
   }
 
-
   return {
-    valid:
-      true,
-
-    message:
-      '',
+    valid: true,
+    message: '',
   };
 }
 
-
-// ============================================================
-// 21. AVATAR EXTENSION
-// ============================================================
-
-function avatarExtension(
-  file
-) {
-  switch (
-    file?.type
-  ) {
+function avatarExtension(file) {
+  switch (file?.type) {
     case 'image/png':
       return 'png';
-
     case 'image/webp':
       return 'webp';
-
     default:
       return 'jpg';
   }
 }
 
-
-// ============================================================
-// 22. AVATAR STORAGE PATH
-//
-// profiles.id istifadə edirik.
-// auth.users.id ilə qarışdırmırıq.
-//
-// avatars/
-//   {profile_id}/
-//      avatar-{timestamp}.webp
-// ============================================================
-
-function buildAvatarPath(
-  file
-) {
-  const profileId =
-    state.profile?.id;
-
+function buildAvatarPath(file) {
+  const profileId = state.profile?.id;
 
   if (!profileId) {
     throw new Error(
@@ -2149,145 +1184,65 @@ function buildAvatarPath(
     );
   }
 
-
-  const extension =
-    avatarExtension(
-      file
-    );
-
-
   return (
     `${profileId}/` +
-    `avatar-${Date.now()}.${extension}`
+    `avatar-${Date.now()}.` +
+    avatarExtension(file)
   );
 }
 
-
-// ============================================================
-// 23. AVATAR UPLOAD
-// ============================================================
-
-async function uploadAvatar(
-  file
-) {
-  if (
-    state.avatarUploading
-  ) {
-    return;
-  }
-
+async function uploadAvatar(file) {
+  if (state.avatarUploading) return;
 
   const validation =
-    validateAvatarFile(
-      file
-    );
+    validateAvatarFile(file);
 
-
-  if (
-    !validation.valid
-  ) {
-    notify.warning(
-      validation.message
-    );
-
+  if (!validation.valid) {
+    notify.warning(validation.message);
     return;
   }
 
-
-  const profileId =
-    state.profile?.id;
-
+  const profileId = state.profile?.id;
 
   if (!profileId) {
     notify.error(
       'Profil məlumatı tapılmadı.'
     );
-
     return;
   }
 
-
-  state.avatarUploading =
-    true;
-
+  state.avatarUploading = true;
 
   const oldAvatar =
     normalizeString(
-      state.profile
-        ?.avatar_url
+      state.profile?.avatar_url
     );
 
-
-  let newPath =
-    '';
-
+  let newPath = '';
 
   try {
-    newPath =
-      buildAvatarPath(
-        file
-      );
+    newPath = buildAvatarPath(file);
 
-
-    // --------------------------------------------------------
-    // Storage upload
-    // --------------------------------------------------------
-
-    const {
-      error:
-        uploadError,
-    } =
-      await supabase
-        .storage
-        .from(
-          APP_CONFIG
-            .storage
-            .avatars
-        )
+    const { error: uploadError } =
+      await supabase.storage
+        .from(APP_CONFIG.storage.avatars)
         .upload(
           newPath,
           file,
           {
-            cacheControl:
-              '3600',
-
-            upsert:
-              false,
-
-            contentType:
-              file.type,
+            cacheControl: '3600',
+            upsert: false,
+            contentType: file.type,
           }
         );
 
+    if (uploadError) throw uploadError;
 
-    if (
-      uploadError
-    ) {
-      throw uploadError;
-    }
-
-
-    // --------------------------------------------------------
-    // profiles.avatar_url update
-    // DB-də relative path saxlayırıq.
-    // --------------------------------------------------------
-
-    const {
-      data,
-      error,
-    } =
+    const { data, error } =
       await supabase
-        .from(
-          TABLES.profiles
-        )
-        .update({
-          avatar_url:
-            newPath,
-        })
-        .eq(
-          'id',
-          profileId
-        )
+        .from(TABLES.profiles)
+        .update({ avatar_url: newPath })
+        .eq('id', profileId)
         .select(`
           id,
           auth_user_id,
@@ -2305,87 +1260,38 @@ async function uploadAvatar(
         `)
         .single();
 
-
     if (error) {
-      // DB update alınmasa yeni yüklənmiş lazımsız faylı silirik.
-      await removeAvatarObject(
-        newPath
-      );
-
-
+      await removeAvatarObject(newPath);
       throw error;
     }
 
-
-    state.profile =
-      data;
-
-
-    if (
-      state.identity
-    ) {
-      state.identity.profile =
-        data;
-
-
-      state.identity.avatar =
-        getProfileAvatar(
-          data
-        );
-    }
-
-
+    applyUpdatedProfile(data);
     renderProfile();
 
-
-    await refreshLayoutIdentity();
-
-
-    window.dispatchEvent(
-      new CustomEvent(
-        SKYFIT_EVENTS
-          .profileChange,
-        {
-          detail: {
-            profile:
-              data,
-
-            type:
-              'avatar-update',
-          },
-        }
-      )
+    dispatchProfileChange(
+      data,
+      'avatar-update'
     );
 
-
-    // --------------------------------------------------------
-    // Köhnə avatar artıq DB tərəfindən istifadə olunmur.
-    // Safe şəkildə storage-dan silməyə cəhd edirik.
-    // --------------------------------------------------------
-
     const oldPath =
-      extractAvatarStoragePath(
-        oldAvatar
-      );
-
+      extractAvatarStoragePath(oldAvatar);
 
     if (
-      oldPath &&
-      oldPath !==
-        newPath
+      avatarPathBelongsToProfile(
+        oldPath,
+        profileId
+      ) &&
+      oldPath !== newPath
     ) {
-      removeAvatarObject(
-        oldPath
-      ).catch(
-        error => {
+      removeAvatarObject(oldPath).catch(
+        cleanupError => {
           console.warn(
             '[SKy Fit Profile] Old avatar cleanup:',
-            error
+            cleanupError
           );
         }
       );
     }
-
 
     notify.success(
       'Profil şəkli yeniləndi.'
@@ -2396,7 +1302,6 @@ async function uploadAvatar(
       error
     );
 
-
     notify.error(
       getErrorMessage(
         error,
@@ -2404,77 +1309,34 @@ async function uploadAvatar(
       )
     );
   } finally {
-    state.avatarUploading =
-      false;
+    state.avatarUploading = false;
   }
 }
 
-
-// ============================================================
-// 24. EXTRACT AVATAR STORAGE PATH
-//
-// DB-də:
-// profile-id/avatar.jpg
-//
-// və ya köhnədən tam public URL qalıbsa onu da tanıyır.
-// ============================================================
-
-function extractAvatarStoragePath(
-  value
-) {
-  const source =
-    normalizeString(
-      value
-    );
-
-
-  if (!source) {
-    return '';
-  }
-
+function extractAvatarStoragePath(value) {
+  const source = normalizeString(value);
+  if (!source) return '';
 
   if (
-    !source.startsWith(
-      'http://'
-    ) &&
-    !source.startsWith(
-      'https://'
-    )
+    !/^https?:\/\//i.test(source)
   ) {
-    return source
-      .replace(
-        /^\/+/,
-        ''
-      );
+    return source.replace(/^\/+/, '');
   }
 
-
   try {
-    const url =
-      new URL(source);
-
+    const url = new URL(source);
 
     const marker =
       '/storage/v1/object/public/avatars/';
 
-
     const index =
-      url.pathname.indexOf(
-        marker
-      );
+      url.pathname.indexOf(marker);
 
-
-    if (
-      index === -1
-    ) {
-      return '';
-    }
-
+    if (index === -1) return '';
 
     return decodeURIComponent(
       url.pathname.slice(
-        index +
-        marker.length
+        index + marker.length
       )
     );
   } catch {
@@ -2482,52 +1344,36 @@ function extractAvatarStoragePath(
   }
 }
 
-
-// ============================================================
-// 25. REMOVE AVATAR OBJECT
-// ============================================================
-
-async function removeAvatarObject(
-  path
+function avatarPathBelongsToProfile(
+  path,
+  profileId
 ) {
-  const safePath =
-    normalizeString(
-      path
-    );
+  const safePath = normalizeString(path);
+  const safeProfileId =
+    normalizeString(profileId);
 
+  return Boolean(
+    safePath &&
+    safeProfileId &&
+    safePath.startsWith(
+      `${safeProfileId}/`
+    )
+  );
+}
 
-  if (!safePath) {
-    return false;
-  }
+async function removeAvatarObject(path) {
+  const safePath = normalizeString(path);
+  if (!safePath) return false;
 
+  const { error } =
+    await supabase.storage
+      .from(APP_CONFIG.storage.avatars)
+      .remove([safePath]);
 
-  const {
-    error,
-  } =
-    await supabase
-      .storage
-      .from(
-        APP_CONFIG
-          .storage
-          .avatars
-      )
-      .remove([
-        safePath,
-      ]);
-
-
-  if (error) {
-    throw error;
-  }
-
+  if (error) throw error;
 
   return true;
 }
-
-
-// ============================================================
-// 26. CHANGE PASSWORD
-// ============================================================
 
 function bindPasswordAction() {
   getElements()
@@ -2535,76 +1381,47 @@ function bindPasswordAction() {
     ?.addEventListener(
       'click',
       async () => {
-        const email =
-          normalizeString(
-            state.identity
-              ?.email ||
-            state.profile
-              ?.email
-          );
-
+        const email = normalizeString(
+          state.identity?.email ||
+          state.profile?.email
+        );
 
         if (!email) {
           notify.error(
             'Hesabın e-poçt ünvanı tapılmadı.'
           );
-
           return;
         }
-
 
         const confirmed =
           await confirmDialog({
-            eyebrow:
-              'Təhlükəsizlik',
-
-            title:
-              'Şifrə dəyişdirilsin?',
-
+            eyebrow: 'Təhlükəsizlik',
+            title: 'Şifrə dəyişdirilsin?',
             message:
               `${email} ünvanına təhlükəsiz şifrə yeniləmə keçidi göndəriləcək.`,
-
-            confirmText:
-              'Keçid göndər',
-
-            cancelText:
-              'Ləğv et',
+            confirmText: 'Keçid göndər',
+            cancelText: 'Ləğv et',
           });
 
-
-        if (!confirmed) {
-          return;
-        }
-
+        if (!confirmed) return;
 
         try {
           const redirectUrl =
             new URL(
-              APP_CONFIG
-                .routes
-                .updatePassword,
+              APP_CONFIG.routes.updatePassword,
               window.location.href
             ).href;
 
-
-          const {
-            error,
-          } =
-            await supabase
-              .auth
+          const { error } =
+            await supabase.auth
               .resetPasswordForEmail(
                 email,
                 {
-                  redirectTo:
-                    redirectUrl,
+                  redirectTo: redirectUrl,
                 }
               );
 
-
-          if (error) {
-            throw error;
-          }
-
+          if (error) throw error;
 
           notify.success(
             'Şifrə yeniləmə keçidi e-poçt ünvanına göndərildi.'
@@ -2614,7 +1431,6 @@ function bindPasswordAction() {
             '[SKy Fit Profile] Password reset:',
             error
           );
-
 
           notify.error(
             getErrorMessage(
@@ -2627,75 +1443,42 @@ function bindPasswordAction() {
     );
 }
 
-
-// ============================================================
-// 27. THEME LABEL
-// ============================================================
-
 function currentThemeLabel() {
-  switch (
-    getStoredTheme()
-  ) {
+  switch (getStoredTheme()) {
     case 'dark':
       return 'Tünd rejim';
-
     case 'light':
       return 'Açıq rejim';
-
     default:
       return 'Sistem rejimi';
   }
 }
 
-
-// ============================================================
-// 28. SYNC THEME LABEL
-// ============================================================
-
 function syncThemeLabel() {
   setText(
-    getElements()
-      .themeLabel,
+    getElements().themeLabel,
     currentThemeLabel()
   );
 }
 
-
-// ============================================================
-// 29. THEME ACTION
-// ============================================================
-
 function bindThemeAction() {
-  const elements =
-    getElements();
+  const elements = getElements();
 
-
-  elements.themeButton
-    ?.addEventListener(
-      'click',
-      () => {
-        cycleTheme();
-
-
-        syncThemeLabel();
-      }
-    );
-
+  elements.themeButton?.addEventListener(
+    'click',
+    () => {
+      cycleTheme();
+      syncThemeLabel();
+    }
+  );
 
   window.addEventListener(
-    SKYFIT_EVENTS
-      .themeChange,
+    SKYFIT_EVENTS.themeChange,
     syncThemeLabel
   );
 
-
   syncThemeLabel();
 }
-
-
-// ============================================================
-// 30. LOGOUT
-// ============================================================
 
 function bindLogoutAction() {
   getElements()
@@ -2705,95 +1488,51 @@ function bindLogoutAction() {
       async () => {
         const confirmed =
           await confirmDialog({
-            eyebrow:
-              'Hesab',
-
-            title:
-              'Çıxış edilsin?',
-
+            eyebrow: 'Hesab',
+            title: 'Çıxış edilsin?',
             message:
               'Cari SKy Fit sessiyası bağlanacaq.',
-
-            confirmText:
-              'Çıxış et',
-
-            cancelText:
-              'Ləğv et',
-
-            danger:
-              true,
+            confirmText: 'Çıxış et',
+            cancelText: 'Ləğv et',
+            danger: true,
           });
 
-
-        if (!confirmed) {
-          return;
-        }
-
+        if (!confirmed) return;
 
         await signOut({
-          redirect:
-            true,
-
-          redirectTo:
-            APP_CONFIG
-              .routes
-              .login,
+          redirect: true,
+          redirectTo: APP_CONFIG.routes.login,
         });
       }
     );
 }
 
-
-// ============================================================
-// 31. AUTH CHANGE
-// ============================================================
-
 function bindAuthEvents() {
   window.addEventListener(
-    SKYFIT_EVENTS
-      .authChange,
+    SKYFIT_EVENTS.authChange,
     async event => {
       const authEvent =
         normalizeString(
-          event.detail
-            ?.event
+          event.detail?.event
         );
 
-
-      if (
-        authEvent ===
-        'SIGNED_OUT'
-      ) {
+      if (authEvent === 'SIGNED_OUT') {
         return;
       }
 
-
       try {
         const identity =
-          event.detail
-            ?.identity ||
+          event.detail?.identity ||
           await getCurrentIdentity({
-            force:
-              true,
+            force: true,
           });
 
-
-        if (
-          !identity
-            ?.authenticated
-        ) {
+        if (!identity?.authenticated) {
           return;
         }
 
-
-        state.identity =
-          identity;
-
-
-        state.profile =
-          identity.profile;
-
-
+        state.identity = identity;
+        state.profile = identity.profile;
         renderProfile();
       } catch (error) {
         console.error(
@@ -2805,63 +1544,20 @@ function bindAuthEvents() {
   );
 }
 
-
-// ============================================================
-// 32. PROFILE CHANGE
-//
-// Eyni event-i özümüz də dispatch etdiyimiz üçün
-// profile detail başqa komponentdən dəyişəndə sinxronlaşır.
-// ============================================================
-
 function bindProfileChangeEvents() {
   window.addEventListener(
-    SKYFIT_EVENTS
-      .profileChange,
+    SKYFIT_EVENTS.profileChange,
     event => {
       const profile =
-        event.detail
-          ?.profile;
+        event.detail?.profile;
 
+      if (!profile) return;
 
-      if (!profile) {
-        return;
-      }
-
-
-      state.profile =
-        profile;
-
-
-      if (
-        state.identity
-      ) {
-        state.identity.profile =
-          profile;
-
-
-        state.identity.name =
-          getProfileName(
-            profile,
-            state.identity.email
-          );
-
-
-        state.identity.avatar =
-          getProfileAvatar(
-            profile
-          );
-      }
-
-
+      applyUpdatedProfile(profile);
       renderProfile();
     }
   );
 }
-
-
-// ============================================================
-// 33. LOAD PROFILE PAGE DATA
-// ============================================================
 
 async function loadProfileData() {
   await Promise.all([
@@ -2870,63 +1566,32 @@ async function loadProfileData() {
   ]);
 }
 
-
-// ============================================================
-// 34. BIND EVENTS
-// ============================================================
-
 function bindEvents() {
   bindEditAction();
-
   bindAvatarEvents();
-
   bindAttendanceEvents();
-
   bindPasswordAction();
-
   bindThemeAction();
-
   bindLogoutAction();
-
   bindAuthEvents();
-
   bindProfileChangeEvents();
 }
 
-
-// ============================================================
-// 35. INIT
-// ============================================================
-
 async function init() {
   try {
-    // Layout dərhal render olunub.
-    // Burada yalnız real identity hydrate edilir.
     await initLayout();
 
-
-    const identity =
-      await loadIdentity();
-
-
-    if (!identity) {
-      return;
-    }
-
+    const identity = await loadIdentity();
+    if (!identity) return;
 
     renderProfile();
-
-
     bindEvents();
-
-
     await loadProfileData();
   } catch (error) {
     console.error(
       '[SKy Fit Profile] Init:',
       error
     );
-
 
     notify.error(
       getErrorMessage(
@@ -2937,20 +1602,6 @@ async function init() {
   }
 }
 
-
-// ============================================================
-// 36. START
-// ============================================================
-
-asyncHandler(
-  init,
-  {
-    notifyOnError:
-      true,
-  }
-)();
-
-
-// ============================================================
-// SKY FIT PRO PROFILE.JS COMPLETE
-// ============================================================
+asyncHandler(init, {
+  notifyOnError: true,
+})();
