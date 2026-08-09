@@ -504,7 +504,21 @@ async function loadProducts() {
           updated_at,
           created_by,
           updated_by,
-          operator_shift_id
+          operator_shift_id,
+
+          sale_variants:product_sale_variants (
+            id,
+            product_id,
+            name,
+            variant_type,
+            stock_deduction,
+            price,
+            sort_order,
+            is_quick_sale,
+            is_active,
+            created_at,
+            updated_at
+          )
         `)
         .order(
           'created_at',
@@ -2096,6 +2110,9 @@ function auditActionLabel(
     products:
       'Məhsul',
 
+    product_sale_variants:
+      'Satış variantı',
+
     sales:
       'Satış',
 
@@ -2347,6 +2364,85 @@ function paymentStatusClass(
   }
 }
 
+
+function productSaleVariants(product, options = {}) {
+  const quickOnly = Boolean(options.quickOnly);
+
+  return rows(product?.sale_variants)
+    .filter(variant => variant?.is_active !== false)
+    .filter(variant => !quickOnly || variant?.is_quick_sale === true)
+    .sort((a, b) =>
+      number(a?.sort_order) - number(b?.sort_order) ||
+      normalizeString(a?.name).localeCompare(normalizeString(b?.name), 'az')
+    );
+}
+
+function productHasSaleVariants(product) {
+  return productSaleVariants(product).length > 0;
+}
+
+function saleVariantName(variant) {
+  return normalizeString(variant?.name, 'Satış variantı');
+}
+
+function saleVariantPrice(variant) {
+  return Math.max(0, number(variant?.price));
+}
+
+function saleVariantDeduction(variant) {
+  return Math.max(0, number(variant?.stock_deduction));
+}
+
+function saleVariantType(variant) {
+  return normalizeString(variant?.variant_type, 'unit');
+}
+
+function saleVariantIsCustom(variant) {
+  return saleVariantType(variant) === 'custom';
+}
+
+function saleVariantTypeLabel(type) {
+  switch (normalizeString(type)) {
+    case 'gram':
+      return 'Qram';
+    case 'tablet':
+      return 'Tablet / kapsul';
+    case 'portion':
+      return 'Porsiya';
+    case 'scoop':
+      return 'Qaşıq';
+    case 'pack':
+      return 'Bütöv qab / paket';
+    case 'custom':
+      return 'Sərbəst miqdar';
+    default:
+      return 'Ədəd / vahid';
+  }
+}
+
+function productDisplayPrice(product) {
+  const variants = productSaleVariants(product);
+  if (!variants.length) {
+    return productPrice(product);
+  }
+
+  return variants.reduce(
+    (minimum, variant) => Math.min(minimum, saleVariantPrice(variant)),
+    Number.POSITIVE_INFINITY
+  );
+}
+
+function productDisplayUnit(product) {
+  const variants = productSaleVariants(product);
+  if (!variants.length) {
+    return productUnitLabel(product);
+  }
+
+  return variants.length === 1
+    ? saleVariantName(variants[0])
+    : `${variants.length} satış seçimi`;
+}
+
 function filteredPosProducts() {
   const search =
     normalizeSearch(
@@ -2526,7 +2622,7 @@ function createPosCard(
 
       <span class="pos-product-card__unit">
         ${escapeHtml(
-          productUnitLabel(
+          productDisplayUnit(
             product
           )
         )}
@@ -2537,7 +2633,7 @@ function createPosCard(
         <span class="pos-product-card__price">
           ${escapeHtml(
             money(
-              productPrice(
+              productDisplayPrice(
                 product
               )
             )
@@ -2639,723 +2735,418 @@ function bindPosEvents() {
 
 async function openPosSaleModal(
   product,
-  trigger = null
+  trigger = null,
+  options = {}
 ) {
-  if (
-    state.members.length ===
-    0
-  ) {
+  if (state.members.length === 0) {
     await loadMembers();
   }
 
-  const mode =
-    productSaleMode(
-      product
-    );
+  const variants = productSaleVariants(product, {
+    quickOnly: Boolean(options.quickOnly),
+  });
 
-  const stock =
-    productStock(
-      product
-    );
+  const stock = productStock(product);
+  const image = productImage(product);
+  const legacyMode = productSaleMode(product);
 
-  const price =
-    productPrice(
-      product
-    );
+  const content = createElement('form', {
+    className: 'modal-form pos-sale-v2',
+    attrs: {
+      id: 'pos-sale-form',
+      novalidate: '',
+    },
+  });
 
-  const image =
-    productImage(
-      product
-    );
-
-  const content =
-    createElement(
-      'form',
-      {
-        className:
-          'modal-form',
-
-        attrs: {
-          id:
-            'pos-sale-form',
-
-          novalidate:
-            '',
-        },
-      }
-    );
+  const variantMarkup = variants.length
+    ? `
+      <div class="ui-field">
+        <span class="ui-field__label">Satış ölçüsü</span>
+        <div class="sale-variant-picker" id="pos-sale-variant-picker">
+          ${variants.map((variant, index) => `
+            <button
+              type="button"
+              class="sale-variant-chip${index === 0 ? ' is-active' : ''}"
+              data-sale-variant-id="${escapeHtml(variant.id)}"
+              aria-pressed="${index === 0 ? 'true' : 'false'}"
+            >
+              <strong>${escapeHtml(saleVariantName(variant))}</strong>
+              <span>${escapeHtml(money(saleVariantPrice(variant)))}</span>
+            </button>
+          `).join('')}
+        </div>
+      </div>
+    `
+    : '';
 
   content.innerHTML = `
     <div class="pos-confirm__product">
-
       <div class="pos-confirm__media">
-
         ${
           image
-            ? `
-              <img
-                src="${escapeHtml(
-                  image
-                )}"
-                alt="${escapeHtml(
-                  productName(
-                    product
-                  )
-                )}"
-              >
-            `
-            : `
-              <span class="product-card__image-fallback">
-                SK
-              </span>
-            `
+            ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(productName(product))}">`
+            : '<span class="product-card__image-fallback">SK</span>'
         }
-
       </div>
 
       <div class="pos-confirm__identity">
-
-        <strong class="pos-confirm__name">
-          ${escapeHtml(
-            productName(
-              product
-            )
-          )}
-        </strong>
-
-        <span class="pos-confirm__price">
-          ${escapeHtml(
-            money(price)
-          )}
+        <strong class="pos-confirm__name">${escapeHtml(productName(product))}</strong>
+        <span id="pos-sale-current-price" class="pos-confirm__price">
+          ${escapeHtml(money(variants.length ? saleVariantPrice(variants[0]) : productPrice(product)))}
         </span>
-
         <span class="pos-confirm__stock">
-          Stok:
-          ${escapeHtml(
-            String(stock)
-          )}
-          ${escapeHtml(
-            productStockUnit(
-              product
-            )
-          )}
+          Stok: ${escapeHtml(String(stock))} ${escapeHtml(productStockUnit(product))}
         </span>
-
       </div>
-
     </div>
 
+    ${variantMarkup}
+
     <div class="modal-form__grid">
-
       <div class="ui-field">
-
-        <label
-          class="ui-field__label"
-          for="pos-sale-quantity"
-        >
-          ${
-            mode ===
-              'portion'
-              ? 'Porsiya sayı'
-              : 'Miqdar'
-          }
+        <label class="ui-field__label" for="pos-sale-quantity" id="pos-sale-quantity-label">
+          ${variants.length
+            ? (saleVariantIsCustom(variants[0]) ? `Miqdar (${escapeHtml(productStockUnit(product))})` : 'Say')
+            : (legacyMode === 'portion' ? 'Porsiya sayı' : 'Miqdar')}
         </label>
 
         <div class="ui-input">
-
           <input
             id="pos-sale-quantity"
             class="ui-input__control"
             type="number"
             inputmode="decimal"
-            min="1"
-            step="1"
+            min="${variants.length && saleVariantIsCustom(variants[0]) ? '0.001' : '1'}"
+            step="${variants.length && saleVariantIsCustom(variants[0]) ? '0.001' : '1'}"
             value="1"
           >
-
         </div>
 
-        <span
-          id="pos-sale-quantity-error"
-          class="ui-field__error is-hidden"
-        ></span>
-
+        <span id="pos-sale-quantity-error" class="ui-field__error is-hidden"></span>
       </div>
 
       <div class="ui-field">
-
-        <label
-          class="ui-field__label"
-          for="pos-sale-payment-method"
-        >
-          Ödəniş üsulu
-        </label>
-
-        <select
-          id="pos-sale-payment-method"
-          class="ui-select"
-        >
-          <option value="cash">
-            Nağd
-          </option>
-
-          <option value="card">
-            Kart
-          </option>
-
-          <option value="transfer">
-            Köçürmə
-          </option>
+        <label class="ui-field__label" for="pos-sale-payment-method">Ödəniş üsulu</label>
+        <select id="pos-sale-payment-method" class="ui-select">
+          <option value="cash">Nağd</option>
+          <option value="card">Kart</option>
+          <option value="transfer">Köçürmə</option>
         </select>
-
       </div>
-
     </div>
 
     <div class="ui-field">
-
-      <label
-        class="ui-field__label"
-        for="pos-sale-payment-status"
-      >
-        Ödəniş vəziyyəti
-      </label>
-
-      <select
-        id="pos-sale-payment-status"
-        class="ui-select"
-      >
-        <option value="paid">
-          Ödənilib
-        </option>
-
-        <option value="debt">
-          Borc yaz
-        </option>
+      <label class="ui-field__label" for="pos-sale-payment-status">Ödəniş vəziyyəti</label>
+      <select id="pos-sale-payment-status" class="ui-select">
+        <option value="paid">Ödənilib</option>
+        <option value="debt">Borc yaz</option>
       </select>
-
     </div>
 
-    <div
-      id="pos-sale-member-field"
-      class="ui-field is-hidden"
-    >
-
-      <label
-        class="ui-field__label"
-        for="pos-sale-member"
-      >
-        Borc yazılacaq üzv
-      </label>
-
-      <select
-        id="pos-sale-member"
-        class="ui-select"
-      >
-        <option value="">
-          Üzv seç
-        </option>
-
+    <div id="pos-sale-member-field" class="ui-field is-hidden">
+      <label class="ui-field__label" for="pos-sale-member">Borc yazılacaq üzv</label>
+      <select id="pos-sale-member" class="ui-select">
+        <option value="">Üzv seç</option>
         ${memberOptionsMarkup()}
       </select>
-
-      <span class="ui-field__hint">
-        Borc satışı üçün üzv seçilməsi məcburidir.
-      </span>
-
+      <span class="ui-field__hint">Borc satışı üçün üzv seçilməsi məcburidir.</span>
     </div>
 
     <div class="pos-confirm__summary">
-
       <div class="pos-confirm__row">
-        <span>Vahid qiymət</span>
-
-        <strong>
-          ${escapeHtml(
-            money(price)
-          )}
+        <span>Satış seçimi</span>
+        <strong id="pos-sale-summary-variant">
+          ${escapeHtml(variants.length ? saleVariantName(variants[0]) : productUnitLabel(product))}
         </strong>
       </div>
 
       <div class="pos-confirm__row">
         <span>Miqdar</span>
-
-        <strong
-          id="pos-sale-summary-quantity"
-        >
-          1
-        </strong>
+        <strong id="pos-sale-summary-quantity">1</strong>
       </div>
 
-      ${
-        mode ===
-          'portion'
-          ? `
-            <div class="pos-confirm__row">
-              <span>Stokdan çıxacaq</span>
-
-              <strong
-                id="pos-sale-stock-deduction"
-              >
-                ${escapeHtml(
-                  String(
-                    number(
-                      product
-                        .portion_size,
-                      0
-                    )
-                  )
-                )}
-                ${escapeHtml(
-                  productStockUnit(
-                    product
-                  )
-                )}
-              </strong>
-            </div>
-          `
-          : ''
-      }
+      <div class="pos-confirm__row">
+        <span>Stokdan çıxacaq</span>
+        <strong id="pos-sale-stock-deduction">
+          ${escapeHtml(String(
+            variants.length
+              ? saleVariantDeduction(variants[0])
+              : (legacyMode === 'portion' ? number(product.portion_size) : 1)
+          ))}
+          ${escapeHtml(productStockUnit(product))}
+        </strong>
+      </div>
 
       <div class="pos-confirm__row pos-confirm__row--total">
-
         <span>Cəmi</span>
-
-        <strong
-          id="pos-sale-total"
-        >
-          ${escapeHtml(
-            money(price)
-          )}
+        <strong id="pos-sale-total">
+          ${escapeHtml(money(variants.length ? saleVariantPrice(variants[0]) : productPrice(product)))}
         </strong>
-
       </div>
-
     </div>
 
     <div class="modal-form__actions">
-
-      <button
-        id="pos-sale-cancel"
-        class="ui-button ui-button--glass"
-        type="button"
-      >
-        <span class="ui-button__label">
-          Ləğv et
-        </span>
+      <button id="pos-sale-cancel" class="ui-button ui-button--glass" type="button">
+        <span class="ui-button__label">Ləğv et</span>
       </button>
 
-      <button
-        id="pos-sale-submit"
-        class="ui-button ui-button--primary"
-        type="submit"
-      >
-        <span class="ui-button__label">
-          Sat
-        </span>
-
-        <span
-          class="ui-button__spinner is-hidden"
-          aria-hidden="true"
-        ></span>
+      <button id="pos-sale-submit" class="ui-button ui-button--primary" type="submit">
+        <span class="ui-button__label">Satışı təsdiqlə</span>
+        <span class="ui-button__spinner is-hidden" aria-hidden="true"></span>
       </button>
-
     </div>
   `;
 
   openModal({
-    eyebrow:
-      'POS',
-
-    title:
-      'Satışı təsdiqlə',
-
+    eyebrow: options.quickOnly ? 'Tez satış' : 'POS',
+    title: 'Satışı təsdiqlə',
     content,
-
     trigger,
-
-    onOpen:
-      () => {
-        bindPosSaleForm(
-          content,
-          product
-        );
-      },
+    className: 'app-modal--pos',
+    onOpen: () => {
+      bindPosSaleForm(content, product, variants);
+    },
   });
 }
 
 function bindPosSaleForm(
   form,
-  product
+  product,
+  variants = []
 ) {
-  const quantityInput =
-    $(
-      '#pos-sale-quantity',
-      form
-    );
+  const quantityInput = $('#pos-sale-quantity', form);
+  const quantityLabel = $('#pos-sale-quantity-label', form);
+  const paymentMethodInput = $('#pos-sale-payment-method', form);
+  const paymentStatusInput = $('#pos-sale-payment-status', form);
+  const memberField = $('#pos-sale-member-field', form);
+  const memberInput = $('#pos-sale-member', form);
+  const quantityError = $('#pos-sale-quantity-error', form);
+  const submit = $('#pos-sale-submit', form);
+  const cancel = $('#pos-sale-cancel', form);
+  const picker = $('#pos-sale-variant-picker', form);
 
-  const paymentMethodInput =
-    $(
-      '#pos-sale-payment-method',
-      form
-    );
+  let selectedVariant = variants[0] || null;
 
-  const paymentStatusInput =
-    $(
-      '#pos-sale-payment-status',
-      form
-    );
+  function currentPrice() {
+    return selectedVariant
+      ? saleVariantPrice(selectedVariant)
+      : productPrice(product);
+  }
 
-  const memberField =
-    $(
-      '#pos-sale-member-field',
-      form
-    );
+  function currentDeductionPerUnit() {
+    if (selectedVariant) {
+      return saleVariantDeduction(selectedVariant);
+    }
 
-  const memberInput =
-    $(
-      '#pos-sale-member',
-      form
-    );
+    return productSaleMode(product) === 'portion'
+      ? number(product.portion_size, 1)
+      : 1;
+  }
 
-  const quantityError =
-    $(
-      '#pos-sale-quantity-error',
-      form
-    );
+  function syncQuantityMode() {
+    const custom = selectedVariant && saleVariantIsCustom(selectedVariant);
 
-  const submit =
-    $(
-      '#pos-sale-submit',
-      form
-    );
+    if (quantityInput) {
+      quantityInput.min = custom ? '0.001' : '1';
+      quantityInput.step = custom ? '0.001' : '1';
 
-  const cancel =
-    $(
-      '#pos-sale-cancel',
-      form
+      if (!custom && number(quantityInput.value) < 1) {
+        quantityInput.value = '1';
+      }
+    }
+
+    setText(
+      quantityLabel,
+      custom
+        ? `Miqdar (${productStockUnit(product)})`
+        : (selectedVariant ? 'Say' : (productSaleMode(product) === 'portion' ? 'Porsiya sayı' : 'Miqdar'))
     );
+  }
 
   function syncSummary() {
-    const quantity =
-      Math.max(
-        0,
-        number(
-          quantityInput
-            ?.value
-        )
-      );
+    const quantity = Math.max(0, number(quantityInput?.value));
+    const total = quantity * currentPrice();
+    const stockDeduction = quantity * currentDeductionPerUnit();
 
-    const total =
-      quantity *
-      productPrice(
-        product
-      );
-
+    setText($('#pos-sale-summary-quantity', form), quantity);
+    setText($('#pos-sale-total', form), money(total));
     setText(
-      $(
-        '#pos-sale-summary-quantity',
-        form
-      ),
-      quantity
+      $('#pos-sale-stock-deduction', form),
+      `${stockDeduction} ${productStockUnit(product)}`
     );
-
     setText(
-      $(
-        '#pos-sale-total',
-        form
-      ),
-      money(total)
+      $('#pos-sale-summary-variant', form),
+      selectedVariant ? saleVariantName(selectedVariant) : productUnitLabel(product)
     );
-
-    const deduction =
-      $(
-        '#pos-sale-stock-deduction',
-        form
-      );
-
-    if (deduction) {
-      const stockDeduction =
-        quantity *
-        number(
-          product.portion_size
-        );
-
-      setText(
-        deduction,
-        `${stockDeduction} ${
-          productStockUnit(
-            product
-          )
-        }`
-      );
-    }
+    setText($('#pos-sale-current-price', form), money(currentPrice()));
   }
 
   function syncPaymentStatus() {
-    const debt =
-      paymentStatusInput
-        ?.value ===
-      'debt';
-
-    debt
-      ? showElement(
-          memberField
-        )
-      : hideElement(
-          memberField
-        );
+    const debt = paymentStatusInput?.value === 'debt';
+    debt ? showElement(memberField) : hideElement(memberField);
   }
 
-  quantityInput
-    ?.addEventListener(
-      'input',
-      syncSummary
-    );
+  picker?.addEventListener('click', event => {
+    const button = event.target.closest('[data-sale-variant-id]');
+    if (!button) return;
 
-  paymentStatusInput
-    ?.addEventListener(
-      'change',
-      syncPaymentStatus
-    );
+    selectedVariant = variants.find(
+      variant => String(variant.id) === String(button.dataset.saleVariantId)
+    ) || null;
 
-  cancel
-    ?.addEventListener(
-      'click',
-      closeModal
-    );
+    $$('[data-sale-variant-id]', picker).forEach(item => {
+      const active = item === button;
+      item.classList.toggle('is-active', active);
+      item.setAttribute('aria-pressed', String(active));
+    });
 
+    if (quantityInput) quantityInput.value = '1';
+    syncQuantityMode();
+    syncSummary();
+  });
+
+  quantityInput?.addEventListener('input', syncSummary);
+  paymentStatusInput?.addEventListener('change', syncPaymentStatus);
+  cancel?.addEventListener('click', closeModal);
+
+  syncQuantityMode();
   syncSummary();
-
   syncPaymentStatus();
 
-  form.addEventListener(
-    'submit',
-    async event => {
-      event.preventDefault();
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
 
-      const quantity =
-        number(
-          quantityInput
-            ?.value
-        );
+    const quantity = number(quantityInput?.value);
+    const paymentMethod = normalizeString(paymentMethodInput?.value, 'cash');
+    const paymentStatus = normalizeString(paymentStatusInput?.value, 'paid');
+    const memberId = normalizeString(memberInput?.value);
+    const stockDeduction = quantity * currentDeductionPerUnit();
 
-      const paymentMethod =
-        normalizeString(
-          paymentMethodInput
-            ?.value,
-          'cash'
-        );
-
-      const paymentStatus =
-        normalizeString(
-          paymentStatusInput
-            ?.value,
-          'paid'
-        );
-
-      const memberId =
-        normalizeString(
-          memberInput
-            ?.value
-        );
-
-      if (
-        quantity <= 0
-      ) {
-        setFieldError(
-          quantityInput,
-          quantityError,
-          'Miqdar sıfırdan böyük olmalıdır.'
-        );
-
-        return;
-      }
-
-      // Unit məhsulda yalnız tam ədəd satılır.
-      if (
-        productSaleMode(
-          product
-        ) ===
-          'unit' &&
-        !Number.isInteger(
-          quantity
-        )
-      ) {
-        setFieldError(
-          quantityInput,
-          quantityError,
-          'Ədəd məhsul üçün tam rəqəm daxil et.'
-        );
-
-        return;
-      }
-
-      if (
-        paymentStatus ===
-          'debt' &&
-        !memberId
-      ) {
-        notify.warning(
-          'Borc satışı üçün üzv seçilməlidir.'
-        );
-
-        memberInput
-          ?.focus();
-
-        return;
-      }
-
-      await executePosSale({
-        product,
-
-        quantity,
-
-        paymentMethod,
-
-        paymentStatus,
-
-        memberId:
-          paymentStatus ===
-            'debt'
-            ? memberId
-            : null,
-
-        button:
-          submit,
-      });
+    if (quantity <= 0) {
+      setFieldError(
+        quantityInput,
+        quantityError,
+        'Miqdar sıfırdan böyük olmalıdır.'
+      );
+      return;
     }
-  );
-}
 
-//
-// Real backend RPC.
+    if (!saleVariantIsCustom(selectedVariant) && !Number.isInteger(quantity)) {
+      setFieldError(
+        quantityInput,
+        quantityError,
+        'Bu satış seçimi üçün say tam ədəd olmalıdır.'
+      );
+      return;
+    }
+
+    if (stockDeduction > productStock(product)) {
+      setFieldError(
+        quantityInput,
+        quantityError,
+        `Stok kifayət deyil. Cari stok: ${productStock(product)} ${productStockUnit(product)}.`
+      );
+      return;
+    }
+
+    if (paymentStatus === 'debt' && !memberId) {
+      notify.warning('Borc satışı üçün üzv seçilməlidir.');
+      memberInput?.focus();
+      return;
+    }
+
+    await executePosSale({
+      product,
+      variant: selectedVariant,
+      quantity,
+      paymentMethod,
+      paymentStatus,
+      memberId: paymentStatus === 'debt' ? memberId : null,
+      button: submit,
+    });
+  });
+}
 
 async function executePosSale({
   product,
+  variant = null,
   quantity,
   paymentMethod,
   paymentStatus,
   memberId,
   button,
 }) {
-  if (
-    state.busy
-  ) {
-    return;
-  }
+  if (state.busy) return;
 
-  state.busy =
-    true;
+  state.busy = true;
 
-  setButtonLoading(
-    button,
-    true,
-    {
-      loadingText:
-        'Satılır...',
-    }
-  );
+  setButtonLoading(button, true, {
+    loadingText: 'Satılır...',
+  });
 
   try {
-    const items = [
-      {
-        product_id:
-          product.id,
+    const useV2 = Boolean(variant);
 
-        quantity,
-      },
+    const items = [
+      useV2
+        ? {
+            product_id: product.id,
+            variant_id: variant.id,
+            quantity,
+          }
+        : {
+            product_id: product.id,
+            quantity,
+          },
     ];
 
-    const {
-      data:
-        saleId,
-      error,
-    } =
-      await supabase.rpc(
-        RPC.processSale,
-        {
-          p_member_id:
-            memberId ||
-            null,
+    const { data: saleId, error } = await supabase.rpc(
+      useV2 ? RPC.processSaleV2 : RPC.processSale,
+      {
+        p_member_id: memberId || null,
+        p_payment_method: paymentMethod,
+        p_payment_status: paymentStatus,
+        p_items: items,
+      }
+    );
 
-          p_payment_method:
-            paymentMethod,
-
-          p_payment_status:
-            paymentStatus,
-
-          p_items:
-            items,
-        }
-      );
-
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
 
     closeModal();
 
     notify.success(
-      `${productName(
-        product
-      )} satıldı.`,
+      `${productName(product)} · ${variant ? saleVariantName(variant) : productUnitLabel(product)} satıldı.`,
       'Satış tamamlandı'
     );
 
-    // Backend özü:
-    // sales
-    // sale_items
-    // products.stock_quantity
-    // stock_movements
-    // ledger və ya debt
-    // audit_log
-    // yazır.
     await Promise.all([
       loadProducts(),
       loadSales(),
       loadLedger(),
       loadDebts(),
-      loadHistory({
-        limit:
-          50,
-      }),
+      loadHistory({ limit: 50 }),
     ]);
 
     renderPosProducts();
+    renderQuickSaleProducts();
 
-    if (
-      state.activeTab ===
-      'dashboard'
-    ) {
+    if (state.activeTab === 'dashboard') {
       renderDashboard();
     }
 
     window.dispatchEvent(
-      new CustomEvent(
-        ADMIN_OPERATION_EVENT,
-        {
-          detail: {
-            type:
-              'sale',
-
-            saleId,
-
-            productId:
-              product.id,
-
-            operatorId:
-              state.identity
-                ?.profileId,
-          },
-        }
-      )
+      new CustomEvent(ADMIN_OPERATION_EVENT, {
+        detail: {
+          type: 'sale',
+          saleId,
+          productId: product.id,
+          variantId: variant?.id || null,
+          operatorId: state.identity?.profileId,
+        },
+      })
     );
   } catch (error) {
-    console.error(
-      '[SKy Fit POS] process_sale:',
-      error
-    );
+    console.error('[SKy Fit POS] process sale:', error);
 
     notify.error(
       getErrorMessage(
@@ -3364,13 +3155,8 @@ async function executePosSale({
       )
     );
   } finally {
-    state.busy =
-      false;
-
-    setButtonLoading(
-      button,
-      false
-    );
+    state.busy = false;
+    setButtonLoading(button, false);
   }
 }
 
@@ -3735,6 +3521,147 @@ function bindProductEvents() {
     'change',
     renderAdminProducts
   );
+}
+
+
+function saleVariantEditorRowMarkup(variant = {}, index = 0) {
+  const type = saleVariantType(variant);
+  const name = normalizeString(variant?.name);
+  const deduction = variant?.stock_deduction ?? '';
+  const price = variant?.price ?? '';
+  const sortOrder = variant?.sort_order ?? index * 10;
+  const quick = variant?.is_quick_sale === true;
+
+  return `
+    <div class="sale-variant-editor-row" data-sale-variant-row data-variant-id="${escapeHtml(variant?.id || '')}">
+      <div class="sale-variant-editor-row__main">
+        <div class="ui-field">
+          <label class="ui-field__label">Ad</label>
+          <div class="ui-input">
+            <input
+              class="ui-input__control"
+              data-variant-field="name"
+              type="text"
+              maxlength="80"
+              value="${escapeHtml(name)}"
+              placeholder="Məs: 50 qr / 1 qaşıq"
+            >
+          </div>
+        </div>
+
+        <div class="ui-field">
+          <label class="ui-field__label">Növ</label>
+          <select class="ui-select" data-variant-field="variant_type">
+            ${['unit', 'gram', 'tablet', 'portion', 'scoop', 'pack', 'custom']
+              .map(option => `
+                <option value="${option}" ${option === type ? 'selected' : ''}>
+                  ${escapeHtml(saleVariantTypeLabel(option))}
+                </option>
+              `)
+              .join('')}
+          </select>
+        </div>
+
+        <div class="ui-field">
+          <label class="ui-field__label">Stokdan çıxacaq</label>
+          <div class="ui-input">
+            <input
+              class="ui-input__control"
+              data-variant-field="stock_deduction"
+              type="number"
+              inputmode="decimal"
+              min="0.001"
+              step="0.001"
+              value="${escapeHtml(String(deduction))}"
+              placeholder="50"
+            >
+          </div>
+        </div>
+
+        <div class="ui-field">
+          <label class="ui-field__label">Satış qiyməti</label>
+          <div class="ui-input">
+            <input
+              class="ui-input__control"
+              data-variant-field="price"
+              type="number"
+              inputmode="decimal"
+              min="0"
+              step="0.01"
+              value="${escapeHtml(String(price))}"
+              placeholder="5.00"
+            >
+          </div>
+        </div>
+      </div>
+
+      <div class="sale-variant-editor-row__footer">
+        <label class="ui-check">
+          <input data-variant-field="is_quick_sale" type="checkbox" ${quick ? 'checked' : ''}>
+          <span>Tez satışda göstər</span>
+        </label>
+
+        <input data-variant-field="sort_order" type="hidden" value="${escapeHtml(String(sortOrder))}">
+
+        <button class="sale-variant-editor-row__remove" type="button" data-remove-sale-variant>
+          Sil
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+function collectSaleVariantRows(form) {
+  return $$('[data-sale-variant-row]', form).map((row, index) => {
+    const field = name => $(`[data-variant-field="${name}"]`, row);
+
+    return {
+      id: normalizeString(row.dataset.variantId) || null,
+      name: normalizeString(field('name')?.value),
+      variant_type: normalizeString(field('variant_type')?.value, 'unit'),
+      stock_deduction: number(field('stock_deduction')?.value),
+      price: number(field('price')?.value),
+      is_quick_sale: Boolean(field('is_quick_sale')?.checked),
+      is_active: true,
+      sort_order: index * 10,
+    };
+  });
+}
+
+async function syncProductSaleVariants(productId, variants) {
+  const valid = rows(variants).filter(variant =>
+    variant.name &&
+    variant.stock_deduction > 0 &&
+    variant.price >= 0
+  );
+
+  const { error: deleteError } = await supabase
+    .from(TABLES.productSaleVariants)
+    .delete()
+    .eq('product_id', productId);
+
+  if (deleteError) throw deleteError;
+
+  if (!valid.length) return [];
+
+  const payload = valid.map((variant, index) => ({
+    product_id: productId,
+    name: variant.name,
+    variant_type: variant.variant_type,
+    stock_deduction: variant.stock_deduction,
+    price: variant.price,
+    is_quick_sale: variant.is_quick_sale,
+    is_active: true,
+    sort_order: index * 10,
+  }));
+
+  const { data, error } = await supabase
+    .from(TABLES.productSaleVariants)
+    .insert(payload)
+    .select('*');
+
+  if (error) throw error;
+  return rows(data);
 }
 
 function openProductEditor(
@@ -4198,6 +4125,47 @@ function openProductEditor(
 
     </div>
 
+    <section class="sale-variant-editor">
+      <div class="sale-variant-editor__header">
+        <div>
+          <span class="section-eyebrow">Satış ölçüləri</span>
+          <strong>Qram · tablet · qaşıq · qab</strong>
+          <small>
+            Məhsulun əsas stoku dəyişmir. Hər seçim satış zamanı stokdan neçə vahid çıxacağını və qiyməti müəyyən edir.
+          </small>
+        </div>
+
+        <button
+          id="admin-product-add-variant"
+          class="ui-button ui-button--glass"
+          type="button"
+        >
+          <span class="ui-button__label">+ Variant əlavə et</span>
+        </button>
+      </div>
+
+      <div id="admin-product-sale-variants" class="sale-variant-editor__list">
+        ${
+          productSaleVariants(product).length
+            ? productSaleVariants(product).map((variant, index) =>
+                saleVariantEditorRowMarkup(variant, index)
+              ).join('')
+            : ''
+        }
+      </div>
+
+      <div class="ui-info-card">
+        <span class="ui-info-card__icon">i</span>
+        <span>
+          <strong>Nümunə</strong>
+          <small>
+            Whey: “50 qr / 1 qaşıq” → stokdan 50 qr çıxır. Creatine: “5 qr” → 5 qr çıxır.
+            Tablet: “10 tablet” → 10 ədəd çıxır. “Sərbəst miqdar” növündə stokdan çıxacaq dəyəri 1 yazıb qiyməti 1 qr/ədəd üçün təyin edə bilərsən.
+          </small>
+        </span>
+      </div>
+    </section>
+
     <label class="ui-upload">
 
       <input
@@ -4357,6 +4325,12 @@ function bindProductForm(
       form
     );
 
+  const variantsRoot =
+    $('#admin-product-sale-variants', form);
+
+  const addVariantButton =
+    $('#admin-product-add-variant', form);
+
   const nameError =
     $(
       '#admin-product-name-error',
@@ -4416,6 +4390,22 @@ function bindProductForm(
     );
 
   syncSaleMode();
+
+  addVariantButton?.addEventListener('click', () => {
+    variantsRoot?.insertAdjacentHTML(
+      'beforeend',
+      saleVariantEditorRowMarkup({}, $$('[data-sale-variant-row]', form).length)
+    );
+
+    const lastRow = $$('[data-sale-variant-row]', form).at(-1);
+    $('[data-variant-field="name"]', lastRow)?.focus();
+  });
+
+  variantsRoot?.addEventListener('click', event => {
+    const removeButton = event.target.closest('[data-remove-sale-variant]');
+    if (!removeButton) return;
+    removeButton.closest('[data-sale-variant-row]')?.remove();
+  });
 
   form.addEventListener(
     'submit',
@@ -4489,6 +4479,22 @@ function bindProductForm(
           'Porsiya məhsulu üçün porsiya qiyməti və porsiya ölçüsü daxil edilməlidir.'
         );
 
+        return;
+      }
+
+      const saleVariants = collectSaleVariantRows(form);
+
+      const invalidVariant = saleVariants.find(
+        variant =>
+          !variant.name ||
+          variant.stock_deduction <= 0 ||
+          variant.price < 0
+      );
+
+      if (invalidVariant) {
+        notify.warning(
+          'Satış variantlarında ad, stokdan çıxılacaq miqdar və qiymət düzgün doldurulmalıdır.'
+        );
         return;
       }
 
@@ -4642,6 +4648,11 @@ function bindProductForm(
               imageFile
             );
         }
+
+        await syncProductSaleVariants(
+          savedProduct.id,
+          saleVariants
+        );
 
         closeModal();
 
@@ -5673,7 +5684,7 @@ function bindStockAddForm(
           error,
         } =
           await supabase.rpc(
-            RPC.addStock,
+            RPC.addStockV2,
             {
               p_product_id:
                 product.id,
@@ -6210,17 +6221,161 @@ function bindStockEvents() {
   );
 }
 
+
+function quickSaleProducts() {
+  const preferred = state.products
+    .filter(product => product.is_active !== false)
+    .filter(product => productStock(product) > 0)
+    .filter(product => productSaleVariants(product, { quickOnly: true }).length > 0);
+
+  if (preferred.length) {
+    return preferred;
+  }
+
+  return state.products
+    .filter(product => product.is_active !== false)
+    .filter(product => productStock(product) > 0);
+}
+
+function ensureQuickSaleFab() {
+  let button = byId('admin-quick-sale-fab');
+
+  if (button) return button;
+
+  button = createElement('button', {
+    className: 'admin-quick-sale-fab',
+    attrs: {
+      id: 'admin-quick-sale-fab',
+      type: 'button',
+      'aria-label': 'Tez satış aç',
+      title: 'Tez satış',
+    },
+  });
+
+  button.innerHTML = `
+    <span class="admin-quick-sale-fab__icon" aria-hidden="true">⚡</span>
+    <span class="admin-quick-sale-fab__label">Tez satış</span>
+  `;
+
+  button.addEventListener('click', () => {
+    void openQuickSaleModal(button);
+  });
+
+  document.body.append(button);
+  return button;
+}
+
+function renderQuickSaleProducts() {
+  const root = byId('quick-sale-products-grid');
+  if (!root) return;
+
+  clearElement(root);
+
+  const products = quickSaleProducts();
+
+  products.forEach(product => {
+    const variants = productSaleVariants(product, { quickOnly: true });
+    const image = productImage(product);
+    const card = createElement('button', {
+      className: 'quick-sale-card',
+      attrs: {
+        type: 'button',
+      },
+    });
+
+    card.innerHTML = `
+      <span class="quick-sale-card__media">
+        ${
+          image
+            ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(productName(product))}" loading="lazy" decoding="async">`
+            : '<span class="product-card__image-fallback">SK</span>'
+        }
+      </span>
+
+      <span class="quick-sale-card__body">
+        <strong>${escapeHtml(productName(product))}</strong>
+        <span>
+          ${
+            variants.length
+              ? `${escapeHtml(String(variants.length))} seçim`
+              : escapeHtml(money(productPrice(product)))
+          }
+        </span>
+        <small>
+          ${escapeHtml(String(productStock(product)))} ${escapeHtml(productStockUnit(product))}
+        </small>
+      </span>
+    `;
+
+    card.addEventListener('click', () => {
+      openPosSaleModal(
+        product,
+        card,
+        {
+          quickOnly: variants.length > 0,
+        }
+      );
+    });
+
+    root.append(card);
+  });
+
+  if (!products.length) {
+    root.innerHTML = `
+      <div class="ui-empty-state quick-sale-empty">
+        <strong>Satış üçün məhsul yoxdur</strong>
+        <span>Aktiv məhsul əlavə et və stok daxil et.</span>
+      </div>
+    `;
+  }
+}
+
+async function openQuickSaleModal(trigger = null) {
+  if (state.products.length === 0) {
+    await loadProducts();
+  }
+
+  const content = createElement('div', {
+    className: 'quick-sale-panel',
+  });
+
+  content.innerHTML = `
+    <div class="quick-sale-panel__header">
+      <div>
+        <span class="section-eyebrow">Şəkilli POS</span>
+        <strong>Bir toxunuşla məhsulu seç</strong>
+        <small>Məhsula toxun, ölçünü və ödənişi seç, sonra satışı təsdiqlə.</small>
+      </div>
+    </div>
+
+    <div id="quick-sale-products-grid" class="quick-sale-products-grid"></div>
+  `;
+
+  openModal({
+    eyebrow: 'SKy Fit POS',
+    title: 'Tez satış',
+    content,
+    trigger,
+    className: 'app-modal--quick-sale',
+    onOpen: () => {
+      renderQuickSaleProducts();
+    },
+  });
+}
+
 function bindQuickAction() {
   byId(
     'admin-quick-action-button'
   )?.addEventListener(
     'click',
-    () => {
-      setActiveTab(
-        'pos'
+    event => {
+      void openQuickSaleModal(
+        event.currentTarget
       );
     }
   );
+
+  ensureQuickSaleFab();
 }
 
 function filteredMembers() {
@@ -10811,6 +10966,9 @@ function historyTableLabel(
     products:
       'Məhsul',
 
+    product_sale_variants:
+      'Satış variantı',
+
     trainers:
       'Məşqçi',
 
@@ -11490,6 +11648,21 @@ function auditFieldLabel(
 
     category:
       'Kateqoriya',
+
+    variant_type:
+      'Variant növü',
+
+    stock_deduction:
+      'Stokdan çıxılma',
+
+    is_quick_sale:
+      'Tez satış',
+
+    gross_profit:
+      'Brüt qazanc',
+
+    cost_total:
+      'Maya cəmi',
 
     movement_type:
       'Stok hərəkəti',
