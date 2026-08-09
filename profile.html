@@ -1,130 +1,60 @@
 <!DOCTYPE html>
-
-<html
-  lang="az"
-  data-theme="dark"
-  data-theme-source="system"
->
+<html lang="az" data-theme="dark" data-theme-source="system">
 <head>
-
-  <!-- ========================================================
-       SKY FIT PRO
-       Profile Page
-       File: profile.html
-       PART 1 / 2
-       ======================================================== -->
-
   <meta charset="UTF-8">
-
   <meta
     name="viewport"
     content="width=device-width, initial-scale=1, viewport-fit=cover"
   >
-
-  <meta
-    name="theme-color"
-    content="#090b10"
-  >
-
-  <meta
-    name="color-scheme"
-    content="dark light"
-  >
-
+  <meta name="theme-color" content="#090b10">
+  <meta name="color-scheme" content="dark light">
   <meta
     name="description"
-    content="SKy Fit Pro profil və üzvlük məlumatları."
+    content="SKy Fit Pro profil, üzvlük və giriş tarixçəsi."
   >
-
   <meta
     name="author"
-    content="Qərib Səfərli"
+    content="Qərib Səfərli — Senior Full Stack Developer"
   >
 
-
-  <!-- ========================================================
-       PWA
-       ======================================================== -->
-
-  <link
-    rel="manifest"
-    href="./manifest.json"
-  >
-
+  <link rel="manifest" href="./manifest.json">
   <link
     rel="icon"
     type="image/png"
     href="./assets/icons/favicon.png"
   >
-
   <link
     rel="apple-touch-icon"
     href="./assets/icons/apple-touch-icon.png"
   >
+  <link rel="stylesheet" href="./css/app.css">
 
-
-  <!-- ========================================================
-       CSS
-       ======================================================== -->
-
-  <link
-    rel="stylesheet"
-    href="./css/app.css"
-  >
-
-
-  <title>
-    Profil · SKy Fit Pro
-  </title>
-
+  <title>Profil · SKy Fit Pro</title>
 </head>
 
-
 <body data-page="profile">
-
-
-  <!-- ========================================================
-       SHARED LAYOUT ROOTS
-       ======================================================== -->
-
   <div id="app-header-root"></div>
-
   <div id="app-drawer-root"></div>
 
-
-  <!-- ========================================================
-       PAGE
-       ======================================================== -->
-
-  <main
-    id="app-main"
-    class="app-main profile-page"
-  >
-
+  <main id="app-main" class="app-main profile-page">
     <div class="page-shell profile-shell">
-
-
-      <!-- ====================================================
-           PROFILE HERO
-           ==================================================== -->
-
-      <section class="profile-hero">
-
-        <div class="profile-hero__glow" aria-hidden="true"></div>
-
+      <section
+        class="profile-hero"
+        aria-labelledby="profile-title"
+      >
+        <div
+          class="profile-hero__glow"
+          aria-hidden="true"
+        ></div>
 
         <div class="profile-hero__identity">
-
-
-          <!-- Avatar -->
-
           <button
             id="profile-avatar-button"
             class="profile-avatar"
             type="button"
             aria-label="Profil şəklini dəyiş"
+            aria-controls="profile-avatar-input"
           >
-
             <img
               id="profile-avatar-image"
               class="profile-avatar__image"
@@ -132,7 +62,6 @@
               alt=""
               hidden
             >
-
 
             <span
               id="profile-avatar-fallback"
@@ -142,22 +71,17 @@
               SK
             </span>
 
-
             <span
               class="profile-avatar__edit"
               aria-hidden="true"
             >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-              >
+              <svg viewBox="0 0 24 24" fill="none">
                 <path
                   d="M5 16.5V19h2.5L17.7 8.8l-2.5-2.5L5 16.5Z"
                   stroke="currentColor"
                   stroke-width="1.7"
                   stroke-linejoin="round"
                 />
-
                 <path
                   d="m14.5 7 2.5 2.5"
                   stroke="currentColor"
@@ -165,9 +89,7 @@
                 />
               </svg>
             </span>
-
           </button>
-
 
           <input
             id="profile-avatar-input"
@@ -176,18 +98,12 @@
             hidden
           >
 
-
-          <!-- Identity -->
-
           <div class="profile-hero__content">
-
             <span class="section-eyebrow">
               Şəxsi profil
             </span>
 
-
             <div class="profile-hero__title-row">
-
               <h1
                 id="profile-title"
                 class="profile-hero__title"
@@ -195,16 +111,13 @@
                 SKy Fit istifadəçisi
               </h1>
 
-
               <span
                 id="profile-role-badge"
                 class="ui-badge ui-badge--neutral"
               >
                 Üzv
               </span>
-
             </div>
-
 
             <span
               id="profile-email"
@@ -213,9 +126,7 @@
               —
             </span>
 
-
             <div class="profile-hero__actions">
-
               <button
                 id="profile-edit-button"
                 class="ui-button ui-button--primary"
@@ -225,32 +136,21 @@
                   Profili redaktə et
                 </span>
               </button>
-
             </div>
-
           </div>
-
         </div>
-
       </section>
 
-
-      <!-- ====================================================
-           QUICK OVERVIEW
-           ==================================================== -->
-
-      <section class="profile-overview">
-
+      <section
+        class="profile-overview"
+        aria-label="Profil xülasəsi"
+      >
         <article class="profile-stat-card">
-
           <span
             class="profile-stat-card__icon"
             aria-hidden="true"
           >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-            >
+            <svg viewBox="0 0 24 24" fill="none">
               <rect
                 x="4"
                 y="5"
@@ -260,7 +160,6 @@
                 stroke="currentColor"
                 stroke-width="1.7"
               />
-
               <path
                 d="M8 9h8M8 13h5"
                 stroke="currentColor"
@@ -270,39 +169,24 @@
             </svg>
           </span>
 
-
           <div class="profile-stat-card__content">
-
-            <span>
-              Üzvlük
-            </span>
-
-            <strong id="profile-membership-plan">
-              —
-            </strong>
-
+            <span>Üzvlük</span>
+            <strong id="profile-membership-plan">—</strong>
             <span
               id="profile-membership-status"
               class="ui-badge ui-badge--neutral"
             >
               —
             </span>
-
           </div>
-
         </article>
 
-
         <article class="profile-stat-card">
-
           <span
             class="profile-stat-card__icon"
             aria-hidden="true"
           >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-            >
+            <svg viewBox="0 0 24 24" fill="none">
               <rect
                 x="4"
                 y="5.5"
@@ -312,7 +196,6 @@
                 stroke="currentColor"
                 stroke-width="1.7"
               />
-
               <path
                 d="M8 3.5v4M16 3.5v4M4 9.5h16"
                 stroke="currentColor"
@@ -322,42 +205,24 @@
             </svg>
           </span>
 
-
           <div class="profile-stat-card__content">
-
-            <span>
-              Bitmə tarixi
-            </span>
-
-            <strong id="profile-membership-expiry">
-              —
-            </strong>
-
-            <small id="profile-membership-days">
-              —
-            </small>
-
+            <span>Bitmə tarixi</span>
+            <strong id="profile-membership-expiry">—</strong>
+            <small id="profile-membership-days">—</small>
           </div>
-
         </article>
 
-
         <article class="profile-stat-card">
-
           <span
             class="profile-stat-card__icon"
             aria-hidden="true"
           >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-            >
+            <svg viewBox="0 0 24 24" fill="none">
               <path
                 d="M5 4h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5V4Z"
                 stroke="currentColor"
                 stroke-width="1.7"
               />
-
               <path
                 d="m13 12 6-4v8l-6-4Z"
                 stroke="currentColor"
@@ -367,36 +232,19 @@
             </svg>
           </span>
 
-
           <div class="profile-stat-card__content">
-
-            <span>
-              Giriş sayı
-            </span>
-
-            <strong id="profile-attendance-count">
-              0
-            </strong>
-
-            <small>
-              Son qeydlər
-            </small>
-
+            <span>Giriş sayı</span>
+            <strong id="profile-attendance-count">0</strong>
+            <small>Son qeydlər</small>
           </div>
-
         </article>
 
-
         <article class="profile-stat-card">
-
           <span
             class="profile-stat-card__icon"
             aria-hidden="true"
           >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-            >
+            <svg viewBox="0 0 24 24" fill="none">
               <circle
                 cx="12"
                 cy="12"
@@ -404,7 +252,6 @@
                 stroke="currentColor"
                 stroke-width="1.7"
               />
-
               <path
                 d="M12 7.5V12l3 2"
                 stroke="currentColor"
@@ -415,187 +262,102 @@
             </svg>
           </span>
 
-
           <div class="profile-stat-card__content">
-
-            <span>
-              Son giriş
-            </span>
-
-            <strong id="profile-last-attendance-date">
-              —
-            </strong>
-
-            <small id="profile-last-attendance-time">
-              —
-            </small>
-
+            <span>Son giriş</span>
+            <strong id="profile-last-attendance-date">—</strong>
+            <small id="profile-last-attendance-time">—</small>
           </div>
-
         </article>
-
       </section>
 
-
-      <!-- ====================================================
-           MAIN GRID
-           ==================================================== -->
-
       <div class="profile-layout">
-
-
-        <!-- ==================================================
-             LEFT COLUMN
-             ================================================== -->
-
         <div class="profile-layout__main">
-
-
-          <!-- ================================================
-               PERSONAL INFORMATION
-               ================================================ -->
-
-          <section class="profile-card">
-
+          <section
+            class="profile-card"
+            aria-labelledby="profile-details-title"
+          >
             <div class="profile-card__header">
-
               <div>
-
                 <span class="section-eyebrow">
                   Profil məlumatları
                 </span>
-
-                <h2 class="profile-card__title">
+                <h2
+                  id="profile-details-title"
+                  class="profile-card__title"
+                >
                   Şəxsi məlumatlar
                 </h2>
-
               </div>
-
-
-              <button
-                class="ui-button ui-button--glass"
-                type="button"
-                onclick="document.getElementById('profile-edit-button')?.click()"
-              >
-                <span class="ui-button__label">
-                  Redaktə et
-                </span>
-              </button>
-
             </div>
 
-
             <div class="profile-detail-grid">
-
-
               <article class="profile-detail-item">
-
                 <span class="profile-detail-item__label">
                   Ad və soyad
                 </span>
-
-                <strong id="profile-full-name">
-                  —
-                </strong>
-
+                <strong id="profile-full-name">—</strong>
               </article>
 
-
               <article class="profile-detail-item">
-
                 <span class="profile-detail-item__label">
                   E-poçt
                 </span>
-
-                <strong id="profile-email-detail">
-                  —
-                </strong>
-
+                <strong id="profile-email-detail">—</strong>
               </article>
 
-
               <article class="profile-detail-item">
-
                 <span class="profile-detail-item__label">
                   Telefon
                 </span>
-
-                <strong id="profile-phone">
-                  —
-                </strong>
-
+                <strong id="profile-phone">—</strong>
               </article>
 
-
               <article class="profile-detail-item">
-
                 <span class="profile-detail-item__label">
                   Doğum tarixi
                 </span>
-
-                <strong id="profile-birth-date">
-                  —
-                </strong>
-
+                <strong id="profile-birth-date">—</strong>
               </article>
 
-
-              <article class="profile-detail-item profile-detail-item--wide">
-
+              <article
+                class="profile-detail-item profile-detail-item--wide"
+              >
                 <span class="profile-detail-item__label">
                   Ünvan
                 </span>
-
-                <strong id="profile-address">
-                  —
-                </strong>
-
+                <strong id="profile-address">—</strong>
               </article>
-
             </div>
-
           </section>
 
-
-          <!-- ================================================
-               MEMBERSHIP CARD
-               ================================================ -->
-
-          <section class="profile-card">
-
+          <section
+            class="profile-card"
+            aria-labelledby="membership-title"
+          >
             <div class="profile-card__header">
-
               <div>
-
                 <span class="section-eyebrow">
                   Üzvlük
                 </span>
-
-                <h2 class="profile-card__title">
+                <h2
+                  id="membership-title"
+                  class="profile-card__title"
+                >
                   Cari plan
                 </h2>
-
               </div>
-
             </div>
-
-
-            <!-- No membership -->
 
             <div
               id="profile-membership-empty"
               class="ui-empty-state is-hidden"
               hidden
             >
-
               <span
                 class="ui-empty-state__icon"
                 aria-hidden="true"
               >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
+                <svg viewBox="0 0 24 24" fill="none">
                   <rect
                     x="4"
                     y="5"
@@ -605,7 +367,6 @@
                     stroke="currentColor"
                     stroke-width="1.7"
                   />
-
                   <path
                     d="M8 9h8M8 13h5"
                     stroke="currentColor"
@@ -614,42 +375,30 @@
                   />
                 </svg>
               </span>
-
-              <strong>
-                Aktiv üzvlük yoxdur
-              </strong>
-
+              <strong>Aktiv üzvlük yoxdur</strong>
               <span>
                 Üzvlük yaradıldıqda məlumat burada görünəcək.
               </span>
-
             </div>
-
-
-            <!-- Membership -->
 
             <article
               id="profile-membership-card"
               class="membership-card"
             >
-
-              <div class="membership-card__glow" aria-hidden="true"></div>
-
+              <div
+                class="membership-card__glow"
+                aria-hidden="true"
+              ></div>
 
               <div class="membership-card__header">
-
                 <div>
-
                   <span class="membership-card__brand">
                     SKy Fit
                   </span>
-
                   <strong id="membership-card-plan">
                     Üzvlük
                   </strong>
-
                 </div>
-
 
                 <span
                   id="membership-card-status"
@@ -657,139 +406,88 @@
                 >
                   —
                 </span>
-
               </div>
-
 
               <div class="membership-card__stats">
-
                 <div>
-
-                  <span>
-                    Başlanğıc
-                  </span>
-
-                  <strong id="membership-card-start">
-                    —
-                  </strong>
-
+                  <span>Başlanğıc</span>
+                  <strong id="membership-card-start">—</strong>
                 </div>
 
-
                 <div>
-
-                  <span>
-                    Bitmə
-                  </span>
-
-                  <strong id="membership-card-end">
-                    —
-                  </strong>
-
+                  <span>Bitmə</span>
+                  <strong id="membership-card-end">—</strong>
                 </div>
 
-
                 <div>
-
-                  <span>
-                    Qalan
-                  </span>
-
-                  <strong id="membership-card-days-left">
-                    —
-                  </strong>
-
+                  <span>Qalan</span>
+                  <strong id="membership-card-days-left">—</strong>
                 </div>
 
-
                 <div>
-
-                  <span>
-                    Məbləğ
-                  </span>
-
-                  <strong id="membership-card-price">
-                    —
-                  </strong>
-
+                  <span>Məbləğ</span>
+                  <strong id="membership-card-price">—</strong>
                 </div>
-
               </div>
 
-
-              <div
-                class="membership-card__progress"
-                aria-hidden="true"
-              >
-
+              <div class="membership-card__progress">
                 <span
                   id="membership-card-progress"
-                  class="membership-card__progress-value"
-                  style="width: 0%"
+                  class="membership-card__progress-value membership-progress--0"
+                  role="progressbar"
+                  aria-label="Üzvlük müddətinin istifadəsi"
+                  aria-valuemin="0"
+                  aria-valuemax="100"
+                  aria-valuenow="0"
+                  data-progress="0"
                 ></span>
-
               </div>
-
             </article>
-
           </section>
 
-
-          <!-- =================================================
-               ATTENDANCE START
-               Davamı Hissə 2/2-də.
-               ================================================= -->
-
-          <section class="profile-card">
-
+          <section
+            class="profile-card"
+            aria-labelledby="attendance-title"
+          >
             <div class="profile-card__header">
-
               <div>
-
                 <span class="section-eyebrow">
                   Aktivlik
                 </span>
-
-                <h2 class="profile-card__title">
+                <h2
+                  id="attendance-title"
+                  class="profile-card__title"
+                >
                   Giriş tarixçəsi
                 </h2>
-
               </div>
-
 
               <span class="ui-badge ui-badge--neutral">
                 Son girişlər
               </span>
-
             </div>
-
 
             <div
               id="profile-attendance-list"
               class="profile-history-list"
+              aria-live="polite"
             ></div>
-
 
             <div
               id="profile-attendance-empty"
               class="ui-empty-state is-hidden"
               hidden
             >
-
               <span
                 class="ui-empty-state__icon"
                 aria-hidden="true"
               >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
+                <svg viewBox="0 0 24 24" fill="none">
                   <path
                     d="M5 4h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5V4Z"
                     stroke="currentColor"
                     stroke-width="1.7"
                   />
-
                   <path
                     d="m13 12 6-4v8l-6-4Z"
                     stroke="currentColor"
@@ -799,22 +497,13 @@
                 </svg>
               </span>
 
-              <strong>
-                Giriş qeydi yoxdur
-              </strong>
-
+              <strong>Giriş qeydi yoxdur</strong>
               <span>
                 Zala girişlər burada tarixçə şəklində görünəcək.
               </span>
-
             </div>
 
-
-            <!-- ================================================= -->
- 
-
-              <div class="section-more">
-
+            <div class="section-more">
               <button
                 id="attendance-show-all-button"
                 class="ui-button ui-button--glass is-hidden"
@@ -825,56 +514,41 @@
                   Hamısını göstər
                 </span>
               </button>
-
             </div>
-
           </section>
-
         </div>
 
-
-        <!-- ==================================================
-             RIGHT COLUMN
-             ================================================== -->
-
-        <aside class="profile-layout__side">
-
-
-          <!-- ================================================
-               QUICK ACTIONS
-               ================================================ -->
-
-          <section class="profile-side-card">
-
+        <aside
+          class="profile-layout__side"
+          aria-label="Profil əməliyyatları"
+        >
+          <section
+            class="profile-side-card"
+            aria-labelledby="profile-actions-title"
+          >
             <div class="profile-side-card__header">
-
               <span class="section-eyebrow">
                 Hesab
               </span>
-
-              <h2 class="profile-side-card__title">
+              <h2
+                id="profile-actions-title"
+                class="profile-side-card__title"
+              >
                 Sürətli əməliyyatlar
               </h2>
-
             </div>
 
-
             <div class="profile-action-list">
-
               <button
                 id="profile-change-password-button"
                 class="profile-action"
                 type="button"
               >
-
                 <span
                   class="profile-action__icon"
                   aria-hidden="true"
                 >
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                  >
+                  <svg viewBox="0 0 24 24" fill="none">
                     <rect
                       x="5"
                       y="10"
@@ -884,14 +558,12 @@
                       stroke="currentColor"
                       stroke-width="1.7"
                     />
-
                     <path
                       d="M8.5 10V7.5a3.5 3.5 0 0 1 7 0V10"
                       stroke="currentColor"
                       stroke-width="1.7"
                       stroke-linecap="round"
                     />
-
                     <circle
                       cx="12"
                       cy="15"
@@ -901,19 +573,12 @@
                   </svg>
                 </span>
 
-
                 <span class="profile-action__content">
-
-                  <strong>
-                    Şifrəni dəyiş
-                  </strong>
-
+                  <strong>Şifrəni dəyiş</strong>
                   <small>
                     E-poçt ilə təhlükəsiz yeniləmə
                   </small>
-
                 </span>
-
 
                 <span
                   class="profile-action__arrow"
@@ -921,24 +586,18 @@
                 >
                   ›
                 </span>
-
               </button>
-
 
               <button
                 id="profile-theme-button"
                 class="profile-action"
                 type="button"
               >
-
                 <span
                   class="profile-action__icon"
                   aria-hidden="true"
                 >
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                  >
+                  <svg viewBox="0 0 24 24" fill="none">
                     <path
                       d="M20 15.2A8 8 0 0 1 8.8 4 8 8 0 1 0 20 15.2Z"
                       stroke="currentColor"
@@ -948,19 +607,12 @@
                   </svg>
                 </span>
 
-
                 <span class="profile-action__content">
-
-                  <strong>
-                    Görünüş
-                  </strong>
-
+                  <strong>Görünüş</strong>
                   <small id="profile-theme-label">
                     Sistem rejimi
                   </small>
-
                 </span>
-
 
                 <span
                   class="profile-action__arrow"
@@ -968,52 +620,39 @@
                 >
                   ›
                 </span>
-
               </button>
-
             </div>
-
           </section>
 
-
-          <!-- ================================================
-               ACCOUNT STATUS
-               ================================================ -->
-
-          <section class="profile-side-card">
-
+          <section
+            class="profile-side-card"
+            aria-labelledby="security-title"
+          >
             <div class="profile-side-card__header">
-
               <span class="section-eyebrow">
                 Təhlükəsizlik
               </span>
-
-              <h2 class="profile-side-card__title">
+              <h2
+                id="security-title"
+                class="profile-side-card__title"
+              >
                 Hesab məlumatı
               </h2>
-
             </div>
 
-
             <div class="profile-security-list">
-
               <article class="profile-security-item">
-
                 <span
                   class="profile-security-item__icon"
                   aria-hidden="true"
                 >
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                  >
+                  <svg viewBox="0 0 24 24" fill="none">
                     <path
                       d="M12 3.5 19 6v5c0 4.5-2.6 7.8-7 9.5C7.6 18.8 5 15.5 5 11V6l7-2.5Z"
                       stroke="currentColor"
                       stroke-width="1.7"
                       stroke-linejoin="round"
                     />
-
                     <path
                       d="m9 12 2 2 4-4"
                       stroke="currentColor"
@@ -1023,33 +662,20 @@
                     />
                   </svg>
                 </span>
-
-
                 <span>
-
-                  <strong>
-                    Supabase Auth
-                  </strong>
-
+                  <strong>Supabase Auth</strong>
                   <small>
                     Hesab təhlükəsiz sessiya ilə qorunur
                   </small>
-
                 </span>
-
               </article>
 
-
               <article class="profile-security-item">
-
                 <span
                   class="profile-security-item__icon"
                   aria-hidden="true"
                 >
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                  >
+                  <svg viewBox="0 0 24 24" fill="none">
                     <circle
                       cx="12"
                       cy="12"
@@ -1057,7 +683,6 @@
                       stroke="currentColor"
                       stroke-width="1.7"
                     />
-
                     <path
                       d="M12 8v4l2.8 1.8"
                       stroke="currentColor"
@@ -1066,139 +691,82 @@
                     />
                   </svg>
                 </span>
-
-
                 <span>
-
-                  <strong>
-                    Giriş tarixçəsi
-                  </strong>
-
+                  <strong>Giriş tarixçəsi</strong>
                   <small>
                     Zala girişlər profilində saxlanılır
                   </small>
-
                 </span>
-
               </article>
-
             </div>
-
           </section>
 
-
-          <!-- ================================================
-               LOGOUT
-               ================================================ -->
-
-          <section class="profile-side-card profile-side-card--danger">
-
+          <section
+            class="profile-side-card profile-side-card--danger"
+            aria-labelledby="logout-title"
+          >
             <div class="profile-side-card__header">
-
               <span class="section-eyebrow">
                 Sessiya
               </span>
-
-              <h2 class="profile-side-card__title">
+              <h2
+                id="logout-title"
+                class="profile-side-card__title"
+              >
                 Hesabdan çıxış
               </h2>
-
             </div>
-
 
             <p class="profile-side-card__description">
               Bu cihazdakı cari SKy Fit sessiyasını bağla.
             </p>
-
 
             <button
               id="profile-logout-button"
               class="ui-button ui-button--danger ui-button--full"
               type="button"
             >
-
               <span class="ui-button__label">
                 Çıxış et
               </span>
-
             </button>
-
           </section>
 
-
-          <!-- ================================================
-               DEVELOPER CREDIT
-               ================================================ -->
-
           <section class="profile-side-card profile-developer">
-
             <span class="profile-developer__label">
               Senior Full Stack Developer
             </span>
-
             <strong class="profile-developer__name">
               Qərib Səfərli
             </strong>
-
             <span class="profile-developer__project">
               SKy Fit Pro
             </span>
-
           </section>
-
         </aside>
-
       </div>
-
     </div>
-
   </main>
 
-
-  <!-- ========================================================
-       SHARED ROOTS
-       ======================================================== -->
-
   <div id="app-footer-root"></div>
-
   <div id="app-bottom-nav-root"></div>
-
   <div id="app-modal-root"></div>
-
   <div id="app-toast-root"></div>
-
   <div id="app-loader-root"></div>
 
-
-  <!-- ========================================================
-       NOSCRIPT
-       ======================================================== -->
-
   <noscript>
-
     <div class="noscript-message">
-
-      <strong>
-        JavaScript aktiv deyil
-      </strong>
-
+      <strong>JavaScript aktiv deyil</strong>
       <span>
-        Profil məlumatlarının işləməsi üçün JavaScript aktiv olmalıdır.
+        Profil məlumatlarının işləməsi üçün
+        JavaScript aktiv olmalıdır.
       </span>
-
     </div>
-
   </noscript>
-
-
-  <!-- ========================================================
-       PROFILE MODULE
-       ======================================================== -->
 
   <script
     type="module"
     src="./js/profile.js"
   ></script>
-
 </body>
 </html>

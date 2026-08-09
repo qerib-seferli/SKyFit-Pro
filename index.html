@@ -1,185 +1,99 @@
 <!DOCTYPE html>
-
-<html
-  lang="az"
-  data-theme="dark"
-  data-theme-source="system"
->
+<html lang="az" data-theme="dark" data-theme-source="system">
 <head>
-
-  <!-- ========================================================
-       SKY FIT PRO
-       Home Page
-       File: index.html
-       PART 1 / 2
-       ======================================================== -->
-
   <meta charset="UTF-8">
-
   <meta
     name="viewport"
     content="width=device-width, initial-scale=1, viewport-fit=cover"
   >
-
-  <meta
-    name="theme-color"
-    content="#090b10"
-  >
-
-  <meta
-    name="color-scheme"
-    content="dark light"
-  >
-
+  <meta name="theme-color" content="#090b10">
+  <meta name="color-scheme" content="dark light">
   <meta
     name="description"
     content="SKy Fit Pro — fitness, məşq, üzvlük və məhsullar üçün premium fitness platforması."
   >
-
-
-  <!-- ========================================================
-       PWA
-       ======================================================== -->
-
-  <link
-    rel="manifest"
-    href="./manifest.json"
+  <meta
+    name="author"
+    content="Qərib Səfərli — Senior Full Stack Developer"
   >
 
+  <link rel="manifest" href="./manifest.json">
   <link
     rel="icon"
     type="image/png"
     href="./assets/icons/favicon.png"
   >
-
   <link
     rel="apple-touch-icon"
     href="./assets/icons/apple-touch-icon.png"
   >
+  <link rel="stylesheet" href="./css/app.css">
 
-
-  <!-- ========================================================
-       CSS
-       ======================================================== -->
-
-  <link
-    rel="stylesheet"
-    href="./css/app.css"
-  >
-
-
-  <title>
-    SKy Fit Pro
-  </title>
-
+  <title>SKy Fit Pro</title>
 </head>
 
-
 <body data-page="home">
-
-
-  <!-- ========================================================
-       SHARED LAYOUT ROOTS
-
-       layout.js bunları dərhal hydrate edir.
-       Root-ları HTML-də əvvəlcədən saxlayırıq ki,
-       F5 zamanı layout ölçüləri daha sabit qalsın.
-       ======================================================== -->
-
   <div id="app-header-root"></div>
-
   <div id="app-drawer-root"></div>
 
-
-  <!-- ========================================================
-       APPLICATION
-       ======================================================== -->
-
-  <main
-    id="app-main"
-    class="app-main home-page"
-  >
-
-
-    <!-- ======================================================
-         HERO
-         ====================================================== -->
-
+  <main id="app-main" class="app-main home-page">
     <section
       id="home"
       class="home-hero"
       aria-labelledby="home-hero-title"
     >
+      <div
+        class="home-hero__background"
+        aria-hidden="true"
+      >
+        <div class="home-hero__slides">
+          <img
+            class="home-hero__slide home-hero__slide--1"
+            src="./assets/foto/hero-main-1.png"
+            alt=""
+            decoding="async"
+            fetchpriority="high"
+          >
+          <img
+            class="home-hero__slide home-hero__slide--2"
+            src="./assets/foto/hero-main-2.png"
+            alt=""
+            loading="eager"
+            decoding="async"
+          >
+          <img
+            class="home-hero__slide home-hero__slide--3"
+            src="./assets/foto/hero-main-3.png"
+            alt=""
+            loading="eager"
+            decoding="async"
+          >
+        </div>
 
-<div
-  class="home-hero__background"
-  aria-hidden="true"
->
-
-  <div class="home-hero__slides">
-
-    <img
-      class="home-hero__slide home-hero__slide--1"
-      src="./assets/foto/hero-main-1.png"
-      alt=""
-      decoding="async"
-      fetchpriority="high"
-    >
-
-    <img
-      class="home-hero__slide home-hero__slide--2"
-      src="./assets/foto/hero-main-2.png"
-      alt=""
-      loading="eager"
-      decoding="async"
-    >
-
-    <img
-      class="home-hero__slide home-hero__slide--3"
-      src="./assets/foto/hero-main-3.png"
-      alt=""
-      loading="eager"
-      decoding="async"
-    >
-
-  </div>
-
-  <div class="home-hero__scrim"></div>
-
-  <div class="home-hero__noise"></div>
-
-  <div class="home-hero__accent"></div>
-
-</div>
-
+        <div class="home-hero__scrim"></div>
+        <div class="home-hero__noise"></div>
+        <div class="home-hero__accent"></div>
+      </div>
 
       <div class="page-shell home-hero__inner">
-
         <div class="home-hero__content">
-
           <span class="home-hero__eyebrow">
             SKy Fit Pro
           </span>
-
 
           <h1
             id="home-hero-title"
             class="home-hero__title"
           >
-            Gücünü
-            <span>yenidən qur.</span>
+            Gücünü <span>yenidən qur.</span>
           </h1>
 
-
           <p class="home-hero__description">
-            Peşəkar fitness mühiti, məşqçilər,
-            üzvlük və gündəlik məşq ehtiyacları
-            bir platformada.
+            Peşəkar fitness mühiti, məşqçilər, üzvlük və
+            gündəlik məşq ehtiyacları bir platformada.
           </p>
 
-
           <div class="home-hero__actions">
-
             <a
               href="#trainers"
               class="ui-button ui-button--primary"
@@ -189,7 +103,6 @@
               </span>
             </a>
 
-
             <a
               href="#products"
               class="ui-button ui-button--glass"
@@ -198,33 +111,19 @@
                 Məhsullar
               </span>
             </a>
-
           </div>
-
         </div>
-
-
-        <!-- ==================================================
-             HERO FEATURE CARDS
-             Qiymətləri burada reklam etmirik.
-             30 AZN / 3 AZN göstərilmir.
-             ================================================== -->
 
         <div
           class="home-hero__features"
           aria-label="SKy Fit imkanları"
         >
-
           <article class="hero-feature-card">
-
             <span
               class="hero-feature-card__icon"
               aria-hidden="true"
             >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-              >
+              <svg viewBox="0 0 24 24" fill="none">
                 <path
                   d="M6 9v6M18 9v6M3.5 10.5v3M20.5 10.5v3M6 12h12"
                   stroke="currentColor"
@@ -233,32 +132,18 @@
                 />
               </svg>
             </span>
-
             <span class="hero-feature-card__content">
-
-              <strong>
-                Professional Gym
-              </strong>
-
-              <small>
-                Güc və performans
-              </small>
-
+              <strong>Professional Gym</strong>
+              <small>Güc və performans</small>
             </span>
-
           </article>
 
-
           <article class="hero-feature-card">
-
             <span
               class="hero-feature-card__icon"
               aria-hidden="true"
             >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-              >
+              <svg viewBox="0 0 24 24" fill="none">
                 <circle
                   cx="12"
                   cy="8"
@@ -266,7 +151,6 @@
                   stroke="currentColor"
                   stroke-width="1.7"
                 />
-
                 <path
                   d="M5.5 20c.6-4 3-6 6.5-6s5.9 2 6.5 6"
                   stroke="currentColor"
@@ -275,39 +159,24 @@
                 />
               </svg>
             </span>
-
             <span class="hero-feature-card__content">
-
-              <strong>
-                Məşqçilər
-              </strong>
-
-              <small>
-                Peşəkar dəstək
-              </small>
-
+              <strong>Məşqçilər</strong>
+              <small>Peşəkar dəstək</small>
             </span>
-
           </article>
 
-
           <article class="hero-feature-card">
-
             <span
               class="hero-feature-card__icon"
               aria-hidden="true"
             >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-              >
+              <svg viewBox="0 0 24 24" fill="none">
                 <path
                   d="M5 8.5h14l-1.1 11H6.1L5 8.5Z"
                   stroke="currentColor"
                   stroke-width="1.7"
                   stroke-linejoin="round"
                 />
-
                 <path
                   d="M9 9V6.8a3 3 0 1 1 6 0V9"
                   stroke="currentColor"
@@ -316,504 +185,146 @@
                 />
               </svg>
             </span>
-
             <span class="hero-feature-card__content">
-
-              <strong>
-                SKy Fit Shop
-              </strong>
-
-              <small>
-                Fitness məhsulları
-              </small>
-
+              <strong>SKy Fit Shop</strong>
+              <small>Fitness məhsulları</small>
             </span>
-
           </article>
-
         </div>
-
       </div>
-
     </section>
 
-
+    <section
+      class="home-section home-experience"
+      aria-labelledby="experience-title"
+    >
       <div class="page-shell">
-
-        <div class="member-overview-card">
-
-
-          <!-- ================================================
-               Greeting
-               ================================================ -->
-
-          <div class="member-overview-card__header">
-
-            <div>
-
-              <span class="section-eyebrow">
-                Şəxsi hesab
-              </span>
-
-              <h2 class="section-title section-title--compact">
-                Salam,
-                <span id="member-greeting">
-                  SKy Fit üzvü
-                </span>
-              </h2>
-
-            </div>
-
-
-            <a
-              href="./profile.html"
-              class="ui-button ui-button--glass"
-            >
-              <span class="ui-button__label">
-                Profilim
-              </span>
-            </a>
-
-          </div>
-
-
-          <!-- ================================================
-               Overview Grid
-               ================================================ -->
-
-          <div class="member-overview-grid">
-
-
-            <!-- Membership -->
-
-            <article class="member-overview-item">
-
-              <span
-                class="member-overview-item__icon"
-                aria-hidden="true"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
-                  <rect
-                    x="4"
-                    y="5"
-                    width="16"
-                    height="14"
-                    rx="3"
-                    stroke="currentColor"
-                    stroke-width="1.7"
-                  />
-
-                  <path
-                    d="M8 9h8M8 13h5"
-                    stroke="currentColor"
-                    stroke-width="1.7"
-                    stroke-linecap="round"
-                  />
-                </svg>
-              </span>
-
-
-              <div class="member-overview-item__content">
-
-                <span class="member-overview-item__label">
-                  Üzvlük
-                </span>
-
-
-                <strong id="membership-plan-name">
-                  —
-                </strong>
-
-
-                <span
-                  id="membership-status-badge"
-                  class="ui-badge ui-badge--neutral"
-                >
-                  —
-                </span>
-
-              </div>
-
-            </article>
-
-
-            <!-- Expiry -->
-
-            <article class="member-overview-item">
-
-              <span
-                class="member-overview-item__icon"
-                aria-hidden="true"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
-                  <rect
-                    x="4"
-                    y="5.5"
-                    width="16"
-                    height="14"
-                    rx="2.5"
-                    stroke="currentColor"
-                    stroke-width="1.7"
-                  />
-
-                  <path
-                    d="M8 3.5v4M16 3.5v4M4 9.5h16"
-                    stroke="currentColor"
-                    stroke-width="1.7"
-                    stroke-linecap="round"
-                  />
-                </svg>
-              </span>
-
-
-              <div class="member-overview-item__content">
-
-                <span class="member-overview-item__label">
-                  Bitmə tarixi
-                </span>
-
-
-                <strong id="membership-expiry">
-                  —
-                </strong>
-
-
-                <span
-                  id="membership-days-left"
-                  class="member-overview-item__meta"
-                >
-                  —
-                </span>
-
-              </div>
-
-            </article>
-
-
-            <!-- Attendance count -->
-
-            <article class="member-overview-item">
-
-              <span
-                class="member-overview-item__icon"
-                aria-hidden="true"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
-                  <path
-                    d="M5 4h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5V4Z"
-                    stroke="currentColor"
-                    stroke-width="1.7"
-                  />
-
-                  <path
-                    d="m13 12 6-4v8l-6-4Z"
-                    stroke="currentColor"
-                    stroke-width="1.7"
-                    stroke-linejoin="round"
-                  />
-                </svg>
-              </span>
-
-
-              <div class="member-overview-item__content">
-
-                <span class="member-overview-item__label">
-                  Giriş sayı
-                </span>
-
-
-                <strong id="attendance-count">
-                  0
-                </strong>
-
-
-                <span class="member-overview-item__meta">
-                  Son qeydlər
-                </span>
-
-              </div>
-
-            </article>
-
-
-            <!-- Latest attendance -->
-
-            <article class="member-overview-item">
-
-              <span
-                class="member-overview-item__icon"
-                aria-hidden="true"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="8.5"
-                    stroke="currentColor"
-                    stroke-width="1.7"
-                  />
-
-                  <path
-                    d="M12 7.5V12l3 2"
-                    stroke="currentColor"
-                    stroke-width="1.7"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
-              </span>
-
-
-              <div class="member-overview-item__content">
-
-                <span class="member-overview-item__label">
-                  Son giriş
-                </span>
-
-
-                <strong id="latest-attendance-date">
-                  —
-                </strong>
-
-
-                <span class="member-overview-item__meta">
-
-                  <span id="latest-attendance-time">
-                    —
-                  </span>
-
-                  <span aria-hidden="true">
-                    ·
-                  </span>
-
-                  <span id="latest-attendance-type">
-                    —
-                  </span>
-
-                </span>
-
-              </div>
-
-            </article>
-
-          </div>
-
-        </div>
-
-      </div>
-
-    </section>
-
-
-    <!-- ======================================================
-         EXPERIENCE / GYM INTRO
-         Sonradan zalın real fotoları ilə doldurulacaq.
-         ====================================================== -->
-
-    <section class="home-section home-experience">
-
-      <div class="page-shell">
-
-
         <div class="section-heading">
-
           <div>
-
             <span class="section-eyebrow">
               SKy Fit atmosferi
             </span>
-
-            <h2 class="section-title">
+            <h2
+              id="experience-title"
+              class="section-title"
+            >
               Məşq üçün qurulmuş mühit.
             </h2>
-
           </div>
-
 
           <p class="section-description">
             Güc, fokus və davamlılıq üçün rahat və
             peşəkar fitness mühiti.
           </p>
-
         </div>
 
+        <div class="gym-showcase">
+          <figure
+            class="gym-showcase__item gym-showcase__item--primary"
+          >
+            <img
+              class="gym-showcase__image"
+              src="./assets/foto/gym-section-1.png"
+              alt="SKy Fit zalının ümumi görünüşü"
+              loading="lazy"
+              decoding="async"
+              data-gym-image
+            >
+            <figcaption class="gym-showcase__caption">
+              <span class="gym-showcase__eyebrow">
+                SKy Fit
+              </span>
+              <strong>
+                Güc üçün yaradılmış məkan
+              </strong>
+              <small>
+                Professional məşq atmosferi
+              </small>
+            </figcaption>
+          </figure>
 
-        <!--
-          Zal şəkillərini göndərəndə bu placeholder-ları
-          img elementləri ilə əvəz edəcəyik.
-        -->
+          <figure class="gym-showcase__item">
+            <img
+              class="gym-showcase__image"
+              src="./assets/foto/gym-section-2.png"
+              alt="SKy Fit məşq zonası"
+              loading="lazy"
+              decoding="async"
+              data-gym-image
+            >
+            <figcaption class="gym-showcase__caption">
+              <span class="gym-showcase__eyebrow">
+                Training
+              </span>
+              <strong>Məşq zonası</strong>
+              <small>Fokus və performans</small>
+            </figcaption>
+          </figure>
 
-<div class="gym-showcase">
-
-  <figure class="gym-showcase__item gym-showcase__item--primary">
-
-    <img
-      class="gym-showcase__image"
-      src="./assets/foto/gym-section-1.png"
-      alt="SKy Fit zalının ümumi görünüşü"
-      loading="lazy"
-      decoding="async"
-    >
-
-    <figcaption class="gym-showcase__caption">
-
-      <span class="gym-showcase__eyebrow">
-        SKy Fit
-      </span>
-
-      <strong>
-        Güc üçün yaradılmış məkan
-      </strong>
-
-      <small>
-        Professional məşq atmosferi
-      </small>
-
-    </figcaption>
-
-  </figure>
-
-
-  <figure class="gym-showcase__item">
-
-    <img
-      class="gym-showcase__image"
-      src="./assets/foto/gym-section-2.png"
-      alt="SKy Fit məşq zonası"
-      loading="lazy"
-      decoding="async"
-    >
-
-    <figcaption class="gym-showcase__caption">
-
-      <span class="gym-showcase__eyebrow">
-        Training
-      </span>
-
-      <strong>
-        Məşq zonası
-      </strong>
-
-      <small>
-        Fokus və performans
-      </small>
-
-    </figcaption>
-
-  </figure>
-
-
-  <figure class="gym-showcase__item">
-
-    <img
-      class="gym-showcase__image"
-      src="./assets/foto/gym-section-3.png"
-      alt="SKy Fit güc avadanlıqları"
-      loading="lazy"
-      decoding="async"
-    >
-
-    <figcaption class="gym-showcase__caption">
-
-      <span class="gym-showcase__eyebrow">
-        Strength
-      </span>
-
-      <strong>
-        Güc avadanlıqları
-      </strong>
-
-      <small>
-        Real məşq üçün real avadanlıq
-      </small>
-
-    </figcaption>
-
-  </figure>
-
-</div>
-
+          <figure class="gym-showcase__item">
+            <img
+              class="gym-showcase__image"
+              src="./assets/foto/gym-section-3.png"
+              alt="SKy Fit güc avadanlıqları"
+              loading="lazy"
+              decoding="async"
+              data-gym-image
+            >
+            <figcaption class="gym-showcase__caption">
+              <span class="gym-showcase__eyebrow">
+                Strength
+              </span>
+              <strong>Güc avadanlıqları</strong>
+              <small>
+                Real məşq üçün real avadanlıq
+              </small>
+            </figcaption>
+          </figure>
+        </div>
       </div>
-
     </section>
-
-
-    <!-- ======================================================
-         TRAINERS
-         app.js → trainers.full_name
-         ====================================================== -->
 
     <section
       id="trainers"
       class="home-section home-trainers"
+      aria-labelledby="trainers-title"
     >
-
       <div class="page-shell">
-
-
         <div class="section-heading">
-
           <div>
-
             <span class="section-eyebrow">
               Komandamız
             </span>
-
-            <h2 class="section-title">
+            <h2
+              id="trainers-title"
+              class="section-title"
+            >
               Məşqçilər
             </h2>
-
           </div>
-
 
           <p class="section-description">
             SKy Fit komandası ilə tanış ol.
           </p>
-
         </div>
-
-
-        <!-- ================================================
-             Trainer grid
-             ================================================ -->
 
         <div
           id="trainers-grid"
           class="trainers-grid"
           aria-live="polite"
+          aria-busy="false"
         ></div>
-
-
-        <!-- ================================================
-             Trainer empty
-             ================================================ -->
 
         <div
           id="trainers-empty-state"
           class="ui-empty-state is-hidden"
           hidden
         >
-
           <span
             class="ui-empty-state__icon"
             aria-hidden="true"
           >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-            >
+            <svg viewBox="0 0 24 24" fill="none">
               <circle
                 cx="12"
                 cy="8"
@@ -821,7 +332,6 @@
                 stroke="currentColor"
                 stroke-width="1.7"
               />
-
               <path
                 d="M5.5 20c.6-4 3-6 6.5-6s5.9 2 6.5 6"
                 stroke="currentColor"
@@ -831,20 +341,13 @@
             </svg>
           </span>
 
-
-          <strong>
-            Məşqçi əlavə edilməyib
-          </strong>
-
+          <strong>Məşqçi əlavə edilməyib</strong>
           <span>
             Aktiv məşqçilər burada görünəcək.
           </span>
-
         </div>
 
-
         <div class="section-more">
-
           <button
             id="trainers-show-all-button"
             class="ui-button ui-button--glass is-hidden"
@@ -855,69 +358,47 @@
               Hamısını göstər
             </span>
           </button>
-
         </div>
-
       </div>
-
     </section>
-
-
-    <!-- ======================================================
-         PRODUCTS SECTION START
-         Davamı Hissə 2/2-də olacaq.
-         ====================================================== -->
 
     <section
       id="products"
       class="home-section home-products"
+      aria-labelledby="products-title"
     >
-
       <div class="page-shell">
-
-
-        <div class="section-heading section-heading--products">
-
+        <div
+          class="section-heading section-heading--products"
+        >
           <div>
-
             <span class="section-eyebrow">
               SKy Fit Shop
             </span>
-
-            <h2 class="section-title">
+            <h2
+              id="products-title"
+              class="section-title"
+            >
               Məhsullar
             </h2>
-
           </div>
 
-
           <p class="section-description">
-            Məşqdən əvvəl, məşq zamanı və sonra ehtiyacın olan
-            məhsullar.
+            Məşqdən əvvəl, məşq zamanı və sonra
+            ehtiyacın olan məhsullar.
           </p>
-
         </div>
 
-
-        <!-- ==================================================
-             PRODUCT SEARCH
-             ================================================== -->
-
         <div class="product-toolbar">
-
           <label
             class="search-control"
             for="product-search-input"
           >
-
             <span
               class="search-control__icon"
               aria-hidden="true"
             >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-              >
+              <svg viewBox="0 0 24 24" fill="none">
                 <circle
                   cx="10.5"
                   cy="10.5"
@@ -925,7 +406,6 @@
                   stroke="currentColor"
                   stroke-width="1.8"
                 />
-
                 <path
                   d="m15 15 4.5 4.5"
                   stroke="currentColor"
@@ -935,16 +415,16 @@
               </svg>
             </span>
 
-
             <input
               id="product-search-input"
               class="search-control__input"
               type="search"
               inputmode="search"
               autocomplete="off"
+              spellcheck="false"
+              aria-label="Məhsul axtar"
               placeholder="Məhsul axtar..."
             >
-
 
             <button
               id="product-search-clear"
@@ -955,50 +435,32 @@
             >
               ×
             </button>
-
           </label>
-
         </div>
-
-
-        <!-- ==================================================
-
-          <!-- ==================================================
-             PRODUCT GRID
-             ================================================== -->
 
         <div
           id="products-grid"
           class="products-grid"
           aria-live="polite"
+          aria-busy="false"
         ></div>
-
-
-        <!-- ==================================================
-             NO PRODUCTS
-             ================================================== -->
 
         <div
           id="products-empty-state"
           class="ui-empty-state is-hidden"
           hidden
         >
-
           <span
             class="ui-empty-state__icon"
             aria-hidden="true"
           >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-            >
+            <svg viewBox="0 0 24 24" fill="none">
               <path
                 d="M5 8.5h14l-1.1 11H6.1L5 8.5Z"
                 stroke="currentColor"
                 stroke-width="1.7"
                 stroke-linejoin="round"
               />
-
               <path
                 d="M9 9V6.8a3 3 0 1 1 6 0V9"
                 stroke="currentColor"
@@ -1008,37 +470,23 @@
             </svg>
           </span>
 
-
-          <strong>
-            Məhsul yoxdur
-          </strong>
-
-
+          <strong>Məhsul yoxdur</strong>
           <span>
-            Aktiv və saytda görünən məhsullar burada göstəriləcək.
+            Aktiv və saytda görünən məhsullar
+            burada göstəriləcək.
           </span>
-
         </div>
-
-
-        <!-- ==================================================
-             SEARCH EMPTY
-             ================================================== -->
 
         <div
           id="products-search-empty-state"
           class="ui-empty-state is-hidden"
           hidden
         >
-
           <span
             class="ui-empty-state__icon"
             aria-hidden="true"
           >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-            >
+            <svg viewBox="0 0 24 24" fill="none">
               <circle
                 cx="10.5"
                 cy="10.5"
@@ -1046,7 +494,6 @@
                 stroke="currentColor"
                 stroke-width="1.8"
               />
-
               <path
                 d="m15 15 4.5 4.5"
                 stroke="currentColor"
@@ -1056,25 +503,13 @@
             </svg>
           </span>
 
-
-          <strong>
-            Məhsul tapılmadı
-          </strong>
-
-
+          <strong>Məhsul tapılmadı</strong>
           <span>
             Axtarış sözünü dəyişib yenidən yoxla.
           </span>
-
         </div>
 
-
-        <!-- ==================================================
-             SHOW ALL
-             ================================================== -->
-
         <div class="section-more">
-
           <button
             id="products-show-all-button"
             class="ui-button ui-button--glass is-hidden"
@@ -1085,50 +520,40 @@
               Hamısını göstər
             </span>
           </button>
-
         </div>
-
       </div>
-
     </section>
 
-
-    <!-- ======================================================
-         CTA / MEMBERSHIP
-         Qiymət göstərilmir.
-         ====================================================== -->
-
-    <section class="home-section home-cta-section">
-
+    <section
+      class="home-section home-cta-section"
+      aria-labelledby="home-cta-title"
+    >
       <div class="page-shell">
-
         <div class="home-cta">
-
-          <div class="home-cta__glow" aria-hidden="true"></div>
-
+          <div
+            class="home-cta__glow"
+            aria-hidden="true"
+          ></div>
 
           <div class="home-cta__content">
-
             <span class="section-eyebrow">
               SKy Fit üzvlüyü
             </span>
 
-
-            <h2 class="home-cta__title">
+            <h2
+              id="home-cta-title"
+              class="home-cta__title"
+            >
               Məşqini sistemli et.
             </h2>
 
-
             <p class="home-cta__description">
-              Üzvlük, giriş tarixçəsi və şəxsi məlumatlarını
-              bir hesabdan izləyə bilərsən.
+              Üzvlük, giriş tarixçəsi və şəxsi
+              məlumatlarını bir hesabdan izləyə bilərsən.
             </p>
-
           </div>
 
-
           <div class="home-cta__actions">
-
             <a
               href="./profile.html"
               class="ui-button ui-button--primary"
@@ -1138,7 +563,6 @@
               </span>
             </a>
 
-
             <a
               href="#trainers"
               class="ui-button ui-button--glass"
@@ -1147,84 +571,31 @@
                 Məşqçilər
               </span>
             </a>
-
           </div>
-
         </div>
-
       </div>
-
     </section>
-
   </main>
 
-
-  <!-- ========================================================
-       FOOTER
-
-       Footer məzmununu layout.js yaradır.
-       Root əvvəlcədən saxlanır.
-       ======================================================== -->
-
   <div id="app-footer-root"></div>
-
-
-  <!-- ========================================================
-       BOTTOM NAVIGATION
-
-       layout.js tərəfindən dərhal doldurulur.
-       ======================================================== -->
-
   <div id="app-bottom-nav-root"></div>
-
-
-  <!-- ========================================================
-       UI ROOTS
-
-       core.js ehtiyac olduqda bunları doldurur.
-       Əvvəlcədən saxlamaq DOM sıçramasını azaldır.
-       ======================================================== -->
-
   <div id="app-modal-root"></div>
-
   <div id="app-toast-root"></div>
-
   <div id="app-loader-root"></div>
 
-
-  <!-- ========================================================
-       NOSCRIPT
-       ======================================================== -->
-
   <noscript>
-
     <div class="noscript-message">
-
-      <strong>
-        JavaScript aktiv deyil
-      </strong>
-
+      <strong>JavaScript aktiv deyil</strong>
       <span>
-        SKy Fit Pro tətbiqinin işləməsi üçün JavaScript aktiv
-        olmalıdır.
+        SKy Fit Pro tətbiqinin işləməsi üçün
+        JavaScript aktiv olmalıdır.
       </span>
-
     </div>
-
   </noscript>
-
-
-  <!-- ========================================================
-       PAGE MODULE
-
-       layout.js ayrıca import edilmir.
-       app.js → layout.js → core.js zənciri özü qurulur.
-       ======================================================== -->
 
   <script
     type="module"
     src="./js/app.js"
   ></script>
-
 </body>
 </html>
