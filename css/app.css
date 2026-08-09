@@ -5214,23 +5214,16 @@ html[data-theme="light"]
    ================================================================ */
 
 /* ================================================================
-   SKY FIT PRO
-   HOME PAGE — STEP 3
-   Product Modal + Trainer Modal + Loader
+   SKY FIT PRO — HOME MODALS FINAL
+   Product + Trainer Public Frontend
 
    Senior Full Stack Developer: Qərib Səfərli
    ================================================================ */
 
 
 /* ================================================================
-   39. MODAL ROOT / BACKDROP
+   MODAL BACKDROP
    ================================================================ */
-
-#app-modal-root {
-  position: relative;
-  z-index: 7000;
-}
-
 
 .app-modal-backdrop {
   position: fixed;
@@ -5240,34 +5233,42 @@ html[data-theme="light"]
   display: grid;
   place-items: center;
 
-  padding: 18px;
+  padding: 20px;
 
   overflow-y: auto;
 
-  background:
-    rgba(2, 4, 7, 0.76);
+  background: rgba(2, 4, 7, 0.78);
 
-  backdrop-filter:
-    blur(9px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 
-  -webkit-backdrop-filter:
-    blur(9px);
+  animation: skyfitBackdropIn 180ms ease both;
+}
+
+
+@keyframes skyfitBackdropIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 
 /* ================================================================
-   40. MODAL WINDOW
+   MODAL WINDOW
    ================================================================ */
 
 .app-modal {
   width: min(
-    calc(100vw - 36px),
-    760px
+    calc(100vw - 40px),
+    780px
   );
 
-  max-height: min(
-    760px,
-    calc(100dvh - 36px)
+  max-height: calc(
+    100dvh - 40px
   );
 
   display: flex;
@@ -5275,25 +5276,46 @@ html[data-theme="light"]
 
   overflow: hidden;
 
-  border:
-    1px solid var(--border);
+  border: 1px solid
+    rgba(255, 255, 255, 0.10);
 
-  border-radius:
-    18px;
+  border-radius: 22px;
 
   background:
-    rgba(13, 17, 23, 0.985);
+    linear-gradient(
+      145deg,
+      rgba(16, 20, 27, 0.995),
+      rgba(10, 13, 18, 0.995)
+    );
 
   box-shadow:
-    0 30px 90px
-    rgba(0, 0, 0, 0.55);
+    0 35px 100px rgba(0, 0, 0, 0.58),
+    0 0 0 1px rgba(255, 220, 0, 0.025);
+
+  animation:
+    skyfitModalOpen
+    260ms
+    cubic-bezier(0.16, 1, 0.3, 1)
+    both;
 }
 
 
-html[data-theme="light"]
-.app-modal {
-  background:
-    rgba(255, 255, 255, 0.99);
+@keyframes skyfitModalOpen {
+  from {
+    opacity: 0;
+
+    transform:
+      translateY(18px)
+      scale(0.965);
+  }
+
+  to {
+    opacity: 1;
+
+    transform:
+      translateY(0)
+      scale(1);
+  }
 }
 
 
@@ -5302,20 +5324,24 @@ html[data-theme="light"]
    ================================================================ */
 
 .app-modal__header {
-  flex: 0 0 auto;
+  min-height: 66px;
 
-  min-height: 62px;
+  flex: 0 0 auto;
 
   display: flex;
   align-items: center;
   justify-content: space-between;
 
-  gap: 12px;
+  gap: 16px;
 
-  padding: 11px 13px;
+  padding: 13px 16px;
 
   border-bottom:
-    1px solid var(--border-soft);
+    1px solid
+    rgba(255, 255, 255, 0.065);
+
+  background:
+    rgba(255, 255, 255, 0.012);
 }
 
 
@@ -5324,13 +5350,12 @@ html[data-theme="light"]
 
   display: grid;
 
-  gap: 4px;
+  gap: 5px;
 }
 
 
 .app-modal__eyebrow {
-  color:
-    var(--yellow);
+  color: var(--yellow);
 
   font-family:
     var(--font-display);
@@ -5339,11 +5364,9 @@ html[data-theme="light"]
 
   font-weight: 600;
 
-  letter-spacing:
-    0.09em;
+  letter-spacing: 0.10em;
 
-  text-transform:
-    uppercase;
+  text-transform: uppercase;
 }
 
 
@@ -5352,34 +5375,36 @@ html[data-theme="light"]
 
   overflow: hidden;
 
-  color:
-    var(--text);
+  color: var(--text);
 
   font-family:
     var(--font-display);
 
-  font-size: 20px;
+  font-size: 21px;
 
   line-height: 1;
 
   font-weight: 600;
 
-  text-overflow:
-    ellipsis;
+  letter-spacing: -0.015em;
 
-  text-transform:
-    uppercase;
+  text-overflow: ellipsis;
 
-  white-space:
-    nowrap;
+  text-transform: uppercase;
+
+  white-space: nowrap;
 }
 
 
-.app-modal__close {
-  width: 38px;
-  height: 38px;
+/* ================================================================
+   CLOSE BUTTON
+   ================================================================ */
 
-  flex: 0 0 38px;
+.app-modal__close {
+  width: 40px;
+  height: 40px;
+
+  flex: 0 0 40px;
 
   display: grid;
   place-items: center;
@@ -5387,39 +5412,40 @@ html[data-theme="light"]
   padding: 0;
 
   border:
-    1px solid var(--border);
+    1px solid
+    rgba(255, 255, 255, 0.10);
 
-  border-radius:
-    10px;
+  border-radius: 12px;
 
-  color:
-    var(--text-muted);
+  color: var(--text-muted);
 
   background:
-    var(--surface-2);
+    rgba(255, 255, 255, 0.045);
 
-  cursor:
-    pointer;
+  cursor: pointer;
 
   transition:
-    150ms ease;
+    160ms ease;
 }
 
 
 .app-modal__close:hover {
-  color:
-    var(--danger);
+  color: #ffffff;
 
   border-color:
-    rgba(255, 95, 109, 0.4);
+    rgba(255, 220, 0, 0.45);
 
   background:
-    rgba(255, 95, 109, 0.08);
+    rgba(255, 220, 0, 0.08);
+
+  transform:
+    rotate(4deg)
+    scale(1.04);
 }
 
 
 /* ================================================================
-   MODAL BODY
+   BODY
    ================================================================ */
 
 .app-modal__body {
@@ -5430,34 +5456,35 @@ html[data-theme="light"]
   overflow-x: hidden;
   overflow-y: auto;
 
-  padding: 13px;
+  padding: 16px;
 }
 
 
 /* ================================================================
-   41. PRODUCT DETAIL MODAL
+   PRODUCT MODAL
    ================================================================ */
 
 .product-modal {
   display: grid;
 
   grid-template-columns:
-    minmax(240px, 0.85fr)
-    minmax(0, 1.15fr);
+    minmax(260px, 0.88fr)
+    minmax(0, 1.12fr);
 
-  align-items: start;
+  align-items: center;
 
-  gap: 16px;
+  gap: 22px;
 }
 
 
-/* PRODUCT IMAGE */
+/* ================================================================
+   PRODUCT IMAGE
+   ================================================================ */
 
 .product-modal__media {
   width: 100%;
 
-  aspect-ratio:
-    1 / 1;
+  aspect-ratio: 1 / 1;
 
   overflow: hidden;
 
@@ -5465,13 +5492,17 @@ html[data-theme="light"]
   place-items: center;
 
   border:
-    1px solid var(--border-soft);
+    1px solid
+    rgba(255, 255, 255, 0.08);
 
-  border-radius:
-    14px;
+  border-radius: 17px;
 
   background:
     #ffffff;
+
+  box-shadow:
+    0 16px 45px
+    rgba(0, 0, 0, 0.20);
 }
 
 
@@ -5479,41 +5510,28 @@ html[data-theme="light"]
   width: 100%;
   height: 100%;
 
-  padding: 14px;
+  padding: 15px;
 
-  object-fit:
-    contain;
+  object-fit: contain;
 
-  object-position:
-    center;
+  object-position: center;
 }
 
 
-.product-modal__fallback {
-  width: 100%;
-  height: 100%;
+/* ================================================================
+   REMOVE DUPLICATE PRODUCT TITLE
 
-  display: grid;
-  place-items: center;
+   Ad artıq modal header-də var.
+   ================================================================ */
 
-  color:
-    #9b8900;
-
-  background:
-    #f4f5f6;
-
-  font-family:
-    var(--font-display);
-
-  font-size:
-    38px;
-
-  font-weight:
-    700;
+.product-modal__name {
+  display: none;
 }
 
 
-/* PRODUCT CONTENT */
+/* ================================================================
+   PRODUCT CONTENT
+   ================================================================ */
 
 .product-modal__content {
   min-width: 0;
@@ -5521,105 +5539,235 @@ html[data-theme="light"]
   display: flex;
   flex-direction: column;
 
-  gap: 11px;
+  justify-content: center;
 
-  padding:
-    3px 0;
-}
-
-
-.product-modal__name {
-  margin: 0;
-
-  color:
-    var(--text);
-
-  font-family:
-    var(--font-display);
-
-  font-size:
-    clamp(
-      23px,
-      3vw,
-      32px
-    );
-
-  line-height:
-    1.04;
-
-  font-weight:
-    600;
-
-  text-transform:
-    uppercase;
+  gap: 16px;
 }
 
 
 .product-modal__description {
   margin: 0;
 
+  max-width: 430px;
+
   color:
     var(--text-muted);
 
-  font-size:
-    12px;
+  font-size: 13px;
 
-  line-height:
-    1.55;
+  line-height: 1.65;
 }
 
 
-/* PRICE */
+/* ================================================================
+   PRICE
+   ================================================================ */
 
 .product-modal__meta {
   display: flex;
 
-  align-items:
-    baseline;
+  align-items: flex-end;
 
-  gap: 8px;
+  gap: 9px;
+
+  width: fit-content;
 
   padding:
-    11px 0;
+    13px 0 2px;
 
-  border-top:
-    1px solid var(--border-soft);
-
-  border-bottom:
-    1px solid var(--border-soft);
+  border: 0;
 }
 
 
 .product-modal__price {
-  color:
-    var(--yellow);
+  color: var(--yellow);
 
   font-family:
     var(--font-number);
 
-  font-size:
-    27px;
+  font-size: clamp(
+    29px,
+    4vw,
+    39px
+  );
 
-  line-height:
-    1;
+  line-height: 0.9;
 
-  font-weight:
-    700;
+  font-weight: 700;
+
+  font-variant-numeric:
+    tabular-nums;
 }
 
 
 .product-modal__unit {
-  color:
-    var(--text-muted);
+  padding-bottom: 3px;
 
-  font-size:
-    11px;
+  color: var(--text-muted);
+
+  font-size: 11px;
+
+  font-weight: 500;
 }
 
 
-/* PRODUCT FACTS */
+/* ================================================================
+   PUBLIC FRONTEND:
+   ADMIN MƏLUMATLARINI GİZLƏT
+
+   Stok
+   Kateqoriya
+   SKU
+   ================================================================ */
 
 .product-modal__facts {
+  display: none !important;
+}
+
+
+/* ================================================================
+   TRAINER MODAL
+   ================================================================ */
+
+.trainer-modal {
+  display: grid;
+
+  grid-template-columns:
+    minmax(260px, 0.88fr)
+    minmax(0, 1.12fr);
+
+  align-items: center;
+
+  gap: 22px;
+}
+
+
+/* ================================================================
+   TRAINER IMAGE
+   ================================================================ */
+
+.trainer-modal__media {
+  width: 100%;
+
+  aspect-ratio: 1 / 1;
+
+  overflow: hidden;
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.08);
+
+  border-radius: 17px;
+
+  background: var(--surface-2);
+
+  box-shadow:
+    0 16px 45px
+    rgba(0, 0, 0, 0.22);
+}
+
+
+.trainer-modal__media img {
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+
+  object-position:
+    center 18%;
+}
+
+
+/* ================================================================
+   TRAINER DUPLICATE TITLE
+
+   Ad modal header-də var.
+   ================================================================ */
+
+.trainer-modal__name {
+  display: none;
+}
+
+
+/* ================================================================
+   TRAINER CONTENT
+   ================================================================ */
+
+.trainer-modal__content {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  align-items: flex-start;
+
+  justify-content: center;
+
+  gap: 13px;
+}
+
+
+/* ================================================================
+   SPECIALTY CHIP
+   ================================================================ */
+
+.trainer-modal__specialty {
+  width: fit-content;
+
+  min-height: 28px;
+
+  display: inline-flex;
+
+  align-items: center;
+
+  padding: 0 10px;
+
+  border:
+    1px solid
+    rgba(255, 220, 0, 0.28);
+
+  border-radius: 999px;
+
+  color: var(--yellow);
+
+  background:
+    rgba(255, 220, 0, 0.065);
+
+  font-size: 9px;
+
+  font-weight: 700;
+}
+
+
+/* ================================================================
+   TRAINER BIO
+   ================================================================ */
+
+.trainer-modal__bio {
+  margin: 0;
+
+  max-width: 420px;
+
+  color:
+    var(--text-muted);
+
+  font-size: 13px;
+
+  line-height: 1.65;
+}
+
+
+/* ================================================================
+   TRAINER CONTACT / FACTS
+
+   Əgər core.js bunları yaradırsa,
+   onlar aşağıda kompakt görünəcək.
+   ================================================================ */
+
+.trainer-modal__facts,
+.trainer-modal__contacts {
+  width: 100%;
+
   display: grid;
 
   grid-template-columns:
@@ -5632,485 +5780,115 @@ html[data-theme="light"]
 }
 
 
-.product-modal__facts > div {
+.trainer-modal__facts > div,
+.trainer-modal__contacts > div,
+.trainer-modal__contacts > a {
   min-width: 0;
 
-  padding:
-    9px 10px;
+  padding: 9px 10px;
 
   border:
-    1px solid var(--border-soft);
+    1px solid
+    var(--border-soft);
 
-  border-radius:
-    10px;
+  border-radius: 10px;
 
   background:
-    var(--surface-2);
-}
-
-
-.product-modal__facts span {
-  display: block;
-
-  margin-bottom:
-    3px;
-
-  color:
-    var(--text-faint);
-
-  font-size:
-    8px;
-
-  font-weight:
-    600;
-
-  text-transform:
-    uppercase;
-}
-
-
-.product-modal__facts strong {
-  display: block;
-
-  overflow:
-    hidden;
-
-  color:
-    var(--text-soft);
-
-  font-size:
-    11px;
-
-  font-weight:
-    700;
-
-  text-overflow:
-    ellipsis;
-
-  white-space:
-    nowrap;
+    rgba(255, 255, 255, 0.025);
 }
 
 
 /* ================================================================
-   42. TRAINER DETAIL MODAL
+   LIGHT MODE
    ================================================================ */
 
-.trainer-modal {
-  display: grid;
-
-  grid-template-columns:
-    minmax(230px, 0.8fr)
-    minmax(0, 1.2fr);
-
-  align-items:
-    start;
-
-  gap: 16px;
-}
-
-
-.trainer-modal__media {
-  width:
-    100%;
-
-  aspect-ratio:
-    1 / 1;
-
-  overflow:
-    hidden;
-
-  border:
-    1px solid var(--border-soft);
-
-  border-radius:
-    14px;
-
+html[data-theme="light"]
+.app-modal {
   background:
-    var(--surface-2);
-}
-
-
-.trainer-modal__media img {
-  width:
-    100%;
-
-  height:
-    100%;
-
-  object-fit:
-    cover;
-
-  object-position:
-    center 18%;
-}
-
-
-.trainer-modal__content {
-  min-width:
-    0;
-
-  display:
-    flex;
-
-  flex-direction:
-    column;
-
-  gap:
-    9px;
-
-  padding:
-    3px 0;
-}
-
-
-.trainer-modal__name {
-  margin:
-    0;
-
-  color:
-    var(--text);
-
-  font-family:
-    var(--font-display);
-
-  font-size:
-    clamp(
-      24px,
-      3vw,
-      33px
+    linear-gradient(
+      145deg,
+      #ffffff,
+      #f7f9fb
     );
-
-  line-height:
-    1;
-
-  font-weight:
-    600;
-
-  text-transform:
-    uppercase;
 }
 
 
-.trainer-modal__specialty {
-  width:
-    fit-content;
-
-  min-height:
-    25px;
-
-  display:
-    inline-flex;
-
-  align-items:
-    center;
-
-  padding:
-    0 9px;
-
-  border:
-    1px solid var(--yellow-border);
-
-  border-radius:
-    999px;
-
-  color:
-    var(--yellow);
-
+html[data-theme="light"]
+.app-modal__header {
   background:
-    var(--yellow-soft);
-
-  font-size:
-    9px;
-
-  font-weight:
-    700;
-}
-
-
-.trainer-modal__bio {
-  margin:
-    0;
-
-  color:
-    var(--text-muted);
-
-  font-size:
-    12px;
-
-  line-height:
-    1.6;
+    rgba(0, 0, 0, 0.012);
 }
 
 
 /* ================================================================
-   TRAINER FACTS / CONTACT
-   ================================================================ */
-
-.trainer-modal__facts,
-.trainer-modal__contacts {
-  display:
-    grid;
-
-  grid-template-columns:
-    repeat(
-      2,
-      minmax(0, 1fr)
-    );
-
-  gap:
-    6px;
-
-  margin-top:
-    2px;
-}
-
-
-.trainer-modal__facts > div,
-.trainer-modal__contacts > a,
-.trainer-modal__contacts > div {
-  min-width:
-    0;
-
-  padding:
-    9px 10px;
-
-  border:
-    1px solid var(--border-soft);
-
-  border-radius:
-    10px;
-
-  background:
-    var(--surface-2);
-}
-
-
-.trainer-modal__facts span,
-.trainer-modal__contacts span {
-  display:
-    block;
-
-  color:
-    var(--text-faint);
-
-  font-size:
-    8px;
-}
-
-
-.trainer-modal__facts strong,
-.trainer-modal__contacts strong {
-  display:
-    block;
-
-  margin-top:
-    3px;
-
-  overflow:
-    hidden;
-
-  color:
-    var(--text-soft);
-
-  font-size:
-    10px;
-
-  text-overflow:
-    ellipsis;
-
-  white-space:
-    nowrap;
-}
-
-
-/* ================================================================
-   43. LOADER
-   Real core.js uses .is-visible
-   ================================================================ */
-
-.app-loader {
-  position:
-    fixed;
-
-  z-index:
-    8000;
-
-  inset:
-    0;
-
-  display:
-    grid;
-
-  place-items:
-    center;
-
-  opacity:
-    0;
-
-  visibility:
-    hidden;
-
-  background:
-    rgba(3, 5, 8, 0.54);
-
-  backdrop-filter:
-    blur(5px);
-
-  -webkit-backdrop-filter:
-    blur(5px);
-
-  transition:
-    opacity 150ms ease,
-    visibility 150ms ease;
-}
-
-
-.app-loader.is-visible {
-  opacity:
-    1;
-
-  visibility:
-    visible;
-}
-
-
-.app-loader__panel {
-  min-width:
-    145px;
-
-  display:
-    grid;
-
-  justify-items:
-    center;
-
-  gap:
-    10px;
-
-  padding:
-    17px 20px;
-
-  border:
-    1px solid var(--border);
-
-  border-radius:
-    14px;
-
-  background:
-    rgba(16, 20, 27, 0.97);
-
-  box-shadow:
-    0 20px
-    60px
-    rgba(0, 0, 0, 0.38);
-}
-
-
-.app-loader__spinner {
-  width:
-    32px;
-
-  height:
-    32px;
-
-  border:
-    3px solid
-    rgba(255, 255, 255, 0.10);
-
-  border-top-color:
-    var(--yellow);
-
-  border-radius:
-    50%;
-
-  animation:
-    skyfit-loader-spin
-    0.72s
-    linear
-    infinite;
-}
-
-
-@keyframes skyfit-loader-spin {
-  to {
-    transform:
-      rotate(360deg);
-  }
-}
-
-
-.app-loader__label {
-  color:
-    var(--text-soft);
-
-  font-size:
-    10px;
-
-  font-weight:
-    600;
-}
-
-
-/* ================================================================
-   44. MOBILE MODALS
+   MOBILE
    ================================================================ */
 
 @media (max-width: 700px) {
 
   .app-modal-backdrop {
-    align-items:
-      end;
+    align-items: end;
 
     padding:
-      5px;
+      6px 6px 0;
   }
 
 
   .app-modal {
-    width:
-      100%;
+    width: 100%;
 
     max-height:
       calc(
         100dvh -
         var(--safe-top) -
-        5px
+        6px
       );
 
     border-radius:
-      17px 17px 11px 11px;
+      20px 20px 0 0;
   }
 
 
   .app-modal__header {
-    min-height:
-      54px;
+    min-height: 58px;
 
     padding:
-      9px 10px;
+      10px 12px;
   }
 
 
   .app-modal__title {
-    font-size:
-      17px;
+    font-size: 17px;
+  }
+
+
+  .app-modal__close {
+    width: 36px;
+    height: 36px;
+
+    flex-basis: 36px;
+
+    border-radius: 10px;
   }
 
 
   .app-modal__body {
     padding:
-      10px;
+      11px 11px
+      calc(
+        16px +
+        var(--safe-bottom)
+      );
   }
 
 
   .product-modal,
   .trainer-modal {
-    grid-template-columns:
-      1fr;
+    grid-template-columns: 1fr;
 
-    gap:
-      10px;
+    align-items: start;
+
+    gap: 15px;
   }
 
 
@@ -6119,29 +5897,29 @@ html[data-theme="light"]
     width:
       min(
         100%,
-        310px
+        290px
       );
 
-    margin-inline:
-      auto;
+    margin-inline: auto;
   }
 
 
-  .product-modal__name,
-  .trainer-modal__name {
-    font-size:
-      23px;
+  .product-modal__content,
+  .trainer-modal__content {
+    gap: 10px;
   }
 
 
-  .product-modal__facts,
-  .trainer-modal__facts,
-  .trainer-modal__contacts {
-    grid-template-columns:
-      repeat(
-        2,
-        minmax(0, 1fr)
-      );
+  .product-modal__price {
+    font-size: 31px;
+  }
+
+
+  .product-modal__description,
+  .trainer-modal__bio {
+    font-size: 12px;
+
+    line-height: 1.55;
   }
 
 }
@@ -6151,19 +5929,36 @@ html[data-theme="light"]
    SMALL PHONE
    ================================================================ */
 
-@media (max-width: 380px) {
+@media (max-width: 390px) {
 
-  .product-modal__facts,
+  .app-modal__eyebrow {
+    font-size: 8px;
+  }
+
+
+  .app-modal__title {
+    font-size: 15px;
+  }
+
+
+  .product-modal__media,
+  .trainer-modal__media {
+    width:
+      min(
+        100%,
+        250px
+      );
+  }
+
+
   .trainer-modal__facts,
   .trainer-modal__contacts {
-    grid-template-columns:
-      1fr;
+    grid-template-columns: 1fr;
   }
 
 }
 
 
 /* ================================================================
-   HOME STEP 3 END
+   MODAL FINAL END
    ================================================================ */
-
