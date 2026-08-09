@@ -1,57 +1,28 @@
-// ============================================================
-// SKY FIT PRO
-// Shared Application Layout
-// File: js/layout.js
-//
-// PART 1 / 2
-//
-// Məqsəd:
-// - Header dərhal render olsun
-// - Bottom Navigation dərhal render olsun
-// - F5 zamanı layout yoxa çıxmasın
-// - Auth gözləyərkən UI sıçramasın
-// - Supabase gələndə yalnız identity hydrate olunsun
-// - Drawer bütün səhifələrdə eyni olsun
-// - profiles.full_name və avatar_url istifadə olunsun
-// ============================================================
+// SKy Fit Pro — ortaq tətbiq layout-u
+// Senior Full Stack Developer: Qərib Səfərli
 
-import {
-  APP_CONFIG,
-} from './config.js';
+import { APP_CONFIG } from './config.js';
 
 import {
   SKYFIT_EVENTS,
-
   $,
   $$,
   byId,
   createElement,
   normalizeString,
   escapeHtml,
-
+  initials,
   getCurrentIdentity,
   getProfileName,
   getProfileInitials,
   getProfileAvatar,
-
   roleLabel,
-
   getStoredTheme,
   cycleTheme,
-
   confirmDialog,
   notify,
   signOut,
 } from './core.js';
-
-
-// ============================================================
-// 01. ICON SYSTEM
-//
-// Tətbiq daxili navigasiya ikonları SVG-dir.
-// assets/icons/ altındakı PNG-lər isə PWA/app icon üçündür.
-// Bunları bir-birinə qarışdırmırıq.
-// ============================================================
 
 const ICONS = Object.freeze({
 
@@ -296,370 +267,197 @@ const ICONS = Object.freeze({
   `,
 });
 
+const AUTH_PAGES = new Set([
+  'login',
+  'register',
+  'reset-password',
+  'update-password',
+]);
 
-// ============================================================
-// 02. LAYOUT STATE
-// ============================================================
+const LAYOUT_CACHE_KEY = 'skyfit-layout-identity-v1';
+const DESKTOP_DRAWER_BREAKPOINT = 1180;
+const IDENTITY_REFRESH_INTERVAL = 5 * 60 * 1000;
 
 const state = {
-
   identity: null,
-
   hydrated: false,
-
   drawerOpen: false,
-
   shellRendered: false,
-
   hydrationPromise: null,
 };
 
-
-// ============================================================
-// 03. CURRENT PAGE
-// ============================================================
+let lastIdentityRefresh = Date.now();
+let previousDrawerFocus = null;
+let resizeTimer = null;
 
 function currentPage() {
-  return normalizeString(
-    document.body
-      ?.dataset
-      ?.page,
-    'home'
-  );
+  const declared = normalizeString(document.body?.dataset?.page);
+  if (declared) return declared;
+
+  const file = normalizeString(
+    window.location.pathname.split('/').pop(),
+    'index.html'
+  ).toLowerCase();
+
+  const map = {
+    'index.html': 'home',
+    'favorites.html': 'favorites',
+    'profile.html': 'profile',
+    'admin.html': 'admin',
+    'login.html': 'login',
+    'register.html': 'register',
+    'reset-password.html': 'reset-password',
+    'update-password.html': 'update-password',
+  };
+
+  return map[file] || 'home';
 }
-
-
-// ============================================================
-// 04. AUTH PAGE CHECK
-//
-// Login/register səhifələrində bottom nav istəsək göstərilə bilər,
-// amma əsas tətbiq shell-i daha kompakt qalmalıdır.
-// ============================================================
 
 function isAuthPage() {
-  return [
-    'login',
-    'register',
-    'reset-password',
-    'update-password',
-  ].includes(
-    currentPage()
-  );
+  return AUTH_PAGES.has(currentPage());
 }
 
+function ensureRoot(id, position = 'beforeend') {
+  const existing = byId(id);
+  if (existing) return existing;
 
-// ============================================================
-// 05. ROOT ENSURER
-//
-// HTML-də root varsa istifadə edir.
-// Yoxdursa özü yaradır.
-// Bu yanaşma F5 zamanı layout-un tam itməsinin qarşısını alır.
-// ============================================================
+  const root = createElement('div', {
+    attrs: { id },
+  });
 
-function ensureRoot(
-  id,
-  position = 'beforeend'
-) {
-  let root =
-    byId(id);
-
-
-  if (root) {
-    return root;
-  }
-
-
-  root =
-    createElement(
-      'div',
-      {
-        attrs: {
-          id,
-        },
-      }
-    );
-
-
-  if (
-    position ===
-      'afterbegin'
-  ) {
-    document.body.prepend(
-      root
-    );
+  if (position === 'afterbegin') {
+    document.body.prepend(root);
   } else {
-    document.body.append(
-      root
-    );
+    document.body.append(root);
   }
-
 
   return root;
 }
 
-
-// ============================================================
-// 06. BRAND
-// ============================================================
-
-function brandMarkup(
-  compact = false
-) {
+function brandMarkup(compact = false) {
   return `
     <a
       href="${APP_CONFIG.routes.home}"
-      class="brand-mark ${
-        compact
-          ? 'brand-mark--compact'
-          : ''
-      }"
+      class="brand-mark${compact ? ' brand-mark--compact' : ''}"
       aria-label="SKy Fit ana səhifə"
     >
-
-      <span
-        class="brand-mark__icon"
-        aria-hidden="true"
-      >
-        SK
-      </span>
-
+      <span class="brand-mark__icon" aria-hidden="true">SK</span>
       <span class="brand-mark__text">
-
-        <strong>
-          SKy Fit
-        </strong>
-
-        <small>
-          PRO
-        </small>
-
+        <strong>${escapeHtml(APP_CONFIG.shortName)}</strong>
+        <small>PRO</small>
       </span>
-
     </a>
   `;
 }
 
-
-// ============================================================
-// 07. SHELL IDENTITY
-//
-// Supabase cavab verənə qədər boş/gizli hissələr yaratmırıq.
-// Vizual ölçü sabit qalır.
-// ============================================================
-
 function shellIdentity() {
   return {
-    authenticated:
-      false,
-
-    profile:
-      null,
-
-    role:
-      'member',
-
-    isAdmin:
-      false,
-
-    isStaff:
-      false,
-
-    name:
-      'SKy Fit',
-
-    email:
-      '',
-
-    avatar:
-      '',
+    authenticated: false,
+    profile: null,
+    role: 'member',
+    isAdmin: false,
+    isStaff: false,
+    name: APP_CONFIG.shortName,
+    email: '',
+    avatar: '',
   };
 }
 
-
-// ============================================================
-// 08. IDENTITY NORMALIZER
-// ============================================================
-
-function normalizedIdentity(
-  identity
-) {
-  if (!identity) {
-    return shellIdentity();
-  }
-
+function normalizedIdentity(identity) {
+  if (!identity) return shellIdentity();
 
   return {
-    authenticated:
-      Boolean(
-        identity.authenticated
-      ),
-
-    profile:
-      identity.profile ||
-      null,
-
-    role:
-      normalizeString(
-        identity.role,
-        'member'
-      ),
-
-    isAdmin:
-      Boolean(
-        identity.isAdmin
-      ),
-
-    isStaff:
-      Boolean(
-        identity.isStaff
-      ),
-
-    name:
-      normalizeString(
-        identity.name,
-        'SKy Fit'
-      ),
-
-    email:
-      normalizeString(
-        identity.email
-      ),
-
-    avatar:
-      normalizeString(
-        identity.avatar
-      ),
+    authenticated: Boolean(identity.authenticated),
+    profile: identity.profile || null,
+    role: normalizeString(identity.role, 'member'),
+    isAdmin: Boolean(identity.isAdmin),
+    isStaff: Boolean(identity.isStaff),
+    name: normalizeString(identity.name, APP_CONFIG.shortName),
+    email: normalizeString(identity.email),
+    avatar: normalizeString(identity.avatar),
   };
 }
 
+function avatarMarkup(identity, className = 'app-user-avatar') {
+  const current = normalizedIdentity(identity);
+  const profile = current.profile;
 
-// ============================================================
-// 09. AVATAR MARKUP
-// ============================================================
+  const name = profile
+    ? getProfileName(profile, current.name)
+    : current.name;
 
-function avatarMarkup(
-  identity,
-  className =
-    'app-user-avatar'
-) {
-  const current =
-    normalizedIdentity(
-      identity
-    );
+  const avatar = profile
+    ? getProfileAvatar(profile)
+    : current.avatar;
 
+  const fallback = profile
+    ? getProfileInitials(profile)
+    : initials(name, 'SK');
 
-  const profile =
-    current.profile;
-
-
-  const name =
-    profile
-      ? getProfileName(
-          profile,
-          current.name
-        )
-      : current.name;
-
-
-  const avatar =
-    profile
-      ? getProfileAvatar(
-          profile
-        )
-      : current.avatar;
-
-
-  const initials =
-    profile
-      ? getProfileInitials(
-          profile
-        )
-      : 'SK';
-
-
-  if (avatar) {
-    return `
-      <span class="${className}">
-
+  return `
+    <span class="${className}">
+      ${
+        True: ""
+      }
+      ${avatar ? `
         <img
           src="${escapeHtml(avatar)}"
           alt="${escapeHtml(name)}"
           loading="eager"
           decoding="async"
         >
-
-      </span>
-    `;
-  }
-
-
-  return `
-    <span class="${className}">
-
+      ` : ''}
       <span
-        class="${className}__initials"
+        class="${className}__initials${avatar ? ' is-hidden' : ''}"
         aria-hidden="true"
       >
-        ${escapeHtml(initials)}
+        ${escapeHtml(fallback)}
       </span>
-
     </span>
   `;
 }
 
+function bindAvatarFallbacks(root = document) {
+  $$(
+    '.app-header__avatar img, .app-drawer__avatar img',
+    root
+  ).forEach(image => {
+    image.addEventListener(
+      'error',
+      () => {
+        const wrapper = image.parentElement;
+        const fallback = wrapper?.querySelector('[class$="__initials"]');
 
-// ============================================================
-// 10. HEADER SHELL
-//
-// Bu funksiya Supabase gözləmir.
-// Module işləyən kimi header görünür.
-// ============================================================
-
-function renderHeader(
-  identity =
-    shellIdentity()
-) {
-  const root =
-    ensureRoot(
-      'app-header-root',
-      'afterbegin'
+        image.remove();
+        fallback?.classList.remove('is-hidden');
+      },
+      { once: true }
     );
+  });
+}
 
-
-  const current =
-    normalizedIdentity(
-      identity
-    );
-
+function renderHeader(identity = shellIdentity()) {
+  const root = ensureRoot('app-header-root', 'afterbegin');
+  const current = normalizedIdentity(identity);
 
   root.innerHTML = `
     <header class="app-header">
-
       <div class="app-header__inner">
-
         <div class="app-header__side app-header__side--start">
-
           <button
             id="app-menu-button"
             class="app-header__menu"
             type="button"
             aria-label="Menyunu aç"
-            aria-expanded="${
-              state.drawerOpen
-                ? 'true'
-                : 'false'
-            }"
+            aria-controls="app-drawer"
+            aria-expanded="${state.drawerOpen ? 'true' : 'false'}"
           >
             ${ICONS.menu}
           </button>
-
           ${brandMarkup()}
-
         </div>
 
-
         <div class="app-header__side app-header__side--end">
-
           <a
             href="${APP_CONFIG.routes.favorites}"
             class="app-header__action"
@@ -668,283 +466,130 @@ function renderHeader(
             ${ICONS.heart}
           </a>
 
-
-          ${
-            current.authenticated
-              ? `
-                <a
-                  href="${APP_CONFIG.routes.profile}"
-                  class="app-header__profile"
-                  aria-label="${escapeHtml(
-                    current.name
-                  )}"
-                  title="${escapeHtml(
-                    current.name
-                  )}"
-                >
-                  ${avatarMarkup(
-                    current,
-                    'app-header__avatar'
-                  )}
-                </a>
-              `
-              : `
-                <a
-                  href="${APP_CONFIG.routes.login}"
-                  class="app-header__action app-header__action--login"
-                  aria-label="Daxil ol"
-                >
-                  ${ICONS.login}
-                </a>
-              `
-          }
-
+          ${current.authenticated ? `
+            <a
+              href="${APP_CONFIG.routes.profile}"
+              class="app-header__profile"
+              aria-label="${escapeHtml(current.name)}"
+              title="${escapeHtml(current.name)}"
+            >
+              ${avatarMarkup(current, 'app-header__avatar')}
+            </a>
+          ` : `
+            <a
+              href="${APP_CONFIG.routes.login}"
+              class="app-header__action app-header__action--login"
+              aria-label="Daxil ol"
+            >
+              ${ICONS.login}
+            </a>
+          `}
         </div>
-
       </div>
-
     </header>
   `;
 
-
-  byId(
-    'app-menu-button'
-  )?.addEventListener(
-    'click',
-    openDrawer
-  );
+  byId('app-menu-button')?.addEventListener('click', openDrawer);
+  bindAvatarFallbacks(root);
 }
 
-
-// ============================================================
-// 11. DRAWER LINKS
-// ============================================================
-
-function drawerLinks(
-  identity
-) {
-  const current =
-    normalizedIdentity(
-      identity
-    );
-
+function drawerLinks(identity) {
+  const current = normalizedIdentity(identity);
 
   const links = [
     {
-      key:
-        'home',
-
-      label:
-        'Ana səhifə',
-
-      href:
-        APP_CONFIG.routes.home,
-
-      icon:
-        ICONS.home,
+      key: 'home',
+      label: 'Ana səhifə',
+      href: APP_CONFIG.routes.home,
+      icon: ICONS.home,
     },
-
     {
-      key:
-        'shop',
-
-      label:
-        'Məhsullar',
-
-      href:
-        `${APP_CONFIG.routes.home}#products`,
-
-      icon:
-        ICONS.shop,
+      key: 'shop',
+      label: 'Məhsullar',
+      href: `${APP_CONFIG.routes.home}#products`,
+      icon: ICONS.shop,
     },
-
     {
-      key:
-        'favorites',
-
-      label:
-        'Sevimlilər',
-
-      href:
-        APP_CONFIG.routes.favorites,
-
-      icon:
-        ICONS.heart,
+      key: 'favorites',
+      label: 'Sevimlilər',
+      href: APP_CONFIG.routes.favorites,
+      icon: ICONS.heart,
     },
   ];
 
-
-  if (
-    current.authenticated
-  ) {
+  if (current.authenticated) {
     links.push({
-      key:
-        'profile',
-
-      label:
-        'Profil',
-
-      href:
-        APP_CONFIG.routes.profile,
-
-      icon:
-        ICONS.profile,
+      key: 'profile',
+      label: 'Profil',
+      href: APP_CONFIG.routes.profile,
+      icon: ICONS.profile,
     });
   }
 
-
-  if (
-    current.isStaff
-  ) {
+  if (current.isStaff) {
     links.push({
-      key:
-        'admin',
-
-      label:
-        'İdarəetmə',
-
-      href:
-        APP_CONFIG.routes.admin,
-
-      icon:
-        ICONS.dashboard,
+      key: 'admin',
+      label: 'İdarəetmə',
+      href: APP_CONFIG.routes.admin,
+      icon: ICONS.dashboard,
     });
   }
-
 
   return links;
 }
 
+function linkIsActive(key) {
+  const page = currentPage();
+  const productsHash =
+    page === 'home' &&
+    window.location.hash === '#products';
 
-// ============================================================
-// 12. ACTIVE LINK
-// ============================================================
-
-function linkIsActive(
-  key
-) {
-  const page =
-    currentPage();
-
-
-  if (
-    key ===
-      'home' &&
-    page ===
-      'home'
-  ) {
-    return true;
-  }
-
-
-  if (
-    key ===
-      'favorites' &&
-    page ===
-      'favorites'
-  ) {
-    return true;
-  }
-
-
-  if (
-    key ===
-      'profile' &&
-    page ===
-      'profile'
-  ) {
-    return true;
-  }
-
-
-  if (
-    key ===
-      'admin' &&
-    page ===
-      'admin'
-  ) {
-    return true;
-  }
-
+  if (key === 'shop') return productsHash;
+  if (key === 'home') return page === 'home' && !productsHash;
+  if (key === 'favorites') return page === 'favorites';
+  if (key === 'profile') return page === 'profile';
+  if (key === 'admin') return page === 'admin';
 
   return false;
 }
 
+function themeLabel() {
+  switch (getStoredTheme()) {
+    case 'dark':
+      return 'Tünd rejim';
+    case 'light':
+      return 'Açıq rejim';
+    default:
+      return 'Sistem rejimi';
+  }
+}
 
-// ============================================================
-// 13. DRAWER RENDER
-// ============================================================
+function renderDrawer(identity = shellIdentity()) {
+  const root = ensureRoot('app-drawer-root');
+  const current = normalizedIdentity(identity);
+  const links = drawerLinks(current);
 
-function renderDrawer(
-  identity =
-    shellIdentity()
-) {
-  const root =
-    ensureRoot(
-      'app-drawer-root'
-    );
-
-
-  const current =
-    normalizedIdentity(
-      identity
-    );
-
-
-  const links =
-    drawerLinks(
-      current
-    );
-
-
-  const displayName =
-    current.authenticated
-      ? current.name
-      : 'Qonaq';
-
-
-  const secondaryText =
-    current.authenticated
-      ? [
-          roleLabel(
-            current.role
-          ),
-
-          current.email,
-        ]
-          .filter(Boolean)
-          .join(' · ')
-      : 'SKy Fit Pro';
-
+  const displayName = current.authenticated ? current.name : 'Qonaq';
+  const secondaryText = current.authenticated
+    ? [roleLabel(current.role), current.email].filter(Boolean).join(' · ')
+    : APP_CONFIG.name;
 
   root.innerHTML = `
     <div
-      class="app-drawer-backdrop ${
-        state.drawerOpen
-          ? 'is-open'
-          : ''
-      }"
+      class="app-drawer-backdrop${state.drawerOpen ? ' is-open' : ''}"
       aria-hidden="true"
     ></div>
 
-
     <aside
-      class="app-drawer ${
-        state.drawerOpen
-          ? 'is-open'
-          : ''
-      }"
-      aria-hidden="${
-        state.drawerOpen
-          ? 'false'
-          : 'true'
-      }"
+      id="app-drawer"
+      class="app-drawer${state.drawerOpen ? ' is-open' : ''}"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Əsas menyu"
+      aria-hidden="${state.drawerOpen ? 'false' : 'true'}"
     >
-
       <div class="app-drawer__inner">
-
         <div class="app-drawer__header">
-
           ${brandMarkup(true)}
 
           <button
@@ -955,1699 +600,659 @@ function renderDrawer(
           >
             ${ICONS.close}
           </button>
-
         </div>
 
+        ${current.authenticated ? `
+          <a
+            href="${APP_CONFIG.routes.profile}"
+            class="app-drawer__profile"
+          >
+            ${avatarMarkup(current, 'app-drawer__avatar')}
 
-        ${
-          current.authenticated
-            ? `
-              <a
-                href="${APP_CONFIG.routes.profile}"
-                class="app-drawer__profile"
-              >
+            <span class="app-drawer__identity">
+              <strong class="app-drawer__identity-name">
+                ${escapeHtml(displayName)}
+              </strong>
+              <span class="app-drawer__identity-meta">
+                ${escapeHtml(secondaryText)}
+              </span>
+            </span>
 
-                ${avatarMarkup(
-                  current,
-                  'app-drawer__avatar'
-                )}
+            <span class="app-drawer__profile-arrow" aria-hidden="true">
+              ${ICONS.chevron}
+            </span>
+          </a>
+        ` : `
+          <div class="app-drawer__profile">
+            ${avatarMarkup(current, 'app-drawer__avatar')}
+            <span class="app-drawer__identity">
+              <strong class="app-drawer__identity-name">Qonaq</strong>
+              <span class="app-drawer__identity-meta">
+                ${escapeHtml(APP_CONFIG.name)}
+              </span>
+            </span>
+          </div>
+        `}
 
-
-                <span class="app-drawer__identity">
-
-                  <strong
-                    class="app-drawer__identity-name"
-                  >
-                    ${escapeHtml(
-                      displayName
-                    )}
-                  </strong>
-
-                  <span
-                    class="app-drawer__identity-meta"
-                  >
-                    ${escapeHtml(
-                      secondaryText
-                    )}
-                  </span>
-
-                </span>
-
-
-                <span
-                  class="app-drawer__profile-arrow"
-                  aria-hidden="true"
-                >
-                  ${ICONS.chevron}
-                </span>
-
-              </a>
-            `
-            : `
-              <div class="app-drawer__profile">
-
-                ${avatarMarkup(
-                  current,
-                  'app-drawer__avatar'
-                )}
-
-
-                <span class="app-drawer__identity">
-
-                  <strong
-                    class="app-drawer__identity-name"
-                  >
-                    Qonaq
-                  </strong>
-
-                  <span
-                    class="app-drawer__identity-meta"
-                  >
-                    SKy Fit Pro
-                  </span>
-
-                </span>
-
-              </div>
-            `
-        }
-
-
-        <nav
-          class="app-drawer__nav"
-          aria-label="Əsas menyu"
-        >
-
-          ${links
-            .map(
-              link => `
-                <a
-                  href="${link.href}"
-                  class="app-drawer__link ${
-                    linkIsActive(
-                      link.key
-                    )
-                      ? 'is-active'
-                      : ''
-                  }"
-                >
-
-                  <span
-                    class="app-drawer__link-icon"
-                    aria-hidden="true"
-                  >
-                    ${link.icon}
-                  </span>
-
-                  <span
-                    class="app-drawer__link-label"
-                  >
-                    ${escapeHtml(
-                      link.label
-                    )}
-                  </span>
-
-                </a>
-              `
-            )
-            .join('')}
-
+        <nav class="app-drawer__nav" aria-label="Əsas menyu">
+          ${links.map(link => `
+            <a
+              href="${link.href}"
+              class="app-drawer__link${linkIsActive(link.key) ? ' is-active' : ''}"
+              ${linkIsActive(link.key) ? 'aria-current="page"' : ''}
+            >
+              <span class="app-drawer__link-icon" aria-hidden="true">
+                ${link.icon}
+              </span>
+              <span class="app-drawer__link-label">
+                ${escapeHtml(link.label)}
+              </span>
+            </a>
+          `).join('')}
         </nav>
 
-
         <div class="app-drawer__footer">
-
           <button
             id="app-theme-button"
             class="app-drawer__link"
             type="button"
           >
-
-            <span
-              class="app-drawer__link-icon"
-              aria-hidden="true"
-            >
+            <span class="app-drawer__link-icon" aria-hidden="true">
               ${ICONS.theme}
             </span>
-
-            <span
-              id="app-theme-label"
-              class="app-drawer__link-label"
-            >
-              ${escapeHtml(
-                themeLabel()
-              )}
+            <span id="app-theme-label" class="app-drawer__link-label">
+              ${escapeHtml(themeLabel())}
             </span>
-
           </button>
 
-
-          ${
-            current.authenticated
-              ? `
-                <button
-                  id="app-logout-button"
-                  class="app-drawer__link app-drawer__link--danger"
-                  type="button"
-                >
-
-                  <span
-                    class="app-drawer__link-icon"
-                    aria-hidden="true"
-                  >
-                    ${ICONS.logout}
-                  </span>
-
-                  <span
-                    class="app-drawer__link-label"
-                  >
-                    Çıxış et
-                  </span>
-
-                </button>
-              `
-              : `
-                <a
-                  href="${APP_CONFIG.routes.login}"
-                  class="app-drawer__link"
-                >
-
-                  <span
-                    class="app-drawer__link-icon"
-                    aria-hidden="true"
-                  >
-                    ${ICONS.login}
-                  </span>
-
-                  <span
-                    class="app-drawer__link-label"
-                  >
-                    Daxil ol
-                  </span>
-
-                </a>
-              `
-          }
-
+          ${current.authenticated ? `
+            <button
+              id="app-logout-button"
+              class="app-drawer__link app-drawer__link--danger"
+              type="button"
+            >
+              <span class="app-drawer__link-icon" aria-hidden="true">
+                ${ICONS.logout}
+              </span>
+              <span class="app-drawer__link-label">Çıxış et</span>
+            </button>
+          ` : `
+            <a
+              href="${APP_CONFIG.routes.login}"
+              class="app-drawer__link"
+            >
+              <span class="app-drawer__link-icon" aria-hidden="true">
+                ${ICONS.login}
+              </span>
+              <span class="app-drawer__link-label">Daxil ol</span>
+            </a>
+          `}
         </div>
-
       </div>
-
     </aside>
   `;
 
-
-  $(
-    '.app-drawer-backdrop',
-    root
-  )?.addEventListener(
-    'click',
-    closeDrawer
-  );
-
-
-  byId(
-    'app-drawer-close'
-  )?.addEventListener(
-    'click',
-    closeDrawer
-  );
-
-
-  byId(
-    'app-theme-button'
-  )?.addEventListener(
-    'click',
-    handleThemeCycle
-  );
-
-
-  byId(
-    'app-logout-button'
-  )?.addEventListener(
-    'click',
-    handleLogout
-  );
+  $('.app-drawer-backdrop', root)?.addEventListener('click', closeDrawer);
+  byId('app-drawer-close')?.addEventListener('click', closeDrawer);
+  byId('app-theme-button')?.addEventListener('click', handleThemeCycle);
+  byId('app-logout-button')?.addEventListener('click', handleLogout);
+  bindAvatarFallbacks(root);
 }
 
+function drawerFocusableElements() {
+  const drawer = $('.app-drawer');
+  if (!drawer) return [];
 
-// ============================================================
-// 14. THEME LABEL
-// ============================================================
+  return $$(
+    'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    drawer
+  ).filter(element => !element.hidden);
+}
 
-function themeLabel() {
-  switch (
-    getStoredTheme()
-  ) {
-    case 'dark':
-      return 'Tünd rejim';
+function handleDrawerKeydown(event) {
+  if (!state.drawerOpen) return;
 
-    case 'light':
-      return 'Açıq rejim';
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    closeDrawer();
+    return;
+  }
 
-    default:
-      return 'Sistem rejimi';
+  if (event.key !== 'Tab') return;
+
+  const focusable = drawerFocusableElements();
+  if (!focusable.length) return;
+
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
   }
 }
 
-
-// ============================================================
-// 15. DRAWER OPEN
-// ============================================================
-
 export function openDrawer() {
-  state.drawerOpen =
-    true;
+  if (state.drawerOpen) return;
 
+  state.drawerOpen = true;
+  previousDrawerFocus = document.activeElement;
 
-  const drawer =
-    $('.app-drawer');
+  const drawer = $('.app-drawer');
+  const backdrop = $('.app-drawer-backdrop');
 
+  drawer?.classList.add('is-open');
+  drawer?.setAttribute('aria-hidden', 'false');
+  backdrop?.classList.add('is-open');
 
-  const backdrop =
-    $('.app-drawer-backdrop');
+  byId('app-menu-button')?.setAttribute('aria-expanded', 'true');
+  document.body.classList.add('is-scroll-locked');
 
-
-  drawer?.classList.add(
-    'is-open'
-  );
-
-
-  drawer?.setAttribute(
-    'aria-hidden',
-    'false'
-  );
-
-
-  backdrop?.classList.add(
-    'is-open'
-  );
-
-
-  byId(
-    'app-menu-button'
-  )?.setAttribute(
-    'aria-expanded',
-    'true'
-  );
-
-
-  document.body
-    .classList
-    .add(
-      'is-scroll-locked'
-    );
+  requestAnimationFrame(() => {
+    byId('app-drawer-close')?.focus();
+  });
 }
-
-
-// ============================================================
-// 16. DRAWER CLOSE
-// ============================================================
 
 export function closeDrawer() {
-  state.drawerOpen =
-    false;
+  if (!state.drawerOpen) return;
 
+  state.drawerOpen = false;
 
-  const drawer =
-    $('.app-drawer');
+  const drawer = $('.app-drawer');
+  const backdrop = $('.app-drawer-backdrop');
 
+  drawer?.classList.remove('is-open');
+  drawer?.setAttribute('aria-hidden', 'true');
+  backdrop?.classList.remove('is-open');
 
-  const backdrop =
-    $('.app-drawer-backdrop');
+  byId('app-menu-button')?.setAttribute('aria-expanded', 'false');
+  document.body.classList.remove('is-scroll-locked');
 
+  const focusTarget = previousDrawerFocus;
+  previousDrawerFocus = null;
 
-  drawer?.classList.remove(
-    'is-open'
-  );
-
-
-  drawer?.setAttribute(
-    'aria-hidden',
-    'true'
-  );
-
-
-  backdrop?.classList.remove(
-    'is-open'
-  );
-
-
-  byId(
-    'app-menu-button'
-  )?.setAttribute(
-    'aria-expanded',
-    'false'
-  );
-
-
-  document.body
-    .classList
-    .remove(
-      'is-scroll-locked'
-    );
+  if (focusTarget instanceof HTMLElement && focusTarget.isConnected) {
+    focusTarget.focus();
+  }
 }
 
-
-// ============================================================
-// 17. BOTTOM NAV CONFIG
-// ============================================================
-
-function bottomItems(
-  identity
-) {
-  const current =
-    normalizedIdentity(
-      identity
-    );
-
+function bottomItems(identity) {
+  const current = normalizedIdentity(identity);
 
   const items = [
     {
-      key:
-        'home',
-
-      label:
-        'Ana səhifə',
-
-      href:
-        APP_CONFIG.routes.home,
-
-      icon:
-        ICONS.home,
+      key: 'home',
+      label: 'Ana səhifə',
+      href: APP_CONFIG.routes.home,
+      icon: ICONS.home,
     },
-
     {
-      key:
-        'shop',
-
-      label:
-        'Mağaza',
-
-      href:
-        `${APP_CONFIG.routes.home}#products`,
-
-      icon:
-        ICONS.shop,
+      key: 'shop',
+      label: 'Mağaza',
+      href: `${APP_CONFIG.routes.home}#products`,
+      icon: ICONS.shop,
     },
-
     {
-      key:
-        'favorites',
-
-      label:
-        'Sevimli',
-
-      href:
-        APP_CONFIG.routes.favorites,
-
-      icon:
-        ICONS.heart,
+      key: 'favorites',
+      label: 'Sevimli',
+      href: APP_CONFIG.routes.favorites,
+      icon: ICONS.heart,
     },
   ];
 
-
-  if (
-    current.isStaff
-  ) {
+  if (current.isStaff) {
     items.push({
-      key:
-        'admin',
-
-      label:
-        'Panel',
-
-      href:
-        APP_CONFIG.routes.admin,
-
-      icon:
-        ICONS.dashboard,
+      key: 'admin',
+      label: 'Panel',
+      href: APP_CONFIG.routes.admin,
+      icon: ICONS.dashboard,
     });
   } else {
     items.push({
-      key:
-        'profile',
-
-      label:
-        current.authenticated
-          ? 'Profil'
-          : 'Daxil ol',
-
-      href:
-        current.authenticated
-          ? APP_CONFIG.routes.profile
-          : APP_CONFIG.routes.login,
-
-      icon:
-        current.authenticated
-          ? ICONS.profile
-          : ICONS.login,
+      key: 'profile',
+      label: current.authenticated ? 'Profil' : 'Daxil ol',
+      href: current.authenticated
+        ? APP_CONFIG.routes.profile
+        : APP_CONFIG.routes.login,
+      icon: current.authenticated ? ICONS.profile : ICONS.login,
     });
   }
 
-
   items.push({
-    key:
-      'menu',
-
-    label:
-      'Menyu',
-
-    href:
-      '#',
-
-    icon:
-      ICONS.menu,
-
-    action:
-      'drawer',
+    key: 'menu',
+    label: 'Menyu',
+    href: '#',
+    icon: ICONS.menu,
+    action: 'drawer',
   });
-
 
   return items;
 }
 
+function renderBottomNavigation(identity = shellIdentity()) {
+  const root = ensureRoot('app-bottom-nav-root');
 
-// ============================================================
-// 18. BOTTOM NAV ACTIVE
-// ============================================================
-
-function bottomItemActive(
-  key
-) {
-  if (
-    key ===
-      'menu' ||
-    key ===
-      'shop'
-  ) {
-    return false;
-  }
-
-
-  return linkIsActive(
-    key
-  );
-}
-
-
-// ============================================================
-// 19. BOTTOM NAV RENDER
-//
-// Auth məlumatını gözləmədən render olunur.
-// ============================================================
-
-function renderBottomNavigation(
-  identity =
-    shellIdentity()
-) {
-  const root =
-    ensureRoot(
-      'app-bottom-nav-root'
-    );
-
-
-  if (
-    isAuthPage()
-  ) {
-    root.innerHTML =
-      '';
-
+  if (isAuthPage()) {
+    root.replaceChildren();
     return;
   }
 
-
-  const items =
-    bottomItems(
-      identity
-    );
-
+  const items = bottomItems(identity);
 
   root.innerHTML = `
-    <nav
-      class="app-bottom-nav"
-      aria-label="Aşağı naviqasiya"
-    >
-
+    <nav class="app-bottom-nav" aria-label="Aşağı naviqasiya">
       <div class="app-bottom-nav__inner">
+        ${items.map(item => {
+          if (item.action === 'drawer') {
+            return `
+              <button
+                type="button"
+                class="app-bottom-nav__item"
+                data-layout-action="drawer"
+                aria-label="Menyu"
+                aria-controls="app-drawer"
+                aria-expanded="${state.drawerOpen ? 'true' : 'false'}"
+              >
+                <span class="app-bottom-nav__icon" aria-hidden="true">
+                  ${item.icon}
+                </span>
+                <span class="app-bottom-nav__label">
+                  ${escapeHtml(item.label)}
+                </span>
+              </button>
+            `;
+          }
 
-        ${items
-          .map(
-            item => {
-              const active =
-                bottomItemActive(
-                  item.key
-                );
+          const active = linkIsActive(item.key);
 
-
-              if (
-                item.action ===
-                  'drawer'
-              ) {
-                return `
-                  <button
-                    type="button"
-                    class="app-bottom-nav__item"
-                    data-layout-action="drawer"
-                    aria-label="Menyu"
-                  >
-
-                    <span
-                      class="app-bottom-nav__icon"
-                      aria-hidden="true"
-                    >
-                      ${item.icon}
-                    </span>
-
-                    <span
-                      class="app-bottom-nav__label"
-                    >
-                      ${escapeHtml(
-                        item.label
-                      )}
-                    </span>
-
-                  </button>
-                `;
-              }
-
-
-              return `
-                <a
-                  href="${item.href}"
-                  class="app-bottom-nav__item ${
-                    active
-                      ? 'is-active'
-                      : ''
-                  }"
-                  ${
-                    active
-                      ? 'aria-current="page"'
-                      : ''
-                  }
-                >
-
-                  <span
-                    class="app-bottom-nav__icon"
-                    aria-hidden="true"
-                  >
-                    ${item.icon}
-                  </span>
-
-                  <span
-                    class="app-bottom-nav__label"
-                  >
-                    ${escapeHtml(
-                      item.label
-                    )}
-                  </span>
-
-                </a>
-              `;
-            }
-          )
-          .join('')}
-
+          return `
+            <a
+              href="${item.href}"
+              class="app-bottom-nav__item${active ? ' is-active' : ''}"
+              ${active ? 'aria-current="page"' : ''}
+            >
+              <span class="app-bottom-nav__icon" aria-hidden="true">
+                ${item.icon}
+              </span>
+              <span class="app-bottom-nav__label">
+                ${escapeHtml(item.label)}
+              </span>
+            </a>
+          `;
+        }).join('')}
       </div>
-
     </nav>
   `;
 
-
-  $(
-    '[data-layout-action="drawer"]',
-    root
-  )?.addEventListener(
-    'click',
-    openDrawer
-  );
+  $('[data-layout-action="drawer"]', root)
+    ?.addEventListener('click', openDrawer);
 }
 
-
-// ============================================================
-// 20. FOOTER
-// ============================================================
-
 function renderFooter() {
+  const root = ensureRoot('app-footer-root');
 
-  const root =
-    ensureRoot(
-      'app-footer-root'
-    );
-
-  if (
-    isAuthPage()
-  ) {
-
-    root.innerHTML =
-      '';
-
+  if (isAuthPage()) {
+    root.replaceChildren();
     return;
   }
 
-  const year =
-    new Date()
-      .getFullYear();
+  const year = new Date().getFullYear();
+  const developer = escapeHtml(
+    APP_CONFIG.developer || 'Qərib Səfərli'
+  );
+  const title = escapeHtml(
+    APP_CONFIG.developerTitle || 'Senior Full Stack Developer'
+  );
 
   root.innerHTML = `
     <footer class="app-footer">
-
       <div class="app-footer__inner">
-
         <div class="app-footer__brand">
-
           <span class="app-footer__copy">
-            © ${year} SKy Fit Pro
+            © ${year} ${escapeHtml(APP_CONFIG.name)}
           </span>
-
-          <span
-            class="app-footer__separator"
-            aria-hidden="true"
-          ></span>
-
+          <span class="app-footer__separator" aria-hidden="true"></span>
           <span class="app-footer__developer">
-            Senior Full Stack Developer:
-            <strong>
-              Qərib Səfərli
-            </strong>
+            ${title}: <strong>${developer}</strong>
           </span>
-
         </div>
-
       </div>
-
     </footer>
   `;
 }
 
-
-// ============================================================
-// 21. IMMEDIATE SHELL
-//
-// ƏN VACİB HİSSƏ:
-// getCurrentIdentity() gözlənilmir.
-//
-// Header + Drawer + Bottom Nav + Footer dərhal yaradılır.
-// Supabase yalnız sonradan identity-ni dəyişir.
-// ============================================================
-
-function renderImmediateShell() {
-  if (
-    state.shellRendered
-  ) {
-    return;
-  }
-
-
-  state.shellRendered =
-    true;
-
-
-  const shell =
-    shellIdentity();
-
-
-  renderHeader(
-    shell
-  );
-
-
-  renderDrawer(
-    shell
-  );
-
-
-  renderBottomNavigation(
-    shell
-  );
-
-
-  renderFooter();
-
-
-  document.documentElement
-    .classList
-    .add(
-      'layout-shell-ready'
-    );
-}
-
-
-// ============================================================
-
-
-// ============================================================
-// 22. LAYOUT UI CACHE
-//
-// F5 zamanı:
-// - istifadəçi adı
-// - avatar
-// - rol
-// - staff vəziyyəti
-//
-// Supabase cavabını gözləmədən vizual shell üçün istifadə olunur.
-//
-// Bu AUTH deyil.
-// Heç bir təhlükəsizlik qərarı bu cache-dən verilmir.
-// Admin icazəsi həmişə real Supabase identity ilə yoxlanılır.
-// ============================================================
-
-const LAYOUT_CACHE_KEY =
-  'skyfit-layout-identity-v1';
-
-
-function saveLayoutIdentity(
-  identity
-) {
+function saveLayoutIdentity(identity) {
   try {
-    const current =
-      normalizedIdentity(
-        identity
-      );
-
+    const current = normalizedIdentity(identity);
 
     sessionStorage.setItem(
       LAYOUT_CACHE_KEY,
       JSON.stringify({
-        authenticated:
-          current.authenticated,
-
-        role:
-          current.role,
-
-        isAdmin:
-          current.isAdmin,
-
-        isStaff:
-          current.isStaff,
-
-        name:
-          current.name,
-
-        email:
-          current.email,
-
-        avatar:
-          current.avatar,
+        authenticated: current.authenticated,
+        role: current.role,
+        isAdmin: current.isAdmin,
+        isStaff: current.isStaff,
+        name: current.name,
+        email: current.email,
+        avatar: current.avatar,
       })
     );
   } catch {
-    // sessionStorage bloklanıbsa layout yenə normal işləyəcək.
+    // Cache olmadan da layout işləyir.
   }
 }
 
-
 function readLayoutIdentity() {
   try {
-    const raw =
-      sessionStorage.getItem(
-        LAYOUT_CACHE_KEY
-      );
+    const raw = sessionStorage.getItem(LAYOUT_CACHE_KEY);
+    if (!raw) return null;
 
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return null;
 
-    if (!raw) {
-      return null;
-    }
-
-
-    const parsed =
-      JSON.parse(raw);
-
-
-    if (
-      !parsed ||
-      typeof parsed !==
-        'object'
-    ) {
-      return null;
-    }
-
-
-    return normalizedIdentity(
-      parsed
-    );
+    return normalizedIdentity(parsed);
   } catch {
     return null;
   }
 }
 
-
 function clearLayoutIdentity() {
   try {
-    sessionStorage.removeItem(
-      LAYOUT_CACHE_KEY
-    );
+    sessionStorage.removeItem(LAYOUT_CACHE_KEY);
   } catch {
-    // ignore
+    // Cache olmadan da layout işləyir.
   }
 }
 
-
-// ============================================================
-// 23. INITIAL SHELL IDENTITY
-//
-// Əvvəlki login olmuş şəxsin UI məlumatı sessionStorage-da varsa,
-// F5 zamanı həmin məlumat dərhal görünür.
-//
-// Yoxdursa normal shellIdentity() istifadə olunur.
-// ============================================================
-
 function getImmediateIdentity() {
-  return (
-    readLayoutIdentity() ||
-    shellIdentity()
-  );
+  return readLayoutIdentity() || shellIdentity();
 }
 
+function renderLayout(identity) {
+  const current = normalizedIdentity(identity);
+  state.identity = current;
 
-// ============================================================
-// 24. RENDER COMPLETE LAYOUT
-// ============================================================
-
-function renderLayout(
-  identity
-) {
-  const current =
-    normalizedIdentity(
-      identity
-    );
-
-
-  state.identity =
-    current;
-
-
-  renderHeader(
-    current
-  );
-
-
-  renderDrawer(
-    current
-  );
-
-
-  renderBottomNavigation(
-    current
-  );
-
-
+  renderHeader(current);
+  renderDrawer(current);
+  renderBottomNavigation(current);
   renderFooter();
 
-
-  bindLayoutImageFallbacks();
-
-
-  document.documentElement
-    .classList
-    .add(
-      'layout-shell-ready'
-    );
-
+  document.documentElement.classList.add('layout-shell-ready');
 
   return current;
 }
 
+function renderImmediateShellFromCache() {
+  if (state.shellRendered) return;
 
-// ============================================================
-// 25. IMAGE FALLBACKS
-//
-// Avatar URL səhv/boş olarsa broken-image icon göstərmirik.
-// ============================================================
-
-function bindLayoutImageFallbacks() {
-  $$(
-    '.app-header__avatar img, .app-drawer__avatar img'
-  ).forEach(
-    image => {
-      image.addEventListener(
-        'error',
-        () => {
-          const wrapper =
-            image.parentElement;
-
-
-          if (!wrapper) {
-            image.remove();
-            return;
-          }
-
-
-          const name =
-            normalizeString(
-              state.identity?.name,
-              'SK'
-            );
-
-
-          const words =
-            name
-              .split(' ')
-              .filter(Boolean);
-
-
-          let text =
-            'SK';
-
-
-          if (
-            words.length === 1 &&
-            words[0]
-          ) {
-            text =
-              words[0]
-                .slice(0, 2)
-                .toLocaleUpperCase(
-                  'az-AZ'
-                );
-          } else if (
-            words.length > 1
-          ) {
-            text =
-              (
-                words[0][0] +
-                words[
-                  words.length - 1
-                ][0]
-              )
-                .toLocaleUpperCase(
-                  'az-AZ'
-                );
-          }
-
-
-          image.remove();
-
-
-          const fallback =
-            createElement(
-              'span',
-              {
-                className:
-                  `${wrapper.className}__initials`,
-
-                text,
-              }
-            );
-
-
-          wrapper.append(
-            fallback
-          );
-        },
-        {
-          once: true,
-        }
-      );
-    }
-  );
+  state.shellRendered = true;
+  renderLayout(getImmediateIdentity());
 }
 
-
-// ============================================================
-// 26. HYDRATE REAL IDENTITY
-//
-// Burada artıq Supabase cavabı gözlənilir.
-// Amma layout bundan əvvəl görünür.
-// ============================================================
-
-async function hydrateIdentity(
-  options = {}
-) {
-  if (
-    state.hydrationPromise &&
-    !options.force
-  ) {
+async function hydrateIdentity(options = {}) {
+  if (state.hydrationPromise && !options.force) {
     return state.hydrationPromise;
   }
 
+  state.hydrationPromise = (async () => {
+    try {
+      const identity = await getCurrentIdentity({
+        force: Boolean(options.force),
+      });
 
-  state.hydrationPromise =
-    (async () => {
-      try {
-        const identity =
-          await getCurrentIdentity({
-            force:
-              Boolean(
-                options.force
-              ),
-          });
+      const current = normalizedIdentity(identity);
+      state.hydrated = true;
 
-
-        const current =
-          normalizedIdentity(
-            identity
-          );
-
-
-        state.hydrated =
-          true;
-
-
-        if (
-          current.authenticated
-        ) {
-          saveLayoutIdentity(
-            current
-          );
-        } else {
-          clearLayoutIdentity();
-        }
-
-
-        renderLayout(
-          current
-        );
-
-
-        return identity;
-      } catch (error) {
-        console.error(
-          '[SKy Fit Layout] Identity hydration error:',
-          error
-        );
-
-
-        state.hydrated =
-          true;
-
-
-        // Supabase müvəqqəti cavab verməsə belə
-        // hazır görünən shell-i dağıtmırıq.
-        return null;
-      } finally {
-        state.hydrationPromise =
-          null;
+      if (current.authenticated) {
+        saveLayoutIdentity(current);
+      } else {
+        clearLayoutIdentity();
       }
-    })();
 
+      renderLayout(current);
+      return identity;
+    } catch (error) {
+      state.hydrated = true;
+      console.error('[SKy Fit Layout] Identity hydration error:', error);
+      return null;
+    } finally {
+      state.hydrationPromise = null;
+    }
+  })();
 
-  return state
-    .hydrationPromise;
+  return state.hydrationPromise;
 }
 
-
-// ============================================================
-// 27. REFRESH LAYOUT
-//
-// Digər JS fayllarında profil/avatar dəyişəndə istifadə ediləcək.
-// ============================================================
-
-export async function refreshLayout(
-  options = {}
-) {
+export async function refreshLayout(options = {}) {
   return hydrateIdentity({
-    force:
-      options.force !==
-      false,
+    force: options.force !== false,
   });
 }
-
-
-// ============================================================
-// 28. INIT LAYOUT
-//
-// Köhnə app.js/profile.js/admin.js ilə keçid mərhələsində
-// await initLayout() işləməyə davam edə bilər.
-//
-// Fərq:
-// shell artıq await-dən ƏVVƏL render olunub.
-// ============================================================
 
 export async function initLayout() {
   renderImmediateShellFromCache();
-
-
   return hydrateIdentity();
 }
 
-
-// ============================================================
-// 29. IMMEDIATE SHELL FROM CACHE
-// ============================================================
-
-function renderImmediateShellFromCache() {
-  if (
-    state.shellRendered
-  ) {
-    return;
-  }
-
-
-  state.shellRendered =
-    true;
-
-
-  const identity =
-    getImmediateIdentity();
-
-
-  state.identity =
-    identity;
-
-
-  renderHeader(
-    identity
-  );
-
-
-  renderDrawer(
-    identity
-  );
-
-
-  renderBottomNavigation(
-    identity
-  );
-
-
-  renderFooter();
-
-
-  bindLayoutImageFallbacks();
-
-
-  document.documentElement
-    .classList
-    .add(
-      'layout-shell-ready'
-    );
-}
-
-
-// ============================================================
-// 30. PROFILE CHANGE EVENT
-//
-// profile.js avatar/ad yeniləyəndə bütün layout yenilənə bilər.
-// ============================================================
-
-window.addEventListener(
-  SKYFIT_EVENTS.profileChange,
-  async () => {
-    await refreshLayout({
-      force: true,
-    });
-  }
-);
-
-
-// ============================================================
-// 31. AUTH CHANGE
-//
-// core.js real Supabase auth eventini burada ötürür.
-// ============================================================
-
-window.addEventListener(
-  SKYFIT_EVENTS.authChange,
-  async event => {
-    const authEvent =
-      normalizeString(
-        event.detail?.event
-      );
-
-
-    const identity =
-      event.detail?.identity;
-
-
-    if (
-      authEvent ===
-      'SIGNED_OUT'
-    ) {
-      clearLayoutIdentity();
-
-
-      state.identity =
-        shellIdentity();
-
-
-      state.hydrated =
-        true;
-
-
-      renderLayout(
-        state.identity
-      );
-
-
-      return;
-    }
-
-
-    if (identity) {
-      const current =
-        normalizedIdentity(
-          identity
-        );
-
-
-      state.identity =
-        current;
-
-
-      state.hydrated =
-        true;
-
-
-      if (
-        current.authenticated
-      ) {
-        saveLayoutIdentity(
-          current
-        );
-      }
-
-
-      renderLayout(
-        current
-      );
-
-
-      return;
-    }
-
-
-    // TOKEN_REFRESHED və digər hallarda identity detail gəlməsə
-    // backenddən yenidən oxuyuruq.
-    if (
-      authEvent ===
-        'SIGNED_IN' ||
-      authEvent ===
-        'TOKEN_REFRESHED' ||
-      authEvent ===
-        'USER_UPDATED'
-    ) {
-      await refreshLayout({
-        force: true,
-      });
-    }
-  }
-);
-
-
-// ============================================================
-// 32. THEME CHANGE
-// ============================================================
-
-window.addEventListener(
-  SKYFIT_EVENTS.themeChange,
-  () => {
-    const label =
-      byId(
-        'app-theme-label'
-      );
-
-
-    if (label) {
-      label.textContent =
-        themeLabel();
-    }
-  }
-);
-
-
-// ============================================================
-// 33. THEME ACTION
-// ============================================================
-
 function handleThemeCycle() {
-  const next =
-    cycleTheme();
+  cycleTheme();
 
+  const label = themeLabel();
+  const element = byId('app-theme-label');
 
-  const label =
-    next ===
-      'dark'
-      ? 'Tünd rejim'
-      : next ===
-          'light'
-        ? 'Açıq rejim'
-        : 'Sistem rejimi';
+  if (element) element.textContent = label;
 
-
-  const element =
-    byId(
-      'app-theme-label'
-    );
-
-
-  if (element) {
-    element.textContent =
-      label;
-  }
-
-
-  notify.info(
-    `${label} aktiv edildi.`
-  );
+  notify.info(`${label} aktiv edildi.`);
 }
-
-
-// ============================================================
-// 34. LOGOUT ACTION
-// ============================================================
 
 async function handleLogout() {
-  const confirmed =
-    await confirmDialog({
-      eyebrow:
-        'Hesab',
+  const confirmed = await confirmDialog({
+    eyebrow: 'Hesab',
+    title: 'Çıxış edilsin?',
+    message: 'Cari SKy Fit sessiyası bağlanacaq.',
+    confirmText: 'Çıxış et',
+    cancelText: 'Ləğv et',
+    danger: true,
+  });
 
-      title:
-        'Çıxış edilsin?',
-
-      message:
-        'Cari SKy Fit sessiyası bağlanacaq.',
-
-      confirmText:
-        'Çıxış et',
-
-      cancelText:
-        'Ləğv et',
-
-      danger:
-        true,
-    });
-
-
-  if (!confirmed) {
-    return;
-  }
-
+  if (!confirmed) return;
 
   clearLayoutIdentity();
 
-
   await signOut({
-    redirect:
-      true,
-
-    redirectTo:
-      APP_CONFIG.routes.login,
+    redirect: true,
+    redirectTo: APP_CONFIG.routes.login,
   });
 }
 
+function scrollToHash(hash = window.location.hash) {
+  const value = normalizeString(hash);
 
-// ============================================================
-// 35. ESCAPE KEY
-// ============================================================
+  if (!value || value === '#') return;
 
-document.addEventListener(
-  'keydown',
-  event => {
-    if (
-      event.key ===
-        'Escape' &&
-      state.drawerOpen
-    ) {
-      closeDrawer();
-    }
-  }
-);
-
-
-// ============================================================
-// 36. DRAWER LINK CLOSE
-//
-// Drawer-dan link seçiləndə keçid başlamazdan əvvəl drawer bağlanır.
-// Mobil tətbiq hissini yaxşılaşdırır.
-// ============================================================
-
-document.addEventListener(
-  'click',
-  event => {
-    const link =
-      event.target.closest(
-        '.app-drawer__link[href], .app-drawer__profile[href]'
-      );
-
-
-    if (
-      link &&
-      state.drawerOpen
-    ) {
-      closeDrawer();
-    }
-  }
-);
-
-
-// ============================================================
-// 37. HASH NAVIGATION
-//
-// Mağaza / Məşqçilər kimi eyni səhifədaxili keçidlərdə
-// fixed header elementi örtməsin.
-// ============================================================
-
-function scrollToHash(
-  hash =
-    window.location.hash
-) {
-  const value =
-    normalizeString(
-      hash
-    );
-
-
-  if (
-    !value ||
-    value === '#'
-  ) {
-    return;
-  }
-
-
-  let target;
-
+  let target = null;
 
   try {
-    target =
-      document.querySelector(
-        value
-      );
+    target = document.querySelector(value);
   } catch {
-    target =
-      null;
-  }
-
-
-  if (!target) {
     return;
   }
 
+  if (!target) return;
 
-  requestAnimationFrame(
-    () => {
-      target.scrollIntoView({
-        behavior:
-          'smooth',
-
-        block:
-          'start',
-      });
-    }
-  );
+  requestAnimationFrame(() => {
+    target.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
+  });
 }
 
+function handleAuthChange(event) {
+  const authEvent = normalizeString(event.detail?.event);
+  const identity = event.detail?.identity;
 
-window.addEventListener(
-  'hashchange',
-  () => {
-    scrollToHash();
+  if (authEvent === 'SIGNED_OUT') {
+    clearLayoutIdentity();
+    state.hydrated = true;
+    renderLayout(shellIdentity());
+    return;
   }
-);
 
+  if (identity) {
+    const current = normalizedIdentity(identity);
+    state.hydrated = true;
 
-// ============================================================
-// 38. WINDOW RESIZE
-//
-// Desktop ölçüsünə keçəndə açıq mobil drawer qalmasın.
-// ============================================================
-
-let resizeTimer =
-  null;
-
-
-window.addEventListener(
-  'resize',
-  () => {
-    clearTimeout(
-      resizeTimer
-    );
-
-
-    resizeTimer =
-      setTimeout(
-        () => {
-          if (
-            window.innerWidth >=
-              1180 &&
-            state.drawerOpen
-          ) {
-            closeDrawer();
-          }
-        },
-        100
-      );
-  }
-);
-
-
-// ============================================================
-// 39. VISIBILITY RETURN
-//
-// Tətbiq background-dan qayıdanda hər dəfə bütün layout-u
-// dağıtmırıq. Uzun müddət keçibsə identity yenilənir.
-// ============================================================
-
-let lastIdentityRefresh =
-  Date.now();
-
-
-document.addEventListener(
-  'visibilitychange',
-  () => {
-    if (
-      document.visibilityState !==
-      'visible'
-    ) {
-      return;
+    if (current.authenticated) {
+      saveLayoutIdentity(current);
+    } else {
+      clearLayoutIdentity();
     }
 
-
-    const now =
-      Date.now();
-
-
-    const elapsed =
-      now -
-      lastIdentityRefresh;
-
-
-    // 5 dəqiqədən çox background-da qalıbsa session/profile
-    // səssiz yenilənir.
-    if (
-      elapsed >=
-      5 * 60 * 1000
-    ) {
-      lastIdentityRefresh =
-        now;
-
-
-      refreshLayout({
-        force: true,
-      });
-    }
+    renderLayout(current);
+    return;
   }
-);
 
+  if (
+    authEvent === 'SIGNED_IN' ||
+    authEvent === 'TOKEN_REFRESHED' ||
+    authEvent === 'USER_UPDATED'
+  ) {
+    refreshLayout({ force: true });
+  }
+}
 
-// ============================================================
-// 40. GET LAYOUT STATE
-//
-// Debug/test zamanı istifadə edilə bilər.
-// State-in özü xaricə mutable verilmir.
-// ============================================================
+function handleProfileChange() {
+  refreshLayout({ force: true });
+}
+
+function handleThemeChange() {
+  const label = byId('app-theme-label');
+  if (label) label.textContent = themeLabel();
+}
+
+function handleDocumentClick(event) {
+  const target = event.target;
+  if (!(target instanceof Element)) return;
+
+  const link = target.closest(
+    '.app-drawer__link[href], .app-drawer__profile[href]'
+  );
+
+  if (link && state.drawerOpen) {
+    closeDrawer();
+  }
+}
+
+function handleResize() {
+  clearTimeout(resizeTimer);
+
+  resizeTimer = setTimeout(() => {
+    if (
+      window.innerWidth >= DESKTOP_DRAWER_BREAKPOINT &&
+      state.drawerOpen
+    ) {
+      closeDrawer();
+    }
+  }, 100);
+}
+
+function handleVisibilityChange() {
+  if (document.visibilityState !== 'visible') return;
+
+  const now = Date.now();
+
+  if (now - lastIdentityRefresh < IDENTITY_REFRESH_INTERVAL) {
+    return;
+  }
+
+  lastIdentityRefresh = now;
+  refreshLayout({ force: true });
+}
 
 export function getLayoutState() {
   return {
-    identity:
-      state.identity,
-
-    hydrated:
-      state.hydrated,
-
-    drawerOpen:
-      state.drawerOpen,
-
-    shellRendered:
-      state.shellRendered,
+    identity: state.identity
+      ? { ...state.identity }
+      : null,
+    hydrated: state.hydrated,
+    drawerOpen: state.drawerOpen,
+    shellRendered: state.shellRendered,
   };
 }
 
-
-// ============================================================
-// 41. PUBLIC IDENTITY REFRESH
-//
-// Profil səhifəsi ad/avatar yenilədikdən sonra istifadə edə bilər.
-// ============================================================
-
 export async function refreshLayoutIdentity() {
-  const result =
-    await refreshLayout({
-      force: true,
-    });
-
-
-  lastIdentityRefresh =
-    Date.now();
-
-
+  const result = await refreshLayout({ force: true });
+  lastIdentityRefresh = Date.now();
   return result;
 }
 
+function bindGlobalLayoutEvents() {
+  window.addEventListener(
+    SKYFIT_EVENTS.profileChange,
+    handleProfileChange
+  );
 
-// ============================================================
-// 42. IMMEDIATE BOOTSTRAP
-//
-// ES module script-lər defer kimi işləyir, ona görə çox vaxt
-// document.body artıq mövcuddur.
-//
-// Yenə də təhlükəsiz fallback saxlanılır.
-// ============================================================
+  window.addEventListener(
+    SKYFIT_EVENTS.authChange,
+    handleAuthChange
+  );
+
+  window.addEventListener(
+    SKYFIT_EVENTS.themeChange,
+    handleThemeChange
+  );
+
+  window.addEventListener('hashchange', () => {
+    renderBottomNavigation(state.identity || shellIdentity());
+    renderDrawer(state.identity || shellIdentity());
+    scrollToHash();
+  });
+
+  window.addEventListener('resize', handleResize);
+  document.addEventListener('keydown', handleDrawerKeydown);
+  document.addEventListener('click', handleDocumentClick);
+  document.addEventListener(
+    'visibilitychange',
+    handleVisibilityChange
+  );
+}
+
+let globalEventsBound = false;
 
 function bootstrapLayout() {
   renderImmediateShellFromCache();
 
+  if (!globalEventsBound) {
+    globalEventsBound = true;
+    bindGlobalLayoutEvents();
+  }
 
-  // Supabase hydration UI-ni bloklamır.
   hydrateIdentity()
-    .then(
-      () => {
-        lastIdentityRefresh =
-          Date.now();
+    .then(() => {
+      lastIdentityRefresh = Date.now();
 
-
-        if (
-          window.location.hash
-        ) {
-          setTimeout(
-            () => {
-              scrollToHash();
-            },
-            80
-          );
-        }
+      if (window.location.hash) {
+        setTimeout(scrollToHash, 80);
       }
-    )
-    .catch(
-      error => {
-        console.error(
-          '[SKy Fit Layout] Bootstrap hydration error:',
-          error
-        );
-      }
-    );
+    })
+    .catch(error => {
+      console.error(
+        '[SKy Fit Layout] Bootstrap hydration error:',
+        error
+      );
+    });
 }
 
-
-if (
-  document.readyState ===
-    'loading'
-) {
+if (document.readyState === 'loading') {
   document.addEventListener(
     'DOMContentLoaded',
     bootstrapLayout,
-    {
-      once: true,
-    }
+    { once: true }
   );
 } else {
   bootstrapLayout();
 }
-
-
-// ============================================================
-// SKY FIT PRO
-// LAYOUT.JS COMPLETE
-// ============================================================
