@@ -1,64 +1,37 @@
-// ============================================================
-// SKY FIT PRO
-// Supabase və tətbiq səviyyəli sabit konfiqurasiya
-// File: js/config.js
-// ============================================================
+// SKy Fit Pro
+// Senior Full Stack Developer: Qərib Səfərli
 
-import { createClient } from
-  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
-
-// ============================================================
-// SUPABASE
-// ============================================================
-
-export const SUPABASE_URL =
-  'https://elpwornsvnplyzyufqir.supabase.co';
+// Supabase
+export const SUPABASE_URL = 'https://elpwornsvnplyzyufqir.supabase.co';
 
 export const SUPABASE_ANON_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVscHdvcm5zdm5wbHl6eXVmcWlyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU4Mjc0NjgsImV4cCI6MjEwMTQwMzQ2OH0.9kxI4ZwUEJjwzVOweZowdAdlkAk9tUZ9rg7Yf7CnJJo';
 
-
-// ============================================================
-// SUPABASE CLIENT
-// Bütün layihə boyu yalnız bu client istifadə olunacaq.
-// Başqa faylda ikinci createClient() yaradılmayacaq.
-// ============================================================
-
-export const supabase = createClient(
-  SUPABASE_URL,
-  SUPABASE_ANON_KEY,
-  {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true,
-
-      storageKey: 'skyfit-pro-auth',
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    storageKey: 'skyfit-pro-auth',
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'skyfit-pro-web',
     },
+  },
+});
 
-    global: {
-      headers: {
-        'X-Client-Info': 'skyfit-pro-web',
-      },
-    },
-  }
-);
-
-
-// ============================================================
-// APP META
-// ============================================================
-
+// Tətbiq
 export const APP_CONFIG = Object.freeze({
   name: 'SKy Fit Pro',
   shortName: 'SKy Fit',
-
   version: '1.0.0',
-
+  developer: 'Qərib Səfərli',
+  developerTitle: 'Senior Full Stack Developer',
   locale: 'az-AZ',
   currency: 'AZN',
-
   defaultTheme: 'system',
 
   routes: Object.freeze({
@@ -68,43 +41,25 @@ export const APP_CONFIG = Object.freeze({
     profile: './profile.html',
     admin: './admin.html',
     favorites: './favorites.html',
-
-    resetPassword:
-      './reset-password.html',
-
-    updatePassword:
-      './update-password.html',
+    resetPassword: './reset-password.html',
+    updatePassword: './update-password.html',
   }),
 
   storage: Object.freeze({
     avatars: 'avatars',
-
-    productImages:
-      'product-images',
-
-    trainerImages:
-      'trainer-images',
+    productImages: 'product-images',
+    trainerImages: 'trainer-images',
   }),
 });
 
-
-// ============================================================
-// ROLE CONFIGURATION
-// Mövcud Supabase user_role enum ilə uyğun saxlanılır.
-// ============================================================
-
+// Rollar
 export const USER_ROLES = Object.freeze({
   ADMIN: 'admin',
   STAFF: 'staff',
   MEMBER: 'member',
 });
 
-
-// ============================================================
-// PAYMENT STATUS
-// Mövcud backend enum ilə uyğun saxlanılır.
-// ============================================================
-
+// Ödəniş statusları
 export const PAYMENT_STATUS = Object.freeze({
   PAID: 'paid',
   DEBT: 'debt',
@@ -112,40 +67,37 @@ export const PAYMENT_STATUS = Object.freeze({
   REFUNDED: 'refunded',
 });
 
-
-// ============================================================
-// SALE MODES
-// Mövcud sale_mode enum ilə uyğun saxlanılır.
-// ============================================================
-
+// Satış formaları
 export const SALE_MODES = Object.freeze({
   UNIT: 'unit',
   PORTION: 'portion',
 });
 
-
-// ============================================================
-// LEDGER TYPES
-// Mövcud entry_type enum ilə uyğun saxlanılır.
-// ============================================================
-
+// Kassa tipi
 export const LEDGER_TYPES = Object.freeze({
   INCOME: 'income',
   EXPENSE: 'expense',
 });
 
+// İşçi növbəsi
+export const STAFF_SHIFT_STATUS = Object.freeze({
+  OPEN: 'open',
+  CLOSED: 'closed',
+  CANCELLED: 'cancelled',
+});
 
-// ============================================================
-// UI CONFIGURATION
-// ============================================================
+// İşçi kassa əməliyyatları
+export const STAFF_CASH_TRANSACTION_TYPES = Object.freeze({
+  ADVANCE: 'advance',
+  REPAYMENT: 'repayment',
+  ADJUSTMENT: 'adjustment',
+});
 
+// UI
 export const UI_CONFIG = Object.freeze({
   toastDuration: 4200,
-
   debounceDelay: 280,
-
   modalTransitionDuration: 360,
-
   loaderMinimumDuration: 180,
 
   products: Object.freeze({
@@ -170,113 +122,73 @@ export const UI_CONFIG = Object.freeze({
   }),
 });
 
-
-// ============================================================
-// LOCAL STORAGE KEYS
-// Bütün localStorage açarları mərkəzləşdirilib.
-// ============================================================
-
+// localStorage
 export const STORAGE_KEYS = Object.freeze({
   theme: 'skyfit-pro-theme',
-
-  favorites:
-    'skyfit-pro-favorites',
-
-  lastAdminTab:
-    'skyfit-pro-admin-tab',
+  favorites: 'skyfit-pro-favorites',
+  lastAdminTab: 'skyfit-pro-admin-tab',
 });
 
-
-// ============================================================
-// SUPABASE RPC NAMES
-// Funksiya adlarını müxtəlif JS fayllarında string kimi
-// təkrar yazmamaq üçün mərkəzləşdirilir.
-// ============================================================
-
+// Supabase RPC
 export const RPC = Object.freeze({
-  processSale:
-    'process_sale',
+  processSale: 'process_sale',
 
-  addStock:
-    'add_stock',
+  addStock: 'add_stock',
+  adjustStock: 'adjust_stock',
 
-  createMembership:
-    'create_membership',
+  createMembership: 'create_membership',
+  refreshMembershipStatuses: 'refresh_membership_statuses',
 
-  payDebt:
-    'pay_debt',
+  payDebt: 'pay_debt',
 
-  recordAttendance:
-    'record_attendance',
+  recordAttendance: 'record_attendance',
+  checkInMember: 'check_in_member',
+
+  openStaffShift: 'open_staff_shift',
+  closeStaffShift: 'close_staff_shift',
+  getShiftSummary: 'get_shift_summary',
+  getOperatorActivity: 'get_operator_activity',
+
+  takeStaffCashAdvance: 'take_staff_cash_advance',
+  repayStaffCashAdvance: 'repay_staff_cash_advance',
 });
 
-
-// ============================================================
-// DATABASE TABLE NAMES
-// ============================================================
-
+// Supabase cədvəlləri
 export const TABLES = Object.freeze({
-  profiles:
-    'profiles',
+  profiles: 'profiles',
 
-  products:
-    'products',
+  membershipPlans: 'membership_plans',
+  memberships: 'memberships',
+  attendance: 'attendance',
 
-  trainers:
-    'trainers',
+  products: 'products',
+  stockMovements: 'stock_movements',
 
-  memberships:
-    'memberships',
+  sales: 'sales',
+  saleItems: 'sale_items',
 
-  membershipPlans:
-    'membership_plans',
+  debtAccounts: 'debt_accounts',
+  debtTransactions: 'debt_transactions',
 
-  attendance:
-    'attendance',
+  ledgerEntries: 'ledger_entries',
 
-  sales:
-    'sales',
+  trainers: 'trainers',
 
-  saleItems:
-    'sale_items',
+  staffShifts: 'staff_shifts',
+  staffCashAccounts: 'staff_cash_accounts',
+  staffCashTransactions: 'staff_cash_transactions',
 
-  debtAccounts:
-    'debt_accounts',
-
-  debtTransactions:
-    'debt_transactions',
-
-  ledgerEntries:
-    'ledger_entries',
-
-  stockMovements:
-    'stock_movements',
+  auditLog: 'audit_log',
 });
 
-
-// ============================================================
-// DEVELOPMENT SAFETY
-// Supabase bağlantısının konfiqurasiyasının boş qalmasının
-// qarşısını alır.
-// ============================================================
-
+// Konfiqurasiya yoxlaması
 function validateConfiguration() {
-  if (
-    !SUPABASE_URL ||
-    !SUPABASE_URL.startsWith('https://')
-  ) {
-    throw new Error(
-      'SKy Fit Pro: Supabase URL düzgün deyil.'
-    );
+  if (!SUPABASE_URL || !SUPABASE_URL.startsWith('https://')) {
+    throw new Error('SKy Fit Pro: Supabase URL düzgün deyil.');
   }
 
-  if (
-    !SUPABASE_ANON_KEY ||
-    SUPABASE_ANON_KEY.length < 50
-  ) {
-    throw new Error(
-      'SKy Fit Pro: Supabase anon key düzgün deyil.'
-    );
+  if (!SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.length < 50) {
+    throw new Error('SKy Fit Pro: Supabase anon key düzgün deyil.');
   }
 }
 
