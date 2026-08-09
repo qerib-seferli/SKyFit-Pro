@@ -1595,7 +1595,6 @@ function renderFooter() {
       'app-footer-root'
     );
 
-
   if (
     isAuthPage()
   ) {
@@ -1604,14 +1603,11 @@ function renderFooter() {
       '';
 
     return;
-
   }
-
 
   const year =
     new Date()
       .getFullYear();
-
 
   root.innerHTML = `
     <footer class="app-footer">
@@ -1637,32 +1633,6 @@ function renderFooter() {
           </span>
 
         </div>
-
-
-        <nav
-          class="app-footer__links"
-          aria-label="Footer naviqasiyası"
-        >
-
-          <a
-            href="${APP_CONFIG.routes.home}"
-          >
-            Ana səhifə
-          </a>
-
-          <a
-            href="${APP_CONFIG.routes.home}#trainers"
-          >
-            Məşqçilər
-          </a>
-
-          <a
-            href="${APP_CONFIG.routes.home}#products"
-          >
-            Məhsullar
-          </a>
-
-        </nav>
 
       </div>
 
