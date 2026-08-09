@@ -111,37 +111,46 @@
       aria-labelledby="home-hero-title"
     >
 
-      <div class="home-hero__background">
+<div
+  class="home-hero__background"
+  aria-hidden="true"
+>
 
-        <!--
-          Zalın real şəkillərini aldıqdan sonra
-          src-ni birlikdə dəyişəcəyik.
+  <div class="home-hero__slides">
 
-          Hazırda broken image yaratmamaq üçün img qoymuruq.
-        -->
+    <img
+      class="home-hero__slide home-hero__slide--1"
+      src="./assets/foto/hero-main-1.png"
+      alt=""
+      decoding="async"
+      fetchpriority="high"
+    >
 
-        <div
-          class="home-hero__visual-placeholder"
-          aria-hidden="true"
-        >
+    <img
+      class="home-hero__slide home-hero__slide--2"
+      src="./assets/foto/hero-main-2.png"
+      alt=""
+      loading="eager"
+      decoding="async"
+    >
 
-          <span class="home-hero__visual-glow"></span>
+    <img
+      class="home-hero__slide home-hero__slide--3"
+      src="./assets/foto/hero-main-3.png"
+      alt=""
+      loading="eager"
+      decoding="async"
+    >
 
-          <span class="home-hero__visual-grid"></span>
+  </div>
 
-          <span class="home-hero__visual-mark">
-            SKY
-          </span>
+  <div class="home-hero__scrim"></div>
 
-        </div>
+  <div class="home-hero__noise"></div>
 
+  <div class="home-hero__accent"></div>
 
-        <div
-          class="home-hero__overlay"
-          aria-hidden="true"
-        ></div>
-
-      </div>
+</div>
 
 
       <div class="page-shell home-hero__inner">
@@ -659,60 +668,95 @@
           img elementləri ilə əvəz edəcəyik.
         -->
 
-        <div class="gym-showcase">
+<div class="gym-showcase">
+
+  <figure class="gym-showcase__item gym-showcase__item--primary">
+
+    <img
+      class="gym-showcase__image"
+      src="./assets/foto/gym-section-1.png"
+      alt="SKy Fit zalının ümumi görünüşü"
+      loading="lazy"
+      decoding="async"
+    >
+
+    <figcaption class="gym-showcase__caption">
+
+      <span class="gym-showcase__eyebrow">
+        SKy Fit
+      </span>
+
+      <strong>
+        Güc üçün yaradılmış məkan
+      </strong>
+
+      <small>
+        Professional məşq atmosferi
+      </small>
+
+    </figcaption>
+
+  </figure>
 
 
-          <article class="gym-showcase__item gym-showcase__item--large">
+  <figure class="gym-showcase__item">
 
-            <div class="gym-showcase__placeholder">
+    <img
+      class="gym-showcase__image"
+      src="./assets/foto/gym-section-2.png"
+      alt="SKy Fit məşq zonası"
+      loading="lazy"
+      decoding="async"
+    >
 
-              <span>
-                SKy Fit
-              </span>
+    <figcaption class="gym-showcase__caption">
 
-              <small>
-                Zalın əsas görünüşü
-              </small>
+      <span class="gym-showcase__eyebrow">
+        Training
+      </span>
 
-            </div>
+      <strong>
+        Məşq zonası
+      </strong>
 
-          </article>
+      <small>
+        Fokus və performans
+      </small>
 
+    </figcaption>
 
-          <article class="gym-showcase__item">
-
-            <div class="gym-showcase__placeholder">
-
-              <span>
-                Training
-              </span>
-
-              <small>
-                Məşq zonası
-              </small>
-
-            </div>
-
-          </article>
+  </figure>
 
 
-          <article class="gym-showcase__item">
+  <figure class="gym-showcase__item">
 
-            <div class="gym-showcase__placeholder">
+    <img
+      class="gym-showcase__image"
+      src="./assets/foto/gym-section-3.png"
+      alt="SKy Fit güc avadanlıqları"
+      loading="lazy"
+      decoding="async"
+    >
 
-              <span>
-                Strength
-              </span>
+    <figcaption class="gym-showcase__caption">
 
-              <small>
-                Güc avadanlıqları
-              </small>
+      <span class="gym-showcase__eyebrow">
+        Strength
+      </span>
 
-            </div>
+      <strong>
+        Güc avadanlıqları
+      </strong>
 
-          </article>
+      <small>
+        Real məşq üçün real avadanlıq
+      </small>
 
-        </div>
+    </figcaption>
+
+  </figure>
+
+</div>
 
       </div>
 
