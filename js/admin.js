@@ -4539,11 +4539,10 @@ function bindProductForm(
               ?.value
           ),
 
-        portion_size:
-          mode ===
-            'portion'
-            ? portionSize
-            : 0,
+      portion_size:
+        mode === 'portion'
+          ? portionSize
+          : 1,
 
         low_stock_threshold:
           Math.max(
