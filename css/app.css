@@ -5213,3 +5213,18 @@ html[data-theme="light"]
    HOME STEP 2 END
    ================================================================ */
 
+/* ==============================
+   CSS LOAD TEST
+   ============================== */
+
+body[data-page="home"] {
+  outline: 8px solid red !important;
+}
+
+body[data-page="home"] .product-card {
+  border: 8px solid lime !important;
+}
+
+body[data-page="home"] .trainer-card {
+  border: 8px solid cyan !important;
+}
