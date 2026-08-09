@@ -5213,3 +5213,957 @@ html[data-theme="light"]
    HOME STEP 2 END
    ================================================================ */
 
+/* ================================================================
+   SKY FIT PRO
+   HOME PAGE — STEP 3
+   Product Modal + Trainer Modal + Loader
+
+   Senior Full Stack Developer: Qərib Səfərli
+   ================================================================ */
+
+
+/* ================================================================
+   39. MODAL ROOT / BACKDROP
+   ================================================================ */
+
+#app-modal-root {
+  position: relative;
+  z-index: 7000;
+}
+
+
+.app-modal-backdrop {
+  position: fixed;
+  z-index: 7000;
+  inset: 0;
+
+  display: grid;
+  place-items: center;
+
+  padding: 18px;
+
+  overflow-y: auto;
+
+  background:
+    rgba(2, 4, 7, 0.76);
+
+  backdrop-filter:
+    blur(9px);
+
+  -webkit-backdrop-filter:
+    blur(9px);
+}
+
+
+/* ================================================================
+   40. MODAL WINDOW
+   ================================================================ */
+
+.app-modal {
+  width: min(
+    calc(100vw - 36px),
+    760px
+  );
+
+  max-height: min(
+    760px,
+    calc(100dvh - 36px)
+  );
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
+
+  border:
+    1px solid var(--border);
+
+  border-radius:
+    18px;
+
+  background:
+    rgba(13, 17, 23, 0.985);
+
+  box-shadow:
+    0 30px 90px
+    rgba(0, 0, 0, 0.55);
+}
+
+
+html[data-theme="light"]
+.app-modal {
+  background:
+    rgba(255, 255, 255, 0.99);
+}
+
+
+/* ================================================================
+   MODAL HEADER
+   ================================================================ */
+
+.app-modal__header {
+  flex: 0 0 auto;
+
+  min-height: 62px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 12px;
+
+  padding: 11px 13px;
+
+  border-bottom:
+    1px solid var(--border-soft);
+}
+
+
+.app-modal__heading {
+  min-width: 0;
+
+  display: grid;
+
+  gap: 4px;
+}
+
+
+.app-modal__eyebrow {
+  color:
+    var(--yellow);
+
+  font-family:
+    var(--font-display);
+
+  font-size: 9px;
+
+  font-weight: 600;
+
+  letter-spacing:
+    0.09em;
+
+  text-transform:
+    uppercase;
+}
+
+
+.app-modal__title {
+  margin: 0;
+
+  overflow: hidden;
+
+  color:
+    var(--text);
+
+  font-family:
+    var(--font-display);
+
+  font-size: 20px;
+
+  line-height: 1;
+
+  font-weight: 600;
+
+  text-overflow:
+    ellipsis;
+
+  text-transform:
+    uppercase;
+
+  white-space:
+    nowrap;
+}
+
+
+.app-modal__close {
+  width: 38px;
+  height: 38px;
+
+  flex: 0 0 38px;
+
+  display: grid;
+  place-items: center;
+
+  padding: 0;
+
+  border:
+    1px solid var(--border);
+
+  border-radius:
+    10px;
+
+  color:
+    var(--text-muted);
+
+  background:
+    var(--surface-2);
+
+  cursor:
+    pointer;
+
+  transition:
+    150ms ease;
+}
+
+
+.app-modal__close:hover {
+  color:
+    var(--danger);
+
+  border-color:
+    rgba(255, 95, 109, 0.4);
+
+  background:
+    rgba(255, 95, 109, 0.08);
+}
+
+
+/* ================================================================
+   MODAL BODY
+   ================================================================ */
+
+.app-modal__body {
+  min-height: 0;
+
+  flex: 1;
+
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  padding: 13px;
+}
+
+
+/* ================================================================
+   41. PRODUCT DETAIL MODAL
+   ================================================================ */
+
+.product-modal {
+  display: grid;
+
+  grid-template-columns:
+    minmax(240px, 0.85fr)
+    minmax(0, 1.15fr);
+
+  align-items: start;
+
+  gap: 16px;
+}
+
+
+/* PRODUCT IMAGE */
+
+.product-modal__media {
+  width: 100%;
+
+  aspect-ratio:
+    1 / 1;
+
+  overflow: hidden;
+
+  display: grid;
+  place-items: center;
+
+  border:
+    1px solid var(--border-soft);
+
+  border-radius:
+    14px;
+
+  background:
+    #ffffff;
+}
+
+
+.product-modal__media img {
+  width: 100%;
+  height: 100%;
+
+  padding: 14px;
+
+  object-fit:
+    contain;
+
+  object-position:
+    center;
+}
+
+
+.product-modal__fallback {
+  width: 100%;
+  height: 100%;
+
+  display: grid;
+  place-items: center;
+
+  color:
+    #9b8900;
+
+  background:
+    #f4f5f6;
+
+  font-family:
+    var(--font-display);
+
+  font-size:
+    38px;
+
+  font-weight:
+    700;
+}
+
+
+/* PRODUCT CONTENT */
+
+.product-modal__content {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 11px;
+
+  padding:
+    3px 0;
+}
+
+
+.product-modal__name {
+  margin: 0;
+
+  color:
+    var(--text);
+
+  font-family:
+    var(--font-display);
+
+  font-size:
+    clamp(
+      23px,
+      3vw,
+      32px
+    );
+
+  line-height:
+    1.04;
+
+  font-weight:
+    600;
+
+  text-transform:
+    uppercase;
+}
+
+
+.product-modal__description {
+  margin: 0;
+
+  color:
+    var(--text-muted);
+
+  font-size:
+    12px;
+
+  line-height:
+    1.55;
+}
+
+
+/* PRICE */
+
+.product-modal__meta {
+  display: flex;
+
+  align-items:
+    baseline;
+
+  gap: 8px;
+
+  padding:
+    11px 0;
+
+  border-top:
+    1px solid var(--border-soft);
+
+  border-bottom:
+    1px solid var(--border-soft);
+}
+
+
+.product-modal__price {
+  color:
+    var(--yellow);
+
+  font-family:
+    var(--font-number);
+
+  font-size:
+    27px;
+
+  line-height:
+    1;
+
+  font-weight:
+    700;
+}
+
+
+.product-modal__unit {
+  color:
+    var(--text-muted);
+
+  font-size:
+    11px;
+}
+
+
+/* PRODUCT FACTS */
+
+.product-modal__facts {
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      2,
+      minmax(0, 1fr)
+    );
+
+  gap: 6px;
+}
+
+
+.product-modal__facts > div {
+  min-width: 0;
+
+  padding:
+    9px 10px;
+
+  border:
+    1px solid var(--border-soft);
+
+  border-radius:
+    10px;
+
+  background:
+    var(--surface-2);
+}
+
+
+.product-modal__facts span {
+  display: block;
+
+  margin-bottom:
+    3px;
+
+  color:
+    var(--text-faint);
+
+  font-size:
+    8px;
+
+  font-weight:
+    600;
+
+  text-transform:
+    uppercase;
+}
+
+
+.product-modal__facts strong {
+  display: block;
+
+  overflow:
+    hidden;
+
+  color:
+    var(--text-soft);
+
+  font-size:
+    11px;
+
+  font-weight:
+    700;
+
+  text-overflow:
+    ellipsis;
+
+  white-space:
+    nowrap;
+}
+
+
+/* ================================================================
+   42. TRAINER DETAIL MODAL
+   ================================================================ */
+
+.trainer-modal {
+  display: grid;
+
+  grid-template-columns:
+    minmax(230px, 0.8fr)
+    minmax(0, 1.2fr);
+
+  align-items:
+    start;
+
+  gap: 16px;
+}
+
+
+.trainer-modal__media {
+  width:
+    100%;
+
+  aspect-ratio:
+    1 / 1;
+
+  overflow:
+    hidden;
+
+  border:
+    1px solid var(--border-soft);
+
+  border-radius:
+    14px;
+
+  background:
+    var(--surface-2);
+}
+
+
+.trainer-modal__media img {
+  width:
+    100%;
+
+  height:
+    100%;
+
+  object-fit:
+    cover;
+
+  object-position:
+    center 18%;
+}
+
+
+.trainer-modal__content {
+  min-width:
+    0;
+
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  gap:
+    9px;
+
+  padding:
+    3px 0;
+}
+
+
+.trainer-modal__name {
+  margin:
+    0;
+
+  color:
+    var(--text);
+
+  font-family:
+    var(--font-display);
+
+  font-size:
+    clamp(
+      24px,
+      3vw,
+      33px
+    );
+
+  line-height:
+    1;
+
+  font-weight:
+    600;
+
+  text-transform:
+    uppercase;
+}
+
+
+.trainer-modal__specialty {
+  width:
+    fit-content;
+
+  min-height:
+    25px;
+
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  padding:
+    0 9px;
+
+  border:
+    1px solid var(--yellow-border);
+
+  border-radius:
+    999px;
+
+  color:
+    var(--yellow);
+
+  background:
+    var(--yellow-soft);
+
+  font-size:
+    9px;
+
+  font-weight:
+    700;
+}
+
+
+.trainer-modal__bio {
+  margin:
+    0;
+
+  color:
+    var(--text-muted);
+
+  font-size:
+    12px;
+
+  line-height:
+    1.6;
+}
+
+
+/* ================================================================
+   TRAINER FACTS / CONTACT
+   ================================================================ */
+
+.trainer-modal__facts,
+.trainer-modal__contacts {
+  display:
+    grid;
+
+  grid-template-columns:
+    repeat(
+      2,
+      minmax(0, 1fr)
+    );
+
+  gap:
+    6px;
+
+  margin-top:
+    2px;
+}
+
+
+.trainer-modal__facts > div,
+.trainer-modal__contacts > a,
+.trainer-modal__contacts > div {
+  min-width:
+    0;
+
+  padding:
+    9px 10px;
+
+  border:
+    1px solid var(--border-soft);
+
+  border-radius:
+    10px;
+
+  background:
+    var(--surface-2);
+}
+
+
+.trainer-modal__facts span,
+.trainer-modal__contacts span {
+  display:
+    block;
+
+  color:
+    var(--text-faint);
+
+  font-size:
+    8px;
+}
+
+
+.trainer-modal__facts strong,
+.trainer-modal__contacts strong {
+  display:
+    block;
+
+  margin-top:
+    3px;
+
+  overflow:
+    hidden;
+
+  color:
+    var(--text-soft);
+
+  font-size:
+    10px;
+
+  text-overflow:
+    ellipsis;
+
+  white-space:
+    nowrap;
+}
+
+
+/* ================================================================
+   43. LOADER
+   Real core.js uses .is-visible
+   ================================================================ */
+
+.app-loader {
+  position:
+    fixed;
+
+  z-index:
+    8000;
+
+  inset:
+    0;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  opacity:
+    0;
+
+  visibility:
+    hidden;
+
+  background:
+    rgba(3, 5, 8, 0.54);
+
+  backdrop-filter:
+    blur(5px);
+
+  -webkit-backdrop-filter:
+    blur(5px);
+
+  transition:
+    opacity 150ms ease,
+    visibility 150ms ease;
+}
+
+
+.app-loader.is-visible {
+  opacity:
+    1;
+
+  visibility:
+    visible;
+}
+
+
+.app-loader__panel {
+  min-width:
+    145px;
+
+  display:
+    grid;
+
+  justify-items:
+    center;
+
+  gap:
+    10px;
+
+  padding:
+    17px 20px;
+
+  border:
+    1px solid var(--border);
+
+  border-radius:
+    14px;
+
+  background:
+    rgba(16, 20, 27, 0.97);
+
+  box-shadow:
+    0 20px
+    60px
+    rgba(0, 0, 0, 0.38);
+}
+
+
+.app-loader__spinner {
+  width:
+    32px;
+
+  height:
+    32px;
+
+  border:
+    3px solid
+    rgba(255, 255, 255, 0.10);
+
+  border-top-color:
+    var(--yellow);
+
+  border-radius:
+    50%;
+
+  animation:
+    skyfit-loader-spin
+    0.72s
+    linear
+    infinite;
+}
+
+
+@keyframes skyfit-loader-spin {
+  to {
+    transform:
+      rotate(360deg);
+  }
+}
+
+
+.app-loader__label {
+  color:
+    var(--text-soft);
+
+  font-size:
+    10px;
+
+  font-weight:
+    600;
+}
+
+
+/* ================================================================
+   44. MOBILE MODALS
+   ================================================================ */
+
+@media (max-width: 700px) {
+
+  .app-modal-backdrop {
+    align-items:
+      end;
+
+    padding:
+      5px;
+  }
+
+
+  .app-modal {
+    width:
+      100%;
+
+    max-height:
+      calc(
+        100dvh -
+        var(--safe-top) -
+        5px
+      );
+
+    border-radius:
+      17px 17px 11px 11px;
+  }
+
+
+  .app-modal__header {
+    min-height:
+      54px;
+
+    padding:
+      9px 10px;
+  }
+
+
+  .app-modal__title {
+    font-size:
+      17px;
+  }
+
+
+  .app-modal__body {
+    padding:
+      10px;
+  }
+
+
+  .product-modal,
+  .trainer-modal {
+    grid-template-columns:
+      1fr;
+
+    gap:
+      10px;
+  }
+
+
+  .product-modal__media,
+  .trainer-modal__media {
+    width:
+      min(
+        100%,
+        310px
+      );
+
+    margin-inline:
+      auto;
+  }
+
+
+  .product-modal__name,
+  .trainer-modal__name {
+    font-size:
+      23px;
+  }
+
+
+  .product-modal__facts,
+  .trainer-modal__facts,
+  .trainer-modal__contacts {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+  }
+
+}
+
+
+/* ================================================================
+   SMALL PHONE
+   ================================================================ */
+
+@media (max-width: 380px) {
+
+  .product-modal__facts,
+  .trainer-modal__facts,
+  .trainer-modal__contacts {
+    grid-template-columns:
+      1fr;
+  }
+
+}
+
+
+/* ================================================================
+   HOME STEP 3 END
+   ================================================================ */
+
