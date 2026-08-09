@@ -396,9 +396,6 @@ function avatarMarkup(identity, className = 'app-user-avatar') {
 
   return `
     <span class="${className}">
-      ${
-        True: ""
-      }
       ${avatar ? `
         <img
           src="${escapeHtml(avatar)}"
