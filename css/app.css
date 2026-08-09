@@ -4684,3 +4684,614 @@ html[data-theme="light"] .ui-toast {
     opacity: 1;
   }
 }
+
+
+/*============================================================================================*/
+
+/* =========================================================
+   SKY FIT PRO — UI SCALE & BOTTOM SPACING FIX
+   Senior Full Stack Developer: Qərib Səfərli
+   ========================================================= */
+
+/* Ümumi oxunaqlılıq */
+body {
+  font-size: 15.5px;
+  line-height: 1.5;
+}
+
+/* Fixed bottom nav DOM-da əlavə boşluq yaratmasın */
+#app-bottom-nav-root {
+  min-height: 0 !important;
+}
+
+/* Main ilə footer arasında artıq nav boşluğu yaratmırıq */
+.app-main {
+  padding-bottom: 18px;
+}
+
+/* Footer aşağı menyunun dərhal üstündə qalsın */
+.app-footer {
+  margin-top: 18px;
+  margin-bottom: calc(
+    var(--bottom-nav-height) +
+    var(--safe-bottom) +
+    12px
+  );
+  padding: 13px 0 8px;
+  font-size: 10px;
+}
+
+.app-footer__brand {
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.app-footer__copy,
+.app-footer__developer {
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.app-footer__developer strong {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--text-soft);
+}
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+.brand-mark__icon {
+  width: 38px;
+  height: 38px;
+  flex-basis: 38px;
+  font-size: 12px;
+}
+
+.brand-mark__text strong {
+  font-size: 15px;
+}
+
+.brand-mark__text small {
+  font-size: 8px;
+}
+
+.app-header__menu,
+.app-header__action,
+.app-header__profile {
+  width: 40px;
+  height: 40px;
+  flex-basis: 40px;
+}
+
+.app-header__menu svg,
+.app-header__action svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* =========================================================
+   BOTTOM NAV
+   ========================================================= */
+
+.app-bottom-nav__inner {
+  width: min(calc(100% - 18px), 590px);
+  min-height: 68px;
+  padding: 5px;
+}
+
+.app-bottom-nav__item {
+  min-height: 56px;
+  gap: 4px;
+}
+
+.app-bottom-nav__icon {
+  width: 25px;
+  height: 25px;
+  color: currentColor;
+}
+
+.app-bottom-nav__icon svg,
+.app-bottom-nav__item > svg {
+  width: 22px;
+  height: 22px;
+  stroke-width: 1.9;
+}
+
+.app-bottom-nav__label,
+.app-bottom-nav__item span {
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.app-bottom-nav__item {
+  color: #9ca6b4;
+}
+
+.app-bottom-nav__item.is-active {
+  color: var(--accent);
+}
+
+/* =========================================================
+   ÜMUMİ BAŞLIQLAR / MƏTNLƏR
+   ========================================================= */
+
+.section-eyebrow {
+  font-size: 10px;
+}
+
+.section-description {
+  font-size: 13px;
+}
+
+.ui-button {
+  min-height: 42px;
+  padding-inline: 16px;
+  font-size: 13px;
+}
+
+.ui-badge {
+  min-height: 22px;
+  font-size: 10px;
+}
+
+.ui-field__label {
+  font-size: 13px;
+}
+
+.ui-field__hint,
+.ui-field__error {
+  font-size: 11px;
+}
+
+.ui-input {
+  min-height: 44px;
+}
+
+.ui-input__control {
+  height: 42px;
+  font-size: 13px;
+}
+
+.ui-select,
+.ui-date-input {
+  min-height: 43px;
+  font-size: 13px;
+}
+
+.ui-textarea {
+  font-size: 13px;
+}
+
+.search-control {
+  min-height: 43px;
+}
+
+.search-control__input {
+  height: 41px;
+  font-size: 13px;
+}
+
+.search-control__icon {
+  width: 40px;
+  height: 40px;
+}
+
+.search-control__icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* =========================================================
+   MƏHSUL KARTLARI
+   ========================================================= */
+
+.product-card__body {
+  padding: 10px;
+  gap: 6px;
+}
+
+.product-card__name {
+  min-height: 35px;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.product-card__price {
+  font-size: 16px;
+}
+
+.product-card__meta,
+.product-card__stock-line {
+  font-size: 10px;
+}
+
+.product-card__unit {
+  font-size: 9px;
+}
+
+.product-card__favorite {
+  width: 32px;
+  height: 32px;
+}
+
+.product-card__favorite svg {
+  width: 17px;
+  height: 17px;
+}
+
+/* =========================================================
+   MƏŞQÇİ KARTLARI
+   ========================================================= */
+
+.trainer-card__content {
+  padding: 11px;
+  gap: 5px;
+}
+
+.trainer-card__name {
+  font-size: 14px;
+}
+
+.trainer-card__specialty {
+  font-size: 11px;
+}
+
+.trainer-card__action {
+  font-size: 11px;
+}
+
+/* =========================================================
+   PROFILE
+   ========================================================= */
+
+.profile-stat-card__content > span:first-child {
+  font-size: 10px;
+}
+
+.profile-stat-card__content strong {
+  font-size: 14px;
+}
+
+.profile-stat-card__content small {
+  font-size: 10px;
+}
+
+.profile-card__title,
+.profile-side-card__title {
+  font-size: 17px;
+}
+
+.profile-detail-item__label {
+  font-size: 10px;
+}
+
+.profile-detail-item strong {
+  font-size: 13px;
+}
+
+.membership-card__stats span {
+  font-size: 9px;
+}
+
+.membership-card__stats strong {
+  font-size: 12px;
+}
+
+.history-item__title,
+.profile-action__content strong,
+.profile-security-item strong {
+  font-size: 12px;
+}
+
+.history-item__meta,
+.profile-action__content small,
+.profile-security-item small {
+  font-size: 10px;
+}
+
+/* =========================================================
+   ADMIN — DESKTOP OXUNAQLILIĞI
+   ========================================================= */
+
+.admin-navigation__item {
+  min-height: 40px;
+  font-size: 12px;
+}
+
+.admin-navigation__icon {
+  width: 29px;
+  height: 29px;
+  flex-basis: 29px;
+}
+
+.admin-navigation__icon svg {
+  width: 17px;
+  height: 17px;
+}
+
+.admin-topbar__title {
+  font-size: 19px;
+}
+
+.admin-panel__title {
+  font-size: 21px;
+}
+
+.admin-panel__description,
+.admin-section__description {
+  font-size: 12px;
+}
+
+.admin-section__title {
+  font-size: 15px;
+}
+
+.admin-kpi-card__label,
+.admin-kpi-card > span,
+.finance-summary-card > span,
+.admin-mini-kpi > span {
+  font-size: 10px;
+}
+
+.admin-kpi-card strong,
+.finance-summary-card strong,
+.admin-mini-kpi strong {
+  font-size: 20px;
+}
+
+.admin-table th,
+.finance-table th {
+  font-size: 10px;
+}
+
+.admin-table td,
+.finance-table td {
+  font-size: 11px;
+}
+
+.admin-table__secondary {
+  font-size: 9px;
+}
+
+.admin-row-action {
+  min-height: 31px;
+  font-size: 9px;
+}
+
+.admin-product-card__name,
+.pos-product-card__name {
+  min-height: 31px;
+  font-size: 11px;
+}
+
+.admin-product-card__meta,
+.admin-product-card__row,
+.pos-product-card__row {
+  font-size: 9px;
+}
+
+.admin-product-card__price,
+.pos-product-card__price {
+  font-size: 14px;
+}
+
+.admin-product-card__stock,
+.pos-product-card__stock,
+.pos-product-card__unit {
+  font-size: 9px;
+}
+
+/* =========================================================
+   MODAL / TOAST
+   ========================================================= */
+
+.app-modal__title {
+  font-size: 19px;
+}
+
+.app-modal__eyebrow {
+  font-size: 9px;
+}
+
+.modal-confirm__message,
+.product-modal__description,
+.trainer-modal__description {
+  font-size: 12px;
+}
+
+.ui-toast__title {
+  font-size: 12px;
+}
+
+.ui-toast__message {
+  font-size: 11px;
+}
+
+/* =========================================================
+   TELEFON — DAHA ÇOX TƏTBİQ HİSSİ
+   ========================================================= */
+
+@media (max-width: 700px) {
+  :root {
+    --header-height: 58px;
+    --bottom-nav-height: 68px;
+  }
+
+  body {
+    font-size: 15px;
+  }
+
+  .app-main {
+    padding-bottom: 12px;
+  }
+
+  .app-footer {
+    margin-top: 12px;
+    margin-bottom: calc(
+      var(--bottom-nav-height) +
+      var(--safe-bottom) +
+      7px
+    );
+    padding: 10px 4px 5px;
+  }
+
+  .app-footer__copy,
+  .app-footer__developer,
+  .app-footer__developer strong {
+    font-size: 9px;
+  }
+
+  .app-bottom-nav__inner {
+    width: calc(100% - 8px);
+    min-height: 64px;
+    margin-bottom: calc(3px + var(--safe-bottom));
+    padding: 4px;
+    border-radius: 16px;
+  }
+
+  .app-bottom-nav__item {
+    min-height: 54px;
+    gap: 3px;
+  }
+
+  .app-bottom-nav__icon {
+    width: 25px;
+    height: 25px;
+  }
+
+  .app-bottom-nav__icon svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .app-bottom-nav__label,
+  .app-bottom-nav__item span {
+    font-size: 9px;
+  }
+
+  .brand-mark__icon {
+    width: 36px;
+    height: 36px;
+    flex-basis: 36px;
+  }
+
+  .brand-mark__text strong {
+    font-size: 14px;
+  }
+
+  .app-header__menu,
+  .app-header__action,
+  .app-header__profile {
+    width: 38px;
+    height: 38px;
+    flex-basis: 38px;
+  }
+
+  .app-header__menu svg,
+  .app-header__action svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .section-eyebrow {
+    font-size: 9px;
+  }
+
+  .section-title {
+    font-size: 27px;
+  }
+
+  .section-description {
+    font-size: 12px;
+  }
+
+  .products-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .product-card__body {
+    padding: 7px;
+  }
+
+  .product-card__name {
+    min-height: 30px;
+    font-size: 10.5px;
+  }
+
+  .product-card__price {
+    font-size: 13px;
+  }
+
+  .product-card__meta,
+  .product-card__stock-line {
+    font-size: 8px;
+  }
+
+  .product-card__favorite {
+    width: 29px;
+    height: 29px;
+  }
+
+  .trainer-card__name {
+    font-size: 12px;
+  }
+
+  .trainer-card__specialty {
+    font-size: 10px;
+  }
+
+  .profile-stat-card__content strong {
+    font-size: 13px;
+  }
+
+  .profile-detail-item strong {
+    font-size: 12px;
+  }
+
+  .admin-navigation__item {
+    min-height: 37px;
+    font-size: 10px;
+  }
+
+  .admin-navigation__icon {
+    width: 25px;
+    height: 25px;
+    flex-basis: 25px;
+  }
+
+  .admin-navigation__icon svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .admin-topbar__title {
+    font-size: 17px;
+  }
+
+  .admin-panel__title {
+    font-size: 18px;
+  }
+
+  .admin-panel__description,
+  .admin-section__description {
+    font-size: 10.5px;
+  }
+
+  .admin-table th {
+    font-size: 9px;
+  }
+
+  .admin-table td {
+    font-size: 10px;
+  }
+
+  .ui-button {
+    min-height: 41px;
+    font-size: 12px;
+  }
+}
+
