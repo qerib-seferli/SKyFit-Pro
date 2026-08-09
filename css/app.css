@@ -6159,3 +6159,947 @@ body {
   }
 
 }
+
+
+/* =========================================================
+   SKY FIT PRO — PREMIUM PRODUCT & TRAINER CARDS / MODALS
+   Senior Full Stack Developer: Qərib Səfərli
+   ========================================================= */
+
+/* =========================================================
+   1. PRODUCT CARDS
+   ========================================================= */
+
+.product-card {
+  position: relative;
+  overflow: hidden;
+
+  border: 1px solid rgba(255, 255, 255, .085);
+  border-radius: 14px;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, .025),
+      transparent 45%
+    ),
+    var(--surface);
+
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, .18);
+
+  transition:
+    transform .18s ease,
+    border-color .18s ease,
+    box-shadow .18s ease,
+    background .18s ease;
+}
+
+.product-card:hover {
+  transform: translateY(-3px);
+
+  border-color:
+    rgba(255, 223, 0, .26);
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 223, 0, .035),
+      transparent 50%
+    ),
+    var(--surface-2);
+
+  box-shadow:
+    0 14px 36px rgba(0, 0, 0, .27);
+}
+
+.product-card__media {
+  position: relative;
+
+  aspect-ratio: 1 / 1;
+
+  overflow: hidden;
+
+  border-bottom:
+    1px solid var(--border-soft);
+
+  background:
+    #f3f3f1;
+}
+
+.product-card__image {
+  width: 100%;
+  height: 100%;
+
+  object-fit: contain;
+
+  padding: 8px;
+
+  transition:
+    transform .28s ease;
+}
+
+.product-card:hover
+.product-card__image {
+  transform: scale(1.035);
+}
+
+.product-card__favorite {
+  top: 8px;
+  right: 8px;
+
+  width: 34px;
+  height: 34px;
+
+  border:
+    1px solid rgba(255, 255, 255, .14);
+
+  color: #fff;
+
+  background:
+    rgba(8, 10, 13, .82);
+
+  box-shadow:
+    0 5px 16px rgba(0, 0, 0, .24);
+
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.product-card__favorite:hover,
+.product-card__favorite.is-active {
+  color: var(--accent);
+
+  border-color:
+    var(--accent-border);
+
+  background:
+    rgba(16, 17, 13, .92);
+}
+
+.product-card__body {
+  display: grid;
+
+  gap: 7px;
+
+  padding: 11px;
+}
+
+.product-card__meta {
+  min-height: 16px;
+
+  color: var(--text-faint);
+
+  font-size: 9px;
+  font-weight: 650;
+
+  text-transform: uppercase;
+  letter-spacing: .025em;
+}
+
+.product-card__name {
+  min-height: 37px;
+
+  color: var(--text);
+
+  font-size: 13px;
+  line-height: 1.4;
+  font-weight: 780;
+
+  letter-spacing: -.015em;
+}
+
+.product-card__price {
+  color: var(--accent);
+
+  font-size: 17px;
+  line-height: 1;
+  font-weight: 900;
+}
+
+.product-card__stock-line {
+  min-height: 18px;
+
+  padding-top: 5px;
+
+  border-top:
+    1px solid var(--border-soft);
+
+  color: var(--text-muted);
+
+  font-size: 9px;
+}
+
+
+/* =========================================================
+   2. TRAINER CARDS
+   ========================================================= */
+
+.trainer-card {
+  overflow: hidden;
+
+  border:
+    1px solid rgba(255, 255, 255, .085);
+
+  border-radius: 14px;
+
+  background:
+    var(--surface);
+
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, .18);
+
+  transition:
+    transform .18s ease,
+    border-color .18s ease,
+    box-shadow .18s ease;
+}
+
+.trainer-card:hover {
+  transform: translateY(-3px);
+
+  border-color:
+    rgba(255, 223, 0, .24);
+
+  box-shadow:
+    0 14px 36px rgba(0, 0, 0, .26);
+}
+
+.trainer-card__media {
+  position: relative;
+
+  aspect-ratio: 4 / 4.5;
+
+  overflow: hidden;
+
+  background:
+    var(--surface-2);
+}
+
+.trainer-card__media::after {
+  content: "";
+
+  position: absolute;
+  inset: 0;
+
+  pointer-events: none;
+
+  background:
+    linear-gradient(
+      to top,
+      rgba(7, 9, 12, .72),
+      transparent 45%
+    );
+}
+
+.trainer-card__image {
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+  object-position: center top;
+
+  transition:
+    transform .3s ease;
+}
+
+.trainer-card:hover
+.trainer-card__image {
+  transform: scale(1.025);
+}
+
+.trainer-card__content {
+  display: grid;
+
+  gap: 5px;
+
+  padding: 11px;
+}
+
+.trainer-card__name {
+  color: var(--text);
+
+  font-size: 14px;
+  font-weight: 820;
+
+  letter-spacing: -.015em;
+}
+
+.trainer-card__specialty {
+  color: var(--text-muted);
+
+  font-size: 10px;
+}
+
+.trainer-card__action {
+  width: fit-content;
+
+  margin-top: 3px;
+
+  color: var(--accent);
+
+  font-size: 10px;
+  font-weight: 800;
+}
+
+
+/* =========================================================
+   3. PRODUCT / TRAINER MODAL — DESKTOP
+   ========================================================= */
+
+.app-modal:has(.product-modal),
+.app-modal:has(.trainer-modal) {
+  width:
+    min(
+      calc(100vw - 40px),
+      820px
+    );
+
+  max-height:
+    min(
+      86dvh,
+      720px
+    );
+
+  border-radius: 18px;
+
+  border:
+    1px solid rgba(255, 255, 255, .1);
+
+  background:
+    #11141a;
+
+  box-shadow:
+    0 30px 100px rgba(0, 0, 0, .55);
+}
+
+.app-modal:has(.product-modal)
+.app-modal__header,
+.app-modal:has(.trainer-modal)
+.app-modal__header {
+  min-height: 72px;
+
+  align-items: center;
+
+  padding:
+    13px 16px;
+
+  background:
+    rgba(255, 255, 255, .012);
+}
+
+.app-modal:has(.product-modal)
+.app-modal__eyebrow,
+.app-modal:has(.trainer-modal)
+.app-modal__eyebrow {
+  margin-bottom: 5px;
+
+  font-size: 9px;
+}
+
+.app-modal:has(.product-modal)
+.app-modal__title,
+.app-modal:has(.trainer-modal)
+.app-modal__title {
+  font-size: 21px;
+
+  letter-spacing: -.025em;
+}
+
+.app-modal:has(.product-modal)
+.app-modal__close,
+.app-modal:has(.trainer-modal)
+.app-modal__close {
+  width: 40px;
+  height: 40px;
+
+  border-radius: 10px;
+}
+
+.app-modal:has(.product-modal)
+.app-modal__body,
+.app-modal:has(.trainer-modal)
+.app-modal__body {
+  padding: 16px;
+}
+
+
+/* =========================================================
+   4. PRODUCT MODAL CONTENT
+   ========================================================= */
+
+.product-modal {
+  display: grid;
+
+  grid-template-columns:
+    minmax(260px, 310px)
+    minmax(0, 1fr);
+
+  align-items: start;
+
+  gap: 22px;
+}
+
+.product-modal__media {
+  width: 100%;
+
+  aspect-ratio: 1 / 1;
+
+  overflow: hidden;
+
+  border:
+    1px solid rgba(255, 255, 255, .1);
+
+  border-radius: 15px;
+
+  background: #f5f5f2;
+}
+
+.product-modal__media img {
+  width: 100%;
+  height: 100%;
+
+  padding: 12px;
+
+  object-fit: contain;
+}
+
+.product-modal__content {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  padding:
+    5px 0;
+
+  gap: 10px;
+}
+
+.product-modal__name {
+  margin: 0;
+
+  color: var(--text);
+
+  font-size: 23px;
+  line-height: 1.1;
+
+  font-weight: 850;
+
+  letter-spacing: -.03em;
+}
+
+.product-modal__description {
+  margin: 0;
+
+  color: var(--text-muted);
+
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.product-modal__price {
+  margin-top: 4px;
+
+  color: var(--accent);
+
+  font-size: 27px;
+  line-height: 1;
+
+  font-weight: 950;
+}
+
+.product-modal__meta,
+.product-modal__facts {
+  display: flex;
+  flex-wrap: wrap;
+
+  gap: 6px;
+
+  margin-top: 0;
+}
+
+.product-modal__meta > *,
+.product-modal__facts > * {
+  min-height: 28px;
+
+  display: inline-flex;
+  align-items: center;
+
+  padding:
+    0 9px;
+
+  border:
+    1px solid var(--border);
+
+  border-radius: 8px;
+
+  color: var(--text-muted);
+
+  background:
+    var(--surface-2);
+
+  font-size: 10px;
+}
+
+
+/* =========================================================
+   5. TRAINER MODAL CONTENT
+   ========================================================= */
+
+.trainer-modal {
+  display: grid;
+
+  grid-template-columns:
+    280px
+    minmax(0, 1fr);
+
+  align-items: start;
+
+  gap: 22px;
+}
+
+.trainer-modal__media {
+  width: 100%;
+
+  aspect-ratio: 4 / 5;
+
+  overflow: hidden;
+
+  border:
+    1px solid rgba(255, 255, 255, .1);
+
+  border-radius: 15px;
+
+  background:
+    var(--surface-2);
+}
+
+.trainer-modal__media img {
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+  object-position: center top;
+}
+
+.trainer-modal__content {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 9px;
+
+  padding:
+    5px 0;
+}
+
+.trainer-modal__name {
+  margin: 0;
+
+  color: var(--text);
+
+  font-size: 23px;
+  line-height: 1.1;
+
+  font-weight: 850;
+
+  letter-spacing: -.03em;
+}
+
+.trainer-modal__specialty {
+  width: fit-content;
+
+  min-height: 25px;
+
+  display: inline-flex;
+  align-items: center;
+
+  padding:
+    0 8px;
+
+  border:
+    1px solid var(--accent-border);
+
+  border-radius: 7px;
+
+  color: var(--accent);
+
+  background:
+    var(--accent-soft);
+
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.trainer-modal__description {
+  margin: 0;
+
+  color: var(--text-muted);
+
+  font-size: 12px;
+  line-height: 1.65;
+
+  white-space: pre-line;
+}
+
+.trainer-modal__links {
+  display: flex;
+  flex-wrap: wrap;
+
+  gap: 6px;
+
+  margin-top: 5px;
+}
+
+.trainer-modal__links a {
+  min-height: 34px;
+
+  display: inline-flex;
+  align-items: center;
+
+  padding:
+    0 11px;
+
+  border:
+    1px solid var(--border);
+
+  border-radius: 8px;
+
+  color: var(--text-soft);
+
+  background:
+    var(--surface-2);
+
+  font-size: 10px;
+  font-weight: 750;
+}
+
+
+/* =========================================================
+   6. MOBILE — APP-LIKE BOTTOM SHEET
+   ========================================================= */
+
+@media (max-width: 700px) {
+
+  .app-modal:has(.product-modal),
+  .app-modal:has(.trainer-modal) {
+    width: 100%;
+    max-width: 100%;
+
+    max-height:
+      91dvh;
+
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+
+    border-radius:
+      20px 20px 0 0;
+  }
+
+  .app-modal:has(.product-modal)
+  .app-modal__handle,
+  .app-modal:has(.trainer-modal)
+  .app-modal__handle {
+    display: block;
+
+    width: 48px;
+    height: 5px;
+
+    margin:
+      8px auto 2px;
+
+    border-radius: 999px;
+
+    background:
+      rgba(255, 255, 255, .15);
+  }
+
+  .app-modal:has(.product-modal)
+  .app-modal__header,
+  .app-modal:has(.trainer-modal)
+  .app-modal__header {
+    min-height: 62px;
+
+    padding:
+      9px 14px 10px;
+  }
+
+  .app-modal:has(.product-modal)
+  .app-modal__title,
+  .app-modal:has(.trainer-modal)
+  .app-modal__title {
+    font-size: 20px;
+  }
+
+  .app-modal:has(.product-modal)
+  .app-modal__close,
+  .app-modal:has(.trainer-modal)
+  .app-modal__close {
+    width: 38px;
+    height: 38px;
+
+    flex-basis: 38px;
+  }
+
+  .app-modal:has(.product-modal)
+  .app-modal__body,
+  .app-modal:has(.trainer-modal)
+  .app-modal__body {
+    padding:
+      11px
+      12px
+      calc(
+        16px +
+        var(--safe-bottom)
+      );
+  }
+
+
+  /* PRODUCT MODAL MOBILE */
+
+  .product-modal {
+    grid-template-columns:
+      1fr;
+
+    gap: 14px;
+  }
+
+  .product-modal__media {
+    width: 100%;
+
+    max-height: none;
+
+    aspect-ratio:
+      1.25 / 1;
+
+    border-radius: 14px;
+  }
+
+  .product-modal__media img {
+    padding: 10px;
+
+    object-fit: contain;
+  }
+
+  .product-modal__content {
+    gap: 8px;
+
+    padding: 0;
+  }
+
+  .product-modal__name {
+    font-size: 20px;
+  }
+
+  .product-modal__description {
+    font-size: 12px;
+
+    line-height: 1.55;
+  }
+
+  .product-modal__price {
+    font-size: 25px;
+  }
+
+  .product-modal__meta,
+  .product-modal__facts {
+    gap: 5px;
+  }
+
+  .product-modal__meta > *,
+  .product-modal__facts > * {
+    min-height: 27px;
+
+    padding-inline: 8px;
+
+    font-size: 9px;
+  }
+
+
+  /* TRAINER MODAL MOBILE */
+
+  .trainer-modal {
+    grid-template-columns:
+      1fr;
+
+    gap: 13px;
+  }
+
+  .trainer-modal__media {
+    width: 100%;
+
+    max-height:
+      min(
+        47dvh,
+        390px
+      );
+
+    aspect-ratio:
+      4 / 3.2;
+
+    border-radius: 14px;
+  }
+
+  .trainer-modal__media img {
+    object-fit: cover;
+
+    object-position:
+      center 22%;
+  }
+
+  .trainer-modal__content {
+    gap: 7px;
+
+    padding: 0;
+  }
+
+  .trainer-modal__name {
+    font-size: 20px;
+  }
+
+  .trainer-modal__specialty {
+    min-height: 24px;
+
+    font-size: 9px;
+  }
+
+  .trainer-modal__description {
+    font-size: 12px;
+
+    line-height: 1.55;
+  }
+
+}
+
+
+/* =========================================================
+   7. MOBILE FRONTEND CARDS
+   ========================================================= */
+
+@media (max-width: 700px) {
+
+  .products-grid {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+
+    gap: 8px;
+  }
+
+  .product-card {
+    border-radius: 12px;
+  }
+
+  .product-card__media {
+    aspect-ratio:
+      1 / 1;
+  }
+
+  .product-card__image {
+    padding: 5px;
+  }
+
+  .product-card__body {
+    gap: 5px;
+
+    padding: 8px;
+  }
+
+  .product-card__name {
+    min-height: 34px;
+
+    font-size: 11px;
+    line-height: 1.4;
+  }
+
+  .product-card__price {
+    font-size: 15px;
+  }
+
+  .product-card__meta,
+  .product-card__stock-line {
+    font-size: 8px;
+  }
+
+  .product-card__favorite {
+    width: 30px;
+    height: 30px;
+
+    top: 6px;
+    right: 6px;
+  }
+
+  .product-card__favorite svg {
+    width: 16px;
+    height: 16px;
+  }
+
+
+  .trainers-grid {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+
+    gap: 8px;
+  }
+
+  .trainer-card {
+    border-radius: 12px;
+  }
+
+  .trainer-card__media {
+    aspect-ratio:
+      4 / 4.7;
+  }
+
+  .trainer-card__content {
+    padding: 8px;
+  }
+
+  .trainer-card__name {
+    font-size: 12px;
+  }
+
+  .trainer-card__specialty {
+    font-size: 9px;
+  }
+
+}
+
+
+/* =========================================================
+   8. VERY SMALL PHONES
+   ========================================================= */
+
+@media (max-width: 380px) {
+
+  .products-grid,
+  .trainers-grid {
+    gap: 6px;
+  }
+
+  .product-card__body,
+  .trainer-card__content {
+    padding: 7px;
+  }
+
+  .product-card__name {
+    font-size: 10px;
+  }
+
+  .product-card__price {
+    font-size: 14px;
+  }
+
+  .trainer-card__name {
+    font-size: 11px;
+  }
+
+}
