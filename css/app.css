@@ -5295,3 +5295,867 @@ body {
   }
 }
 
+/* =========================================================
+   SKY FIT PRO — MOBILE ADMIN APP EXPERIENCE
+   Senior Full Stack Developer: Qərib Səfərli
+   ========================================================= */
+
+@media (max-width: 700px) {
+
+  /* -------------------------------------------------------
+     1. SƏHİFƏ — HORIZONTAL OVERFLOW TAM BAĞLANIR
+     ------------------------------------------------------- */
+
+  html,
+  body,
+  .admin-page,
+  .admin-shell,
+  .admin-content,
+  .admin-panels,
+  .admin-panel,
+  .admin-section {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  html,
+  body {
+    overflow-x: hidden;
+  }
+
+  .admin-page {
+    overflow-x: clip;
+    padding-bottom:
+      calc(
+        var(--bottom-nav-height) +
+        var(--safe-bottom) +
+        10px
+      );
+  }
+
+  .admin-shell {
+    width: 100%;
+    margin: 0;
+    padding: 4px 5px 0;
+    display: block;
+  }
+
+  .admin-content {
+    overflow: visible;
+  }
+
+  /* -------------------------------------------------------
+     2. ADMIN NAV — TƏTBİQ TAB BAR
+     ------------------------------------------------------- */
+
+  .admin-sidebar {
+    position: sticky;
+    z-index: 120;
+    top:
+      calc(
+        var(--header-height) +
+        var(--safe-top)
+      );
+
+    width: 100%;
+    height: auto;
+    margin: 0 0 5px;
+    padding: 0;
+
+    overflow: hidden;
+
+    border: 0;
+    border-bottom: 1px solid var(--border);
+    border-radius: 0;
+
+    background:
+      rgba(12, 14, 18, .97);
+
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+  }
+
+  html[data-theme="light"] .admin-sidebar {
+    background:
+      rgba(255, 255, 255, .97);
+  }
+
+  .admin-sidebar__inner {
+    width: 100%;
+    height: auto;
+    padding: 4px 0;
+  }
+
+  .admin-sidebar__brand,
+  .admin-operator-card {
+    display: none !important;
+  }
+
+  .admin-navigation {
+    width: 100%;
+    display: flex;
+    gap: 4px;
+
+    padding:
+      0 4px 3px;
+
+    overflow-x: auto;
+    overflow-y: hidden;
+
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .admin-navigation::-webkit-scrollbar {
+    display: none;
+  }
+
+  .admin-navigation__item {
+    width: auto;
+    min-width: 72px;
+    min-height: 48px;
+    flex: 0 0 auto;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+
+    padding: 4px 7px;
+
+    border-radius: 10px;
+
+    font-size: 9px;
+    line-height: 1.1;
+
+    scroll-snap-align: start;
+  }
+
+  .admin-navigation__item.is-active,
+  .admin-navigation__item[aria-selected="true"] {
+    border-color:
+      var(--accent-border);
+
+    background:
+      var(--accent-soft);
+  }
+
+  .admin-navigation__icon {
+    width: 21px;
+    height: 21px;
+    flex: 0 0 21px;
+  }
+
+  .admin-navigation__icon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  /* -------------------------------------------------------
+     3. TOPBAR — MOBİL APP HEADER
+     ------------------------------------------------------- */
+
+  .admin-topbar {
+    position: relative;
+    top: auto;
+
+    width: 100%;
+    min-height: auto;
+
+    display: grid;
+    grid-template-columns:
+      minmax(0, 1fr)
+      auto;
+
+    align-items: center;
+    gap: 7px;
+
+    padding: 8px;
+
+    border-radius: 11px;
+
+    background:
+      var(--surface);
+  }
+
+  .admin-topbar__heading {
+    min-width: 0;
+  }
+
+  .admin-topbar__title {
+    overflow: hidden;
+
+    font-size: 18px;
+    line-height: 1.05;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .admin-topbar__actions {
+    width: auto;
+    min-width: 0;
+
+    display: flex;
+    gap: 4px;
+  }
+
+  .admin-topbar__operator {
+    display: none;
+  }
+
+  .admin-global-search {
+    grid-column: 1 / -1;
+
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    height: 42px;
+
+    order: 10;
+  }
+
+  .admin-global-search input {
+    font-size: 12px;
+  }
+
+  .admin-topbar__actions .ui-button {
+    min-width: 40px;
+    min-height: 40px;
+    padding-inline: 10px;
+  }
+
+  /* -------------------------------------------------------
+     4. PANEL
+     ------------------------------------------------------- */
+
+  .admin-panels {
+    width: 100%;
+    margin-top: 5px;
+  }
+
+  .admin-panel {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+
+    padding: 8px;
+
+    overflow: hidden;
+
+    border-radius: 11px;
+  }
+
+  .admin-panel__header {
+    width: 100%;
+
+    display: flex;
+    align-items: flex-start;
+    flex-direction: column;
+
+    gap: 7px;
+
+    margin-bottom: 8px;
+  }
+
+  .admin-panel__header > div {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .admin-panel__title {
+    font-size: 19px;
+    line-height: 1.08;
+  }
+
+  .admin-panel__description {
+    width: 100%;
+    max-width: none;
+
+    font-size: 11px;
+    line-height: 1.45;
+  }
+
+  .admin-panel__header > .ui-button {
+    width: 100%;
+  }
+
+  /* -------------------------------------------------------
+     5. TOOLBAR — HƏR ŞEY EKRANIN İÇİNDƏ
+     ------------------------------------------------------- */
+
+  .admin-toolbar {
+    width: 100%;
+
+    display: grid;
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+
+    gap: 5px;
+  }
+
+  .admin-toolbar .search-control {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+
+    grid-column: 1 / -1;
+  }
+
+  .admin-toolbar__select,
+  .admin-toolbar .ui-select,
+  .admin-date-filter,
+  .admin-date-filter .ui-date-input {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .admin-toolbar__select,
+  .admin-toolbar .ui-select,
+  .admin-date-filter .ui-date-input {
+    height: 41px;
+
+    font-size: 11px;
+  }
+
+  /* -------------------------------------------------------
+     6. KPI — APP DASHBOARD KARTLARI
+     ------------------------------------------------------- */
+
+  .admin-kpi-grid,
+  .finance-summary-grid,
+  .admin-mini-kpi-row,
+  .admin-setting-grid {
+    width: 100%;
+
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+
+    gap: 5px;
+  }
+
+  .admin-dashboard-grid {
+    width: 100%;
+
+    grid-template-columns:
+      1fr;
+
+    gap: 5px;
+  }
+
+  .admin-kpi-card,
+  .finance-summary-card,
+  .admin-mini-kpi,
+  .admin-setting-card {
+    min-width: 0;
+    padding: 9px;
+
+    border-radius: 10px;
+  }
+
+  .admin-kpi-card strong,
+  .finance-summary-card strong,
+  .admin-mini-kpi strong {
+    font-size: 18px;
+  }
+
+  .admin-kpi-card__label,
+  .admin-kpi-card > span,
+  .finance-summary-card > span,
+  .admin-mini-kpi > span {
+    font-size: 9px;
+  }
+
+  /* -------------------------------------------------------
+     7. ADMIN SECTION
+     ------------------------------------------------------- */
+
+  .admin-section {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+
+    margin-top: 6px;
+    padding: 8px;
+
+    overflow: hidden;
+
+    border-radius: 10px;
+  }
+
+  .admin-section__header {
+    width: 100%;
+
+    align-items: flex-start;
+
+    gap: 7px;
+  }
+
+  .admin-section__title {
+    font-size: 14px;
+  }
+
+  .admin-section__description {
+    font-size: 10px;
+  }
+
+  /* -------------------------------------------------------
+     8. CƏDVƏLLƏR — BÜTÜN SƏHİFƏ DEYİL,
+        YALNIZ CƏDVƏL ÖZ İÇİNDƏ SCROLL OLUR
+     ------------------------------------------------------- */
+
+  .admin-table-wrap {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+
+    overflow-x: auto;
+    overflow-y: hidden;
+
+    border-radius: 9px;
+
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-inline: contain;
+  }
+
+  .admin-table,
+  .finance-table {
+    width: max-content;
+    min-width: 620px;
+    max-width: none;
+  }
+
+  .admin-table th,
+  .admin-table td,
+  .finance-table th,
+  .finance-table td {
+    padding: 8px 7px;
+
+    font-size: 10px;
+
+    white-space: nowrap;
+  }
+
+  .admin-table th,
+  .finance-table th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+
+    font-size: 9px;
+
+    background:
+      var(--surface-2);
+  }
+
+  .admin-table__primary {
+    max-width: 180px;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .admin-table__secondary {
+    max-width: 180px;
+
+    overflow: hidden;
+
+    font-size: 8px;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* -------------------------------------------------------
+     9. TABLE ACTIONS
+     ------------------------------------------------------- */
+
+  .admin-table__actions {
+    gap: 4px;
+  }
+
+  .admin-row-action {
+    min-height: 32px;
+
+    padding-inline: 9px;
+
+    font-size: 9px;
+
+    white-space: nowrap;
+  }
+
+  /* -------------------------------------------------------
+     10. İSTİFADƏÇİ CELL
+     ------------------------------------------------------- */
+
+  .admin-user-cell {
+    min-width: 155px;
+  }
+
+  .admin-user-cell__avatar {
+    width: 34px;
+    height: 34px;
+    flex-basis: 34px;
+  }
+
+  .admin-user-cell__identity strong {
+    font-size: 10px;
+  }
+
+  .admin-user-cell__identity span {
+    font-size: 8px;
+  }
+
+  /* -------------------------------------------------------
+     11. PRODUCT / POS —
+        MOBİLDƏ 2 SÜTUN, DAHA APP-LIKE
+     ------------------------------------------------------- */
+
+  .admin-products-grid,
+  .pos-products-grid {
+    width: 100%;
+
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+
+    gap: 6px;
+  }
+
+  .admin-product-card,
+  .pos-product-card {
+    width: 100%;
+    min-width: 0;
+
+    border-radius: 11px;
+  }
+
+  .admin-product-card__media,
+  .pos-product-card__media {
+    aspect-ratio: 1 / .88;
+  }
+
+  .admin-product-card__body,
+  .pos-product-card__body {
+    padding: 8px;
+  }
+
+  .admin-product-card__name,
+  .pos-product-card__name {
+    min-height: 32px;
+
+    font-size: 11px;
+    line-height: 1.35;
+  }
+
+  .admin-product-card__price,
+  .pos-product-card__price {
+    font-size: 14px;
+  }
+
+  .admin-product-card__meta,
+  .admin-product-card__row,
+  .pos-product-card__row {
+    font-size: 8.5px;
+  }
+
+  .admin-product-card__actions {
+    display: grid;
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+
+    gap: 4px;
+  }
+
+  .admin-product-card__actions .admin-row-action {
+    width: 100%;
+  }
+
+  /* -------------------------------------------------------
+     12. TRAINERS
+     ------------------------------------------------------- */
+
+  .admin-trainers-grid {
+    width: 100%;
+
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+
+    gap: 6px;
+  }
+
+  .admin-trainer-card {
+    min-width: 0;
+    padding: 8px;
+
+    border-radius: 11px;
+  }
+
+  /* -------------------------------------------------------
+     13. COMPACT LIST / HISTORY
+     ------------------------------------------------------- */
+
+  .compact-list,
+  .operation-list {
+    width: 100%;
+    gap: 5px;
+  }
+
+  .compact-list-item,
+  .operation-item {
+    width: 100%;
+    min-width: 0;
+
+    padding: 8px;
+
+    border-radius: 9px;
+  }
+
+  .compact-list-item__content,
+  .operation-item__content {
+    min-width: 0;
+  }
+
+  .compact-list-item__title,
+  .operation-item__title {
+    max-width: 100%;
+
+    font-size: 10px;
+  }
+
+  .compact-list-item__meta,
+  .operation-item__meta,
+  .operation-item__operator {
+    max-width: 100%;
+
+    overflow: hidden;
+
+    font-size: 8px;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .compact-list-item__side,
+  .operation-item__side {
+    max-width: 95px;
+
+    overflow: hidden;
+
+    font-size: 8px;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* -------------------------------------------------------
+     14. AUDIT DETAIL
+     ------------------------------------------------------- */
+
+  .audit-detail,
+  .audit-change-list,
+  .audit-change {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .audit-change__values {
+    width: 100%;
+
+    grid-template-columns:
+      1fr;
+
+    gap: 4px;
+  }
+
+  .audit-change__arrow {
+    transform: rotate(90deg);
+  }
+
+  .audit-change__value {
+    width: 100%;
+    min-width: 0;
+
+    font-size: 9px;
+
+    overflow-wrap: anywhere;
+  }
+
+  /* -------------------------------------------------------
+     15. MODAL —
+        MOBİL TƏTBİQ BOTTOM SHEET
+     ------------------------------------------------------- */
+
+  .app-modal-backdrop {
+    align-items: end;
+
+    padding: 0;
+  }
+
+  .app-modal {
+    width: 100%;
+    max-width: 100%;
+    max-height: 92dvh;
+
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+
+    border-radius:
+      18px
+      18px
+      0
+      0;
+  }
+
+  .app-modal__handle {
+    display: block;
+  }
+
+  .app-modal__header {
+    padding:
+      10px
+      12px
+      9px;
+  }
+
+  .app-modal__title {
+    font-size: 18px;
+  }
+
+  .app-modal__body {
+    padding:
+      10px
+      12px
+      calc(
+        14px +
+        var(--safe-bottom)
+      );
+  }
+
+  .modal-form__grid {
+    grid-template-columns:
+      1fr;
+  }
+
+  .modal-form__actions {
+    position: sticky;
+    bottom: 0;
+
+    display: grid;
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+
+    padding-top: 8px;
+
+    background:
+      var(--surface);
+  }
+
+  .modal-form__actions .ui-button {
+    width: 100%;
+  }
+
+  /* -------------------------------------------------------
+     16. INPUT / SELECT —
+        TELEFONDA REAL TOUCH SIZE
+     ------------------------------------------------------- */
+
+  .admin-page .ui-input,
+  .admin-page .ui-select,
+  .admin-page .ui-date-input,
+  .admin-page .search-control {
+    min-height: 44px;
+  }
+
+  .admin-page .ui-input__control,
+  .admin-page .search-control__input {
+    min-height: 42px;
+
+    font-size: 12px;
+  }
+
+  /* -------------------------------------------------------
+     17. BOTTOM NAV İLƏ ADMIN ARASINDA
+        ARTIQ BOŞLUQ OLMASIN
+     ------------------------------------------------------- */
+
+  .admin-page + #app-footer-root .app-footer {
+    margin-top: 8px;
+  }
+
+}
+
+
+/* =========================================================
+   ÇOX DAR TELEFONLAR
+   ========================================================= */
+
+@media (max-width: 390px) {
+
+  .admin-shell {
+    padding-inline: 3px;
+  }
+
+  .admin-navigation__item {
+    min-width: 66px;
+
+    padding-inline: 5px;
+
+    font-size: 8px;
+  }
+
+  .admin-products-grid,
+  .pos-products-grid {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+
+    gap: 4px;
+  }
+
+  .admin-product-card__body,
+  .pos-product-card__body {
+    padding: 6px;
+  }
+
+  .admin-kpi-grid,
+  .finance-summary-grid,
+  .admin-mini-kpi-row,
+  .admin-setting-grid {
+    gap: 4px;
+  }
+
+  .admin-kpi-card,
+  .finance-summary-card,
+  .admin-mini-kpi,
+  .admin-setting-card {
+    padding: 7px;
+  }
+
+}
