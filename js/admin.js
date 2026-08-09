@@ -1,16 +1,13 @@
-// ============================================================
-// SKY FIT PRO
-// Admin / Staff Management Controller
-// File: js/admin.js
-//
-// PART 1 / 4
-// REAL SUPABASE SCHEMA VERSION
-// ============================================================
+// SKy Fit Pro — Admin / Staff Management Controller
+// Senior Full Stack Developer: Qərib Səfərli
 
 import {
   supabase,
   APP_CONFIG,
   TABLES,
+  RPC,
+  UI_CONFIG,
+  STORAGE_KEYS,
 } from './config.js';
 
 import {
@@ -86,10 +83,7 @@ import {
   initLayout,
 } from './layout.js';
 
-
-// ============================================================
-// 01. STATE
-// ============================================================
+const ADMIN_OPERATION_EVENT = 'skyfit:admin-operation';
 
 const state = {
 
@@ -173,11 +167,6 @@ const state = {
     false,
 };
 
-
-// ============================================================
-// 02. TABS
-// ============================================================
-
 const ADMIN_TABS =
   new Set([
     'dashboard',
@@ -193,11 +182,6 @@ const ADMIN_TABS =
     'history',
   ]);
 
-
-// ============================================================
-// 03. TAB NORMALIZER
-// ============================================================
-
 function normalizeTab(
   value
 ) {
@@ -207,7 +191,6 @@ function normalizeTab(
       'dashboard'
     );
 
-
   return ADMIN_TABS.has(
     tab
   )
@@ -215,10 +198,26 @@ function normalizeTab(
     : 'dashboard';
 }
 
+function readStoredAdminTab() {
+  try {
+    return normalizeTab(
+      localStorage.getItem(STORAGE_KEYS.lastAdminTab)
+    );
+  } catch {
+    return 'dashboard';
+  }
+}
 
-// ============================================================
-// 04. SET TAB
-// ============================================================
+function storeAdminTab(tab) {
+  try {
+    localStorage.setItem(
+      STORAGE_KEYS.lastAdminTab,
+      normalizeTab(tab)
+    );
+  } catch {
+    // Storage bloklansa da panel işləyir.
+  }
+}
 
 function setActiveTab(
   tab,
@@ -229,10 +228,12 @@ function setActiveTab(
       tab
     );
 
-
   state.activeTab =
     target;
 
+  if (options.persist !== false) {
+    storeAdminTab(target);
+  }
 
   $$(
     '[data-admin-tab]'
@@ -243,12 +244,10 @@ function setActiveTab(
           .adminTab ===
         target;
 
-
       button.classList.toggle(
         'is-active',
         active
       );
-
 
       button.setAttribute(
         'aria-selected',
@@ -256,7 +255,6 @@ function setActiveTab(
       );
     }
   );
-
 
   $$(
     '[data-admin-panel]'
@@ -267,18 +265,15 @@ function setActiveTab(
           .adminPanel ===
         target;
 
-
       panel.classList.toggle(
         'is-hidden',
         !active
       );
 
-
       panel.hidden =
         !active;
     }
   );
-
 
   if (
     options.load !==
@@ -287,11 +282,6 @@ function setActiveTab(
     void loadActiveTab();
   }
 }
-
-
-// ============================================================
-// 05. TAB EVENTS
-// ============================================================
 
 function bindTabEvents() {
   $$(
@@ -310,7 +300,6 @@ function bindTabEvents() {
     }
   );
 
-
   $$(
     '[data-admin-open-tab]'
   ).forEach(
@@ -328,18 +317,12 @@ function bindTabEvents() {
   );
 }
 
-
-// ============================================================
-// 06. STAFF ACCESS
-// ============================================================
-
 async function requireAdminStaff() {
   const identity =
     await getCurrentIdentity({
       force:
         true,
     });
-
 
   if (
     !identity
@@ -352,7 +335,6 @@ async function requireAdminStaff() {
     return null;
   }
 
-
   if (
     !identity.isStaff
   ) {
@@ -363,28 +345,19 @@ async function requireAdminStaff() {
     return null;
   }
 
-
   state.identity =
     identity;
 
-
   return identity;
 }
-
-
-// ============================================================
-// 07. OPERATOR HEADER
-// ============================================================
 
 function renderOperator() {
   const identity =
     state.identity;
 
-
   if (!identity) {
     return;
   }
-
 
   setText(
     byId(
@@ -395,14 +368,12 @@ function renderOperator() {
     )}`
   );
 
-
   setText(
     byId(
       'admin-operator-name'
     ),
     identity.name
   );
-
 
   setText(
     byId(
@@ -414,11 +385,6 @@ function renderOperator() {
   );
 }
 
-
-// ============================================================
-// 08. ACTIVE TAB LOADER
-// ============================================================
-
 async function loadActiveTab() {
   switch (
     state.activeTab
@@ -427,18 +393,15 @@ async function loadActiveTab() {
       await loadDashboard();
       break;
 
-
     case 'pos':
       await loadProducts();
       renderPosProducts();
       break;
 
-
     case 'members':
       await loadMembers();
       renderMembers();
       break;
-
 
     case 'memberships':
       await Promise.all([
@@ -450,18 +413,15 @@ async function loadActiveTab() {
       renderMemberships();
       break;
 
-
     case 'attendance':
       await loadAttendance();
       renderAttendanceAdmin();
       break;
 
-
     case 'products':
       await loadProducts();
       renderAdminProducts();
       break;
-
 
     case 'stock':
       await Promise.all([
@@ -472,7 +432,6 @@ async function loadActiveTab() {
       renderStock();
       break;
 
-
     case 'debts':
       await Promise.all([
         loadDebts(),
@@ -482,36 +441,28 @@ async function loadActiveTab() {
       renderDebts();
       break;
 
-
     case 'finance':
       await loadLedger();
       renderFinance();
       break;
-
 
     case 'trainers':
       await loadTrainers();
       renderAdminTrainers();
       break;
 
-
     case 'history':
       await loadHistory();
       renderHistory();
       break;
-
 
     default:
       break;
   }
 }
 
-
-// ============================================================
-// 09. PRODUCTS LOADER
 //
 // Real products schema.
-// ============================================================
 
 async function loadProducts() {
   if (
@@ -520,10 +471,8 @@ async function loadProducts() {
     return state.products;
   }
 
-
   state.loading.products =
     true;
-
 
   try {
     const {
@@ -565,15 +514,12 @@ async function loadProducts() {
           }
         );
 
-
     if (error) {
       throw error;
     }
 
-
     state.products =
       rows(data);
-
 
     return state.products;
   } catch (error) {
@@ -582,10 +528,8 @@ async function loadProducts() {
       error
     );
 
-
     state.products =
       [];
-
 
     notify.error(
       getErrorMessage(
@@ -594,7 +538,6 @@ async function loadProducts() {
       )
     );
 
-
     return [];
   } finally {
     state.loading.products =
@@ -602,12 +545,8 @@ async function loadProducts() {
   }
 }
 
-
-// ============================================================
-// 10. MEMBERS LOADER
 //
 // profiles.full_name real sütundur.
-// ============================================================
 
 async function loadMembers() {
   if (
@@ -616,10 +555,8 @@ async function loadMembers() {
     return state.members;
   }
 
-
   state.loading.members =
     true;
-
 
   try {
     const {
@@ -653,15 +590,12 @@ async function loadMembers() {
           }
         );
 
-
     if (error) {
       throw error;
     }
 
-
     state.members =
       rows(data);
-
 
     return state.members;
   } catch (error) {
@@ -670,10 +604,8 @@ async function loadMembers() {
       error
     );
 
-
     state.members =
       [];
-
 
     notify.error(
       getErrorMessage(
@@ -682,18 +614,12 @@ async function loadMembers() {
       )
     );
 
-
     return [];
   } finally {
     state.loading.members =
       false;
   }
 }
-
-
-// ============================================================
-// 11. MEMBERSHIP PLANS
-// ============================================================
 
 async function loadMembershipPlans() {
   try {
@@ -729,15 +655,12 @@ async function loadMembershipPlans() {
           }
         );
 
-
     if (error) {
       throw error;
     }
 
-
     state.membershipPlans =
       rows(data);
-
 
     return state
       .membershipPlans;
@@ -747,10 +670,8 @@ async function loadMembershipPlans() {
       error
     );
 
-
     state.membershipPlans =
       [];
-
 
     notify.error(
       getErrorMessage(
@@ -759,19 +680,14 @@ async function loadMembershipPlans() {
       )
     );
 
-
     return [];
   }
 }
 
-
-// ============================================================
-// 12. MEMBERSHIPS
 //
 // Burada relationship-lər explicit göstərilir.
 // Eyni profiles cədvəlinə 3 FK olduğuna görə sadə profiles(*)
 // istifadə ETMİRİK.
-// ============================================================
 
 async function loadMemberships() {
   if (
@@ -780,10 +696,8 @@ async function loadMemberships() {
     return state.memberships;
   }
 
-
   state.loading.memberships =
     true;
-
 
   try {
     const {
@@ -846,15 +760,12 @@ async function loadMemberships() {
           }
         );
 
-
     if (error) {
       throw error;
     }
 
-
     state.memberships =
       rows(data);
-
 
     return state.memberships;
   } catch (error) {
@@ -863,10 +774,8 @@ async function loadMemberships() {
       error
     );
 
-
     state.memberships =
       [];
-
 
     notify.error(
       getErrorMessage(
@@ -875,7 +784,6 @@ async function loadMemberships() {
       )
     );
 
-
     return [];
   } finally {
     state.loading.memberships =
@@ -883,13 +791,9 @@ async function loadMemberships() {
   }
 }
 
-
-// ============================================================
-// 13. ATTENDANCE
 //
 // checked_in_at real timestamp.
 // Operator və üzv explicit FK ilə çəkilir.
-// ============================================================
 
 async function loadAttendance() {
   if (
@@ -898,10 +802,8 @@ async function loadAttendance() {
     return state.attendance;
   }
 
-
   state.loading.attendance =
     true;
-
 
   try {
     const {
@@ -947,15 +849,12 @@ async function loadAttendance() {
         )
         .limit(1000);
 
-
     if (error) {
       throw error;
     }
 
-
     state.attendance =
       rows(data);
-
 
     return state.attendance;
   } catch (error) {
@@ -964,10 +863,8 @@ async function loadAttendance() {
       error
     );
 
-
     state.attendance =
       [];
-
 
     notify.error(
       getErrorMessage(
@@ -976,7 +873,6 @@ async function loadAttendance() {
       )
     );
 
-
     return [];
   } finally {
     state.loading.attendance =
@@ -984,13 +880,9 @@ async function loadAttendance() {
   }
 }
 
-
-// ============================================================
-// 14. DEBTS
 //
 // debt_accounts primary key = member_id.
 // account.id YOXDUR.
-// ============================================================
 
 async function loadDebts() {
   if (
@@ -999,10 +891,8 @@ async function loadDebts() {
     return state.debts;
   }
 
-
   state.loading.debts =
     true;
-
 
   try {
     const {
@@ -1035,15 +925,12 @@ async function loadDebts() {
           }
         );
 
-
     if (error) {
       throw error;
     }
 
-
     state.debts =
       rows(data);
-
 
     return state.debts;
   } catch (error) {
@@ -1052,10 +939,8 @@ async function loadDebts() {
       error
     );
 
-
     state.debts =
       [];
-
 
     notify.error(
       getErrorMessage(
@@ -1064,18 +949,12 @@ async function loadDebts() {
       )
     );
 
-
     return [];
   } finally {
     state.loading.debts =
       false;
   }
 }
-
-
-// ============================================================
-// 15. DEBT TRANSACTIONS
-// ============================================================
 
 async function loadDebtTransactions() {
   try {
@@ -1097,15 +976,12 @@ async function loadDebtTransactions() {
         )
         .limit(1000);
 
-
     if (error) {
       throw error;
     }
 
-
     state.debtTransactions =
       rows(data);
-
 
     return state
       .debtTransactions;
@@ -1115,22 +991,16 @@ async function loadDebtTransactions() {
       error
     );
 
-
     state.debtTransactions =
       [];
-
 
     return [];
   }
 }
 
-
-// ============================================================
-// 16. LEDGER
 //
 // entry_date biznes tarixi,
 // created_at əməliyyat timestamp-ıdır.
-// ============================================================
 
 async function loadLedger() {
   if (
@@ -1139,10 +1009,8 @@ async function loadLedger() {
     return state.ledger;
   }
 
-
   state.loading.finance =
     true;
-
 
   try {
     const {
@@ -1170,15 +1038,12 @@ async function loadLedger() {
         )
         .limit(2000);
 
-
     if (error) {
       throw error;
     }
 
-
     state.ledger =
       rows(data);
-
 
     return state.ledger;
   } catch (error) {
@@ -1187,10 +1052,8 @@ async function loadLedger() {
       error
     );
 
-
     state.ledger =
       [];
-
 
     notify.error(
       getErrorMessage(
@@ -1199,18 +1062,12 @@ async function loadLedger() {
       )
     );
 
-
     return [];
   } finally {
     state.loading.finance =
       false;
   }
 }
-
-
-// ============================================================
-// 17. STOCK MOVEMENTS
-// ============================================================
 
 async function loadStockMovements() {
   try {
@@ -1240,15 +1097,12 @@ async function loadStockMovements() {
         )
         .limit(1000);
 
-
     if (error) {
       throw error;
     }
 
-
     state.stockMovements =
       rows(data);
-
 
     return state
       .stockMovements;
@@ -1258,19 +1112,12 @@ async function loadStockMovements() {
       error
     );
 
-
     state.stockMovements =
       [];
-
 
     return [];
   }
 }
-
-
-// ============================================================
-// 18. SALES
-// ============================================================
 
 async function loadSales() {
   try {
@@ -1292,15 +1139,12 @@ async function loadSales() {
         )
         .limit(1000);
 
-
     if (error) {
       throw error;
     }
 
-
     state.sales =
       rows(data);
-
 
     return state.sales;
   } catch (error) {
@@ -1309,19 +1153,12 @@ async function loadSales() {
       error
     );
 
-
     state.sales =
       [];
-
 
     return [];
   }
 }
-
-
-// ============================================================
-// 19. TRAINERS
-// ============================================================
 
 async function loadTrainers() {
   if (
@@ -1330,10 +1167,8 @@ async function loadTrainers() {
     return state.trainers;
   }
 
-
   state.loading.trainers =
     true;
-
 
   try {
     const {
@@ -1360,15 +1195,12 @@ async function loadTrainers() {
           }
         );
 
-
     if (error) {
       throw error;
     }
 
-
     state.trainers =
       rows(data);
-
 
     return state.trainers;
   } catch (error) {
@@ -1377,10 +1209,8 @@ async function loadTrainers() {
       error
     );
 
-
     state.trainers =
       [];
-
 
     notify.error(
       getErrorMessage(
@@ -1389,7 +1219,6 @@ async function loadTrainers() {
       )
     );
 
-
     return [];
   } finally {
     state.loading.trainers =
@@ -1397,9 +1226,6 @@ async function loadTrainers() {
   }
 }
 
-
-// ============================================================
-// 20. REAL AUDIT HISTORY
 //
 // Süni olaraq sales + ledger + attendance merge etmirik.
 // Backenddə bunun üçün xüsusi RPC artıq var.
@@ -1410,7 +1236,6 @@ async function loadTrainers() {
 //   p_actor_id,
 //   p_limit
 // )
-// ============================================================
 
 async function loadHistory(
   options = {}
@@ -1421,10 +1246,8 @@ async function loadHistory(
     return state.history;
   }
 
-
   state.loading.history =
     true;
-
 
   try {
     const {
@@ -1432,7 +1255,7 @@ async function loadHistory(
       error,
     } =
       await supabase.rpc(
-        'get_operator_activity',
+        RPC.getOperatorActivity,
         {
           p_from:
             options.from ||
@@ -1452,15 +1275,12 @@ async function loadHistory(
         }
       );
 
-
     if (error) {
       throw error;
     }
 
-
     state.history =
       rows(data);
-
 
     return state.history;
   } catch (error) {
@@ -1469,10 +1289,8 @@ async function loadHistory(
       error
     );
 
-
     state.history =
       [];
-
 
     notify.error(
       getErrorMessage(
@@ -1481,18 +1299,12 @@ async function loadHistory(
       )
     );
 
-
     return [];
   } finally {
     state.loading.history =
       false;
   }
 }
-
-
-// ============================================================
-// 21. DASHBOARD LOAD
-// ============================================================
 
 async function loadDashboard() {
   if (
@@ -1501,10 +1313,8 @@ async function loadDashboard() {
     return;
   }
 
-
   state.loading.dashboard =
     true;
-
 
   try {
     await Promise.all([
@@ -1520,9 +1330,7 @@ async function loadDashboard() {
       }),
     ]);
 
-
     renderDashboard();
-
 
     state.dashboard.loaded =
       true;
@@ -1531,7 +1339,6 @@ async function loadDashboard() {
       '[SKy Fit Admin] Dashboard:',
       error
     );
-
 
     notify.error(
       getErrorMessage(
@@ -1545,11 +1352,6 @@ async function loadDashboard() {
   }
 }
 
-
-// ============================================================
-// 22. TODAY CHECK
-// ============================================================
-
 function isToday(
   value
 ) {
@@ -1557,10 +1359,8 @@ function isToday(
     return false;
   }
 
-
   const date =
     new Date(value);
-
 
   if (
     Number.isNaN(
@@ -1570,10 +1370,8 @@ function isToday(
     return false;
   }
 
-
   const now =
     new Date();
-
 
   return (
     date.getFullYear() ===
@@ -1585,15 +1383,9 @@ function isToday(
   );
 }
 
-
-// ============================================================
-// 23. TODAY LEDGER
-// ============================================================
-
 function todayLedgerEntries() {
   const today =
     todayIso();
-
 
   return state.ledger.filter(
     entry =>
@@ -1601,11 +1393,6 @@ function todayLedgerEntries() {
       today
   );
 }
-
-
-// ============================================================
-// 24. DASHBOARD RENDER
-// ============================================================
 
 function renderDashboard() {
   const todaySales =
@@ -1616,14 +1403,12 @@ function renderDashboard() {
         )
     );
 
-
   const paidSales =
     todaySales.filter(
       sale =>
         sale.payment_status ===
         'paid'
     );
-
 
   const todaySalesTotal =
     paidSales.reduce(
@@ -1638,7 +1423,6 @@ function renderDashboard() {
       0
     );
 
-
   const activeMemberships =
     state.memberships.filter(
       membership =>
@@ -1646,7 +1430,6 @@ function renderDashboard() {
           membership
         )
     );
-
 
   const todayAttendance =
     state.attendance.filter(
@@ -1658,7 +1441,6 @@ function renderDashboard() {
         )
     );
 
-
   const openDebts =
     state.debts.filter(
       account =>
@@ -1666,7 +1448,6 @@ function renderDashboard() {
           account
         ) > 0
     );
-
 
   const totalDebt =
     openDebts.reduce(
@@ -1681,10 +1462,8 @@ function renderDashboard() {
       0
     );
 
-
   const todayLedger =
     todayLedgerEntries();
-
 
   const income =
     todayLedger
@@ -1707,7 +1486,6 @@ function renderDashboard() {
         0
       );
 
-
   const expense =
     todayLedger
       .filter(
@@ -1729,10 +1507,7 @@ function renderDashboard() {
         0
       );
 
-
-  // ----------------------------------------------------------
   // KPI values
-  // ----------------------------------------------------------
 
   setText(
     byId(
@@ -1743,14 +1518,12 @@ function renderDashboard() {
     )
   );
 
-
   setText(
     byId(
       'dashboard-sales-count'
     ),
     `${todaySales.length} satış`
   );
-
 
   setText(
     byId(
@@ -1759,14 +1532,12 @@ function renderDashboard() {
     activeMemberships.length
   );
 
-
   setText(
     byId(
       'dashboard-attendance-today'
     ),
     todayAttendance.length
   );
-
 
   setText(
     byId(
@@ -1777,14 +1548,12 @@ function renderDashboard() {
     )
   );
 
-
   setText(
     byId(
       'dashboard-debt-accounts'
     ),
     `${openDebts.length} açıq hesab`
   );
-
 
   setText(
     byId(
@@ -1795,7 +1564,6 @@ function renderDashboard() {
     )
   );
 
-
   setText(
     byId(
       'dashboard-expense-today'
@@ -1804,7 +1572,6 @@ function renderDashboard() {
       expense
     )
   );
-
 
   setText(
     byId(
@@ -1816,7 +1583,6 @@ function renderDashboard() {
     )
   );
 
-
   renderDashboardLowStock();
 
   renderDashboardMemberships();
@@ -1826,27 +1592,19 @@ function renderDashboard() {
   renderDashboardActivity();
 }
 
-
-// ============================================================
-// 25. LOW STOCK DASHBOARD
-// ============================================================
-
 function renderDashboardLowStock() {
   const root =
     byId(
       'dashboard-low-stock'
     );
 
-
   if (!root) {
     return;
   }
 
-
   clearElement(
     root
   );
-
 
   const products =
     state.products
@@ -1856,7 +1614,6 @@ function renderDashboardLowStock() {
             productStockState(
               product
             );
-
 
           return (
             meta.key ===
@@ -1879,7 +1636,6 @@ function renderDashboardLowStock() {
         8
       );
 
-
   if (
     products.length ===
     0
@@ -1890,10 +1646,8 @@ function renderDashboardLowStock() {
       )
     );
 
-
     return;
   }
-
 
   products.forEach(
     product => {
@@ -1901,7 +1655,6 @@ function renderDashboardLowStock() {
         productStockState(
           product
         );
-
 
       const item =
         createElement(
@@ -1911,7 +1664,6 @@ function renderDashboardLowStock() {
               'compact-list-item',
           }
         );
-
 
       item.innerHTML = `
         <span class="compact-list-item__icon">
@@ -1959,7 +1711,6 @@ function renderDashboardLowStock() {
         </span>
       `;
 
-
       root.append(
         item
       );
@@ -1967,31 +1718,22 @@ function renderDashboardLowStock() {
   );
 }
 
-
-// ============================================================
-// 26. MEMBERSHIP DASHBOARD
-// ============================================================
-
 function renderDashboardMemberships() {
   const root =
     byId(
       'dashboard-expiring-memberships'
     );
 
-
   if (!root) {
     return;
   }
-
 
   clearElement(
     root
   );
 
-
   const now =
     new Date();
-
 
   const upcoming =
     state.memberships
@@ -2008,7 +1750,6 @@ function renderDashboardMemberships() {
               membership.end_date
             );
 
-
           const days =
             Math.ceil(
               (
@@ -2017,7 +1758,6 @@ function renderDashboardMemberships() {
               ) /
               86400000
             );
-
 
           return {
             membership,
@@ -2043,7 +1783,6 @@ function renderDashboardMemberships() {
         8
       );
 
-
   if (
     upcoming.length ===
     0
@@ -2054,10 +1793,8 @@ function renderDashboardMemberships() {
       )
     );
 
-
     return;
   }
-
 
   upcoming.forEach(
     ({
@@ -2067,7 +1804,6 @@ function renderDashboardMemberships() {
       const member =
         membership.member;
 
-
       const item =
         createElement(
           'article',
@@ -2076,7 +1812,6 @@ function renderDashboardMemberships() {
               'compact-list-item',
           }
         );
-
 
       item.innerHTML = `
         <span class="compact-list-item__icon">
@@ -2127,7 +1862,6 @@ function renderDashboardMemberships() {
         </span>
       `;
 
-
       root.append(
         item
       );
@@ -2135,27 +1869,19 @@ function renderDashboardMemberships() {
   );
 }
 
-
-// ============================================================
-// 27. DEBT DASHBOARD
-// ============================================================
-
 function renderDashboardDebts() {
   const root =
     byId(
       'dashboard-open-debts'
     );
 
-
   if (!root) {
     return;
   }
 
-
   clearElement(
     root
   );
-
 
   const debts =
     state.debts
@@ -2178,7 +1904,6 @@ function renderDashboardDebts() {
         8
       );
 
-
   if (
     debts.length ===
     0
@@ -2189,16 +1914,13 @@ function renderDashboardDebts() {
       )
     );
 
-
     return;
   }
-
 
   debts.forEach(
     account => {
       const member =
         account.member;
-
 
       const item =
         createElement(
@@ -2208,7 +1930,6 @@ function renderDashboardDebts() {
               'compact-list-item',
           }
         );
-
 
       item.innerHTML = `
         <span class="compact-list-item__icon">
@@ -2256,7 +1977,6 @@ function renderDashboardDebts() {
         </span>
       `;
 
-
       root.append(
         item
       );
@@ -2264,27 +1984,19 @@ function renderDashboardDebts() {
   );
 }
 
-
-// ============================================================
-// 28. AUDIT DASHBOARD
-// ============================================================
-
 function renderDashboardActivity() {
   const root =
     byId(
       'dashboard-recent-operations'
     );
 
-
   if (!root) {
     return;
   }
 
-
   clearElement(
     root
   );
-
 
   state.history
     .slice(
@@ -2301,7 +2013,6 @@ function renderDashboardActivity() {
                 'operation-item',
             }
           );
-
 
         item.innerHTML = `
           <span class="operation-item__icon">
@@ -2350,13 +2061,11 @@ function renderDashboardActivity() {
           </span>
         `;
 
-
         root.append(
           item
         );
       }
     );
-
 
   if (
     root.children.length ===
@@ -2370,11 +2079,6 @@ function renderDashboardActivity() {
   }
 }
 
-
-// ============================================================
-// 29. AUDIT ACTION LABEL
-// ============================================================
-
 function auditActionLabel(
   log
 ) {
@@ -2383,12 +2087,10 @@ function auditActionLabel(
       log?.table_name
     );
 
-
   const action =
     normalizeString(
       log?.action
     ).toUpperCase();
-
 
   const tableNames = {
     products:
@@ -2422,7 +2124,6 @@ function auditActionLabel(
       'Əməkdaş kassası',
   };
 
-
   const actionNames = {
     INSERT:
       'əlavə edildi',
@@ -2434,7 +2135,6 @@ function auditActionLabel(
       'silindi',
   };
 
-
   return `${
     tableNames[table] ||
     table
@@ -2443,11 +2143,6 @@ function auditActionLabel(
     action
   }`;
 }
-
-
-// ============================================================
-// 30. DASHBOARD EMPTY
-// ============================================================
 
 function createDashboardEmpty(
   message
@@ -2461,7 +2156,6 @@ function createDashboardEmpty(
       }
     );
 
-
   item.innerHTML = `
     <span class="compact-list-item__content">
 
@@ -2474,14 +2168,8 @@ function createDashboardEmpty(
     </span>
   `;
 
-
   return item;
 }
-
-
-// ============================================================
-// 31. DASHBOARD REFRESH
-// ============================================================
 
 function bindDashboardEvents() {
   byId(
@@ -2491,7 +2179,6 @@ function bindDashboardEvents() {
     async () => {
       await loadDashboard();
 
-
       notify.success(
         'Dashboard yeniləndi.'
       );
@@ -2499,51 +2186,34 @@ function bindDashboardEvents() {
   );
 }
 
-
-// ============================================================
-// 32. BASE INIT
-// ============================================================
-
 async function initAdminBase() {
   await initLayout();
 
-
   const identity =
     await requireAdminStaff();
-
 
   if (!identity) {
     return false;
   }
 
-
   renderOperator();
-
 
   bindTabEvents();
 
   bindDashboardEvents();
 
-
   setActiveTab(
     'dashboard',
     {
-      load:
-        false,
+      load: false,
+      persist: false,
     }
   );
-
 
   return true;
 }
 
-
-// ============================================================
-
-// ============================================================
-// 33. ACTIVE MEMBERS
 // POS və digər əməliyyatlarda yalnız aktiv member-lər.
-// ============================================================
 
 function activeMembers() {
   return state.members
@@ -2566,11 +2236,6 @@ function activeMembers() {
           )
     );
 }
-
-
-// ============================================================
-// 34. MEMBER OPTION MARKUP
-// ============================================================
 
 function memberOptionsMarkup(
   selectedId = ''
@@ -2611,11 +2276,6 @@ function memberOptionsMarkup(
     .join('');
 }
 
-
-// ============================================================
-// 35. PAYMENT METHOD LABEL
-// ============================================================
-
 function paymentMethodLabel(
   value
 ) {
@@ -2634,11 +2294,6 @@ function paymentMethodLabel(
       return 'Nağd';
   }
 }
-
-
-// ============================================================
-// 36. PAYMENT STATUS LABEL
-// ============================================================
 
 function paymentStatusLabel(
   value
@@ -2661,11 +2316,6 @@ function paymentStatusLabel(
       return 'Ödənilib';
   }
 }
-
-
-// ============================================================
-// 37. PAYMENT STATUS CLASS
-// ============================================================
 
 function paymentStatusClass(
   value
@@ -2697,11 +2347,6 @@ function paymentStatusClass(
   }
 }
 
-
-// ============================================================
-// 38. POS FILTER
-// ============================================================
-
 function filteredPosProducts() {
   const search =
     normalizeSearch(
@@ -2710,7 +2355,6 @@ function filteredPosProducts() {
       )?.value
     );
 
-
   const filter =
     normalizeString(
       byId(
@@ -2718,7 +2362,6 @@ function filteredPosProducts() {
       )?.value,
       'all'
     );
-
 
   return state.products
     .filter(
@@ -2731,7 +2374,6 @@ function filteredPosProducts() {
         if (!search) {
           return true;
         }
-
 
         const text =
           [
@@ -2746,7 +2388,6 @@ function filteredPosProducts() {
               'az-AZ'
             );
 
-
         return text.includes(
           search
         );
@@ -2759,14 +2400,12 @@ function filteredPosProducts() {
             product
           );
 
-
         if (
           filter ===
           'available'
         ) {
           return stock > 0;
         }
-
 
         if (
           filter ===
@@ -2777,13 +2416,11 @@ function filteredPosProducts() {
               product
             );
 
-
           return (
             status.key ===
             'low'
           );
         }
-
 
         if (
           filter ===
@@ -2792,16 +2429,10 @@ function filteredPosProducts() {
           return stock <= 0;
         }
 
-
         return true;
       }
     );
 }
-
-
-// ============================================================
-// 39. POS PRODUCT CARD
-// ============================================================
 
 function createPosCard(
   product
@@ -2811,18 +2442,15 @@ function createPosCard(
       product
     );
 
-
   const image =
     productImage(
       product
     );
 
-
   const status =
     productStockState(
       product
     );
-
 
   const card =
     createElement(
@@ -2851,7 +2479,6 @@ function createPosCard(
         },
       }
     );
-
 
   card.innerHTML = `
     <div class="pos-product-card__media">
@@ -2887,7 +2514,6 @@ function createPosCard(
 
     </div>
 
-
     <div class="pos-product-card__body">
 
       <strong class="pos-product-card__name">
@@ -2898,7 +2524,6 @@ function createPosCard(
         )}
       </strong>
 
-
       <span class="pos-product-card__unit">
         ${escapeHtml(
           productUnitLabel(
@@ -2906,7 +2531,6 @@ function createPosCard(
           )
         )}
       </span>
-
 
       <div class="pos-product-card__row">
 
@@ -2936,7 +2560,6 @@ function createPosCard(
     </div>
   `;
 
-
   if (
     stock > 0
   ) {
@@ -2951,14 +2574,8 @@ function createPosCard(
     );
   }
 
-
   return card;
 }
-
-
-// ============================================================
-// 40. POS RENDER
-// ============================================================
 
 function renderPosProducts() {
   const root =
@@ -2966,26 +2583,21 @@ function renderPosProducts() {
       'pos-products-grid'
     );
 
-
   const empty =
     byId(
       'pos-products-empty'
     );
 
-
   if (!root) {
     return;
   }
-
 
   clearElement(
     root
   );
 
-
   const products =
     filteredPosProducts();
-
 
   products.forEach(
     product => {
@@ -2997,7 +2609,6 @@ function renderPosProducts() {
     }
   );
 
-
   if (empty) {
     products.length ===
       0
@@ -3006,22 +2617,13 @@ function renderPosProducts() {
   }
 }
 
-
-// ============================================================
-// 41. POS EVENTS
-// ============================================================
-
 function bindPosEvents() {
   byId(
     'pos-product-search'
   )?.addEventListener(
     'input',
-    debounce(
-      renderPosProducts,
-      180
-    )
+    debounce(renderPosProducts, UI_CONFIG.debounceDelay)
   );
-
 
   byId(
     'pos-product-filter'
@@ -3031,13 +2633,9 @@ function bindPosEvents() {
   );
 }
 
-
-// ============================================================
-// 42. POS SALE MODAL
 //
 // Kart vurulan kimi satılmır.
 // Modal açılır.
-// ============================================================
 
 async function openPosSaleModal(
   product,
@@ -3050,30 +2648,25 @@ async function openPosSaleModal(
     await loadMembers();
   }
 
-
   const mode =
     productSaleMode(
       product
     );
-
 
   const stock =
     productStock(
       product
     );
 
-
   const price =
     productPrice(
       product
     );
 
-
   const image =
     productImage(
       product
     );
-
 
   const content =
     createElement(
@@ -3091,7 +2684,6 @@ async function openPosSaleModal(
         },
       }
     );
-
 
   content.innerHTML = `
     <div class="pos-confirm__product">
@@ -3120,7 +2712,6 @@ async function openPosSaleModal(
         }
 
       </div>
-
 
       <div class="pos-confirm__identity">
 
@@ -3153,7 +2744,6 @@ async function openPosSaleModal(
       </div>
 
     </div>
-
 
     <div class="modal-form__grid">
 
@@ -3192,7 +2782,6 @@ async function openPosSaleModal(
 
       </div>
 
-
       <div class="ui-field">
 
         <label
@@ -3223,7 +2812,6 @@ async function openPosSaleModal(
 
     </div>
 
-
     <div class="ui-field">
 
       <label
@@ -3247,7 +2835,6 @@ async function openPosSaleModal(
       </select>
 
     </div>
-
 
     <div
       id="pos-sale-member-field"
@@ -3277,7 +2864,6 @@ async function openPosSaleModal(
       </span>
 
     </div>
-
 
     <div class="pos-confirm__summary">
 
@@ -3347,7 +2933,6 @@ async function openPosSaleModal(
 
     </div>
 
-
     <div class="modal-form__actions">
 
       <button
@@ -3359,7 +2944,6 @@ async function openPosSaleModal(
           Ləğv et
         </span>
       </button>
-
 
       <button
         id="pos-sale-submit"
@@ -3378,7 +2962,6 @@ async function openPosSaleModal(
 
     </div>
   `;
-
 
   openModal({
     eyebrow:
@@ -3401,11 +2984,6 @@ async function openPosSaleModal(
   });
 }
 
-
-// ============================================================
-// 43. POS FORM
-// ============================================================
-
 function bindPosSaleForm(
   form,
   product
@@ -3416,13 +2994,11 @@ function bindPosSaleForm(
       form
     );
 
-
   const paymentMethodInput =
     $(
       '#pos-sale-payment-method',
       form
     );
-
 
   const paymentStatusInput =
     $(
@@ -3430,13 +3006,11 @@ function bindPosSaleForm(
       form
     );
 
-
   const memberField =
     $(
       '#pos-sale-member-field',
       form
     );
-
 
   const memberInput =
     $(
@@ -3444,13 +3018,11 @@ function bindPosSaleForm(
       form
     );
 
-
   const quantityError =
     $(
       '#pos-sale-quantity-error',
       form
     );
-
 
   const submit =
     $(
@@ -3458,13 +3030,11 @@ function bindPosSaleForm(
       form
     );
 
-
   const cancel =
     $(
       '#pos-sale-cancel',
       form
     );
-
 
   function syncSummary() {
     const quantity =
@@ -3476,13 +3046,11 @@ function bindPosSaleForm(
         )
       );
 
-
     const total =
       quantity *
       productPrice(
         product
       );
-
 
     setText(
       $(
@@ -3492,7 +3060,6 @@ function bindPosSaleForm(
       quantity
     );
 
-
     setText(
       $(
         '#pos-sale-total',
@@ -3501,13 +3068,11 @@ function bindPosSaleForm(
       money(total)
     );
 
-
     const deduction =
       $(
         '#pos-sale-stock-deduction',
         form
       );
-
 
     if (deduction) {
       const stockDeduction =
@@ -3515,7 +3080,6 @@ function bindPosSaleForm(
         number(
           product.portion_size
         );
-
 
       setText(
         deduction,
@@ -3528,13 +3092,11 @@ function bindPosSaleForm(
     }
   }
 
-
   function syncPaymentStatus() {
     const debt =
       paymentStatusInput
         ?.value ===
       'debt';
-
 
     debt
       ? showElement(
@@ -3545,13 +3107,11 @@ function bindPosSaleForm(
         );
   }
 
-
   quantityInput
     ?.addEventListener(
       'input',
       syncSummary
     );
-
 
   paymentStatusInput
     ?.addEventListener(
@@ -3559,31 +3119,26 @@ function bindPosSaleForm(
       syncPaymentStatus
     );
 
-
   cancel
     ?.addEventListener(
       'click',
       closeModal
     );
 
-
   syncSummary();
 
   syncPaymentStatus();
-
 
   form.addEventListener(
     'submit',
     async event => {
       event.preventDefault();
 
-
       const quantity =
         number(
           quantityInput
             ?.value
         );
-
 
       const paymentMethod =
         normalizeString(
@@ -3592,7 +3147,6 @@ function bindPosSaleForm(
           'cash'
         );
 
-
       const paymentStatus =
         normalizeString(
           paymentStatusInput
@@ -3600,13 +3154,11 @@ function bindPosSaleForm(
           'paid'
         );
 
-
       const memberId =
         normalizeString(
           memberInput
             ?.value
         );
-
 
       if (
         quantity <= 0
@@ -3617,10 +3169,8 @@ function bindPosSaleForm(
           'Miqdar sıfırdan böyük olmalıdır.'
         );
 
-
         return;
       }
-
 
       // Unit məhsulda yalnız tam ədəd satılır.
       if (
@@ -3638,10 +3188,8 @@ function bindPosSaleForm(
           'Ədəd məhsul üçün tam rəqəm daxil et.'
         );
 
-
         return;
       }
-
 
       if (
         paymentStatus ===
@@ -3652,14 +3200,11 @@ function bindPosSaleForm(
           'Borc satışı üçün üzv seçilməlidir.'
         );
 
-
         memberInput
           ?.focus();
 
-
         return;
       }
-
 
       await executePosSale({
         product,
@@ -3683,12 +3228,8 @@ function bindPosSaleForm(
   );
 }
 
-
-// ============================================================
-// 44. EXECUTE POS SALE
 //
 // Real backend RPC.
-// ============================================================
 
 async function executePosSale({
   product,
@@ -3704,10 +3245,8 @@ async function executePosSale({
     return;
   }
 
-
   state.busy =
     true;
-
 
   setButtonLoading(
     button,
@@ -3717,7 +3256,6 @@ async function executePosSale({
         'Satılır...',
     }
   );
-
 
   try {
     const items = [
@@ -3729,14 +3267,13 @@ async function executePosSale({
       },
     ];
 
-
     const {
       data:
         saleId,
       error,
     } =
       await supabase.rpc(
-        'process_sale',
+        RPC.processSale,
         {
           p_member_id:
             memberId ||
@@ -3753,14 +3290,11 @@ async function executePosSale({
         }
       );
 
-
     if (error) {
       throw error;
     }
 
-
     closeModal();
-
 
     notify.success(
       `${productName(
@@ -3768,7 +3302,6 @@ async function executePosSale({
       )} satıldı.`,
       'Satış tamamlandı'
     );
-
 
     // Backend özü:
     // sales
@@ -3789,9 +3322,7 @@ async function executePosSale({
       }),
     ]);
 
-
     renderPosProducts();
-
 
     if (
       state.activeTab ===
@@ -3800,10 +3331,9 @@ async function executePosSale({
       renderDashboard();
     }
 
-
     window.dispatchEvent(
       new CustomEvent(
-        'skyfit:admin-operation',
+        ADMIN_OPERATION_EVENT,
         {
           detail: {
             type:
@@ -3827,7 +3357,6 @@ async function executePosSale({
       error
     );
 
-
     notify.error(
       getErrorMessage(
         error,
@@ -3838,18 +3367,12 @@ async function executePosSale({
     state.busy =
       false;
 
-
     setButtonLoading(
       button,
       false
     );
   }
 }
-
-
-// ============================================================
-// 45. ADMIN PRODUCT FILTER
-// ============================================================
 
 function filteredAdminProducts() {
   const search =
@@ -3859,7 +3382,6 @@ function filteredAdminProducts() {
       )?.value
     );
 
-
   const status =
     normalizeString(
       byId(
@@ -3868,14 +3390,12 @@ function filteredAdminProducts() {
       'all'
     );
 
-
   return state.products
     .filter(
       product => {
         if (!search) {
           return true;
         }
-
 
         const text =
           [
@@ -3889,7 +3409,6 @@ function filteredAdminProducts() {
             .toLocaleLowerCase(
               'az-AZ'
             );
-
 
         return text.includes(
           search
@@ -3908,7 +3427,6 @@ function filteredAdminProducts() {
           );
         }
 
-
         if (
           status ===
           'inactive'
@@ -3918,7 +3436,6 @@ function filteredAdminProducts() {
             false
           );
         }
-
 
         if (
           status ===
@@ -3930,16 +3447,10 @@ function filteredAdminProducts() {
           );
         }
 
-
         return true;
       }
     );
 }
-
-
-// ============================================================
-// 46. ADMIN PRODUCT CARD
-// ============================================================
 
 function createAdminProductCard(
   product
@@ -3949,12 +3460,10 @@ function createAdminProductCard(
       product
     );
 
-
   const stockState =
     productStockState(
       product
     );
-
 
   const card =
     createElement(
@@ -3969,7 +3478,6 @@ function createAdminProductCard(
         },
       }
     );
-
 
   card.innerHTML = `
     <button
@@ -4009,7 +3517,6 @@ function createAdminProductCard(
 
       </div>
 
-
       <div class="admin-product-card__body">
 
         <div class="admin-product-card__badges">
@@ -4044,7 +3551,6 @@ function createAdminProductCard(
 
         </div>
 
-
         <strong class="admin-product-card__name">
           ${escapeHtml(
             productName(
@@ -4052,7 +3558,6 @@ function createAdminProductCard(
             )
           )}
         </strong>
-
 
         <span class="admin-product-card__meta">
           ${
@@ -4063,7 +3568,6 @@ function createAdminProductCard(
               : 'SKU yoxdur'
           }
         </span>
-
 
         <div class="admin-product-card__row">
 
@@ -4098,7 +3602,6 @@ function createAdminProductCard(
 
     </button>
 
-
     <div class="admin-product-card__actions">
 
       <button
@@ -4128,7 +3631,6 @@ function createAdminProductCard(
     </div>
   `;
 
-
   $(
     '.admin-product-card__main',
     card
@@ -4141,7 +3643,6 @@ function createAdminProductCard(
       );
     }
   );
-
 
   $(
     '[data-product-stock]',
@@ -4156,7 +3657,6 @@ function createAdminProductCard(
     }
   );
 
-
   $(
     '[data-product-adjust]',
     card
@@ -4170,14 +3670,8 @@ function createAdminProductCard(
     }
   );
 
-
   return card;
 }
-
-
-// ============================================================
-// 47. ADMIN PRODUCTS RENDER
-// ============================================================
 
 function renderAdminProducts() {
   const root =
@@ -4185,20 +3679,16 @@ function renderAdminProducts() {
       'admin-products-grid'
     );
 
-
   if (!root) {
     return;
   }
-
 
   clearElement(
     root
   );
 
-
   const products =
     filteredAdminProducts();
-
 
   products.forEach(
     product => {
@@ -4209,7 +3699,6 @@ function renderAdminProducts() {
       );
     }
   );
-
 
   if (
     products.length ===
@@ -4223,11 +3712,6 @@ function renderAdminProducts() {
   }
 }
 
-
-// ============================================================
-// 48. PRODUCT EVENTS
-// ============================================================
-
 function bindProductEvents() {
   byId(
     'product-create-button'
@@ -4238,17 +3722,12 @@ function bindProductEvents() {
     }
   );
 
-
   byId(
     'products-admin-search'
   )?.addEventListener(
     'input',
-    debounce(
-      renderAdminProducts,
-      180
-    )
+    debounce(renderAdminProducts, UI_CONFIG.debounceDelay)
   );
-
 
   byId(
     'products-admin-status'
@@ -4258,11 +3737,6 @@ function bindProductEvents() {
   );
 }
 
-
-// ============================================================
-// 49. PRODUCT EDITOR
-// ============================================================
-
 function openProductEditor(
   product = null,
   trigger = null
@@ -4270,12 +3744,10 @@ function openProductEditor(
   const editing =
     Boolean(product);
 
-
   const mode =
     product
       ?.sale_mode ||
     'unit';
-
 
   const content =
     createElement(
@@ -4293,7 +3765,6 @@ function openProductEditor(
         },
       }
     );
-
 
   content.innerHTML = `
     <div class="ui-field">
@@ -4328,7 +3799,6 @@ function openProductEditor(
 
     </div>
 
-
     <div class="modal-form__grid">
 
       <div class="ui-field">
@@ -4357,7 +3827,6 @@ function openProductEditor(
         </div>
 
       </div>
-
 
       <div class="ui-field">
 
@@ -4388,7 +3857,6 @@ function openProductEditor(
 
     </div>
 
-
     <div class="ui-field">
 
       <label
@@ -4410,7 +3878,6 @@ function openProductEditor(
       )}</textarea>
 
     </div>
-
 
     <div class="modal-form__grid">
 
@@ -4454,7 +3921,6 @@ function openProductEditor(
 
       </div>
 
-
       <div class="ui-field">
 
         <label
@@ -4484,7 +3950,6 @@ function openProductEditor(
       </div>
 
     </div>
-
 
     <div class="modal-form__grid">
 
@@ -4525,7 +3990,6 @@ function openProductEditor(
         ></span>
 
       </div>
-
 
       <div
         id="admin-product-portion-price-field"
@@ -4570,7 +4034,6 @@ function openProductEditor(
 
     </div>
 
-
     <div class="modal-form__grid">
 
       <div class="ui-field">
@@ -4605,7 +4068,6 @@ function openProductEditor(
         </div>
 
       </div>
-
 
       <div
         id="admin-product-portion-size-field"
@@ -4650,7 +4112,6 @@ function openProductEditor(
 
     </div>
 
-
     <div class="modal-form__grid">
 
       <div class="ui-field">
@@ -4685,7 +4146,6 @@ function openProductEditor(
 
       </div>
 
-
       <div class="ui-field">
 
         <label class="ui-field__label">
@@ -4713,7 +4173,6 @@ function openProductEditor(
 
           </label>
 
-
           <label class="ui-check">
 
             <input
@@ -4738,7 +4197,6 @@ function openProductEditor(
       </div>
 
     </div>
-
 
     <label class="ui-upload">
 
@@ -4766,7 +4224,6 @@ function openProductEditor(
 
     </label>
 
-
     <button
       id="admin-product-submit"
       class="ui-button ui-button--primary ui-button--full"
@@ -4788,7 +4245,6 @@ function openProductEditor(
 
     </button>
   `;
-
 
   openModal({
     eyebrow:
@@ -4813,11 +4269,6 @@ function openProductEditor(
   });
 }
 
-
-// ============================================================
-// 50. PRODUCT FORM
-// ============================================================
-
 function bindProductForm(
   form,
   product
@@ -4828,13 +4279,11 @@ function bindProductForm(
       form
     );
 
-
   const skuInput =
     $(
       '#admin-product-sku',
       form
     );
-
 
   const categoryInput =
     $(
@@ -4842,13 +4291,11 @@ function bindProductForm(
       form
     );
 
-
   const descriptionInput =
     $(
       '#admin-product-description',
       form
     );
-
 
   const modeInput =
     $(
@@ -4856,13 +4303,11 @@ function bindProductForm(
       form
     );
 
-
   const unitInput =
     $(
       '#admin-product-stock-unit',
       form
     );
-
 
   const retailPriceInput =
     $(
@@ -4870,13 +4315,11 @@ function bindProductForm(
       form
     );
 
-
   const portionPriceInput =
     $(
       '#admin-product-portion-price',
       form
     );
-
 
   const costPriceInput =
     $(
@@ -4884,13 +4327,11 @@ function bindProductForm(
       form
     );
 
-
   const portionSizeInput =
     $(
       '#admin-product-portion-size',
       form
     );
-
 
   const lowStockInput =
     $(
@@ -4898,13 +4339,11 @@ function bindProductForm(
       form
     );
 
-
   const activeInput =
     $(
       '#admin-product-active',
       form
     );
-
 
   const publicInput =
     $(
@@ -4912,13 +4351,11 @@ function bindProductForm(
       form
     );
 
-
   const imageInput =
     $(
       '#admin-product-image',
       form
     );
-
 
   const nameError =
     $(
@@ -4926,13 +4363,11 @@ function bindProductForm(
       form
     );
 
-
   const priceError =
     $(
       '#admin-product-price-error',
       form
     );
-
 
   const submit =
     $(
@@ -4940,12 +4375,10 @@ function bindProductForm(
       form
     );
 
-
   function syncSaleMode() {
     const portion =
       modeInput?.value ===
       'portion';
-
 
     const priceField =
       $(
@@ -4953,13 +4386,11 @@ function bindProductForm(
         form
       );
 
-
     const sizeField =
       $(
         '#admin-product-portion-size-field',
         form
       );
-
 
     portion
       ? showElement(
@@ -4968,7 +4399,6 @@ function bindProductForm(
       : hideElement(
           priceField
         );
-
 
     portion
       ? showElement(
@@ -4979,28 +4409,23 @@ function bindProductForm(
         );
   }
 
-
   modeInput
     ?.addEventListener(
       'change',
       syncSaleMode
     );
 
-
   syncSaleMode();
-
 
   form.addEventListener(
     'submit',
     async event => {
       event.preventDefault();
 
-
       const name =
         normalizeString(
           nameInput?.value
         );
-
 
       const mode =
         normalizeString(
@@ -5008,13 +4433,11 @@ function bindProductForm(
           'unit'
         );
 
-
       const retailPrice =
         number(
           retailPriceInput
             ?.value
         );
-
 
       const portionPrice =
         number(
@@ -5022,13 +4445,11 @@ function bindProductForm(
             ?.value
         );
 
-
       const portionSize =
         number(
           portionSizeInput
             ?.value
         );
-
 
       if (
         name.length < 2
@@ -5039,10 +4460,8 @@ function bindProductForm(
           'Məhsul adı minimum 2 simvol olmalıdır.'
         );
 
-
         return;
       }
-
 
       if (
         mode ===
@@ -5055,10 +4474,8 @@ function bindProductForm(
           'Qiymət düzgün deyil.'
         );
 
-
         return;
       }
-
 
       if (
         mode ===
@@ -5072,10 +4489,8 @@ function bindProductForm(
           'Porsiya məhsulu üçün porsiya qiyməti və porsiya ölçüsü daxil edilməlidir.'
         );
 
-
         return;
       }
-
 
       const payload = {
 
@@ -5152,7 +4567,6 @@ function bindProductForm(
           ),
       };
 
-
       setButtonLoading(
         submit,
         true,
@@ -5164,10 +4578,8 @@ function bindProductForm(
         }
       );
 
-
       try {
         let savedProduct;
-
 
         if (product) {
           const {
@@ -5188,11 +4600,9 @@ function bindProductForm(
               .select('*')
               .single();
 
-
           if (error) {
             throw error;
           }
-
 
           savedProduct =
             data;
@@ -5211,22 +4621,18 @@ function bindProductForm(
               .select('*')
               .single();
 
-
           if (error) {
             throw error;
           }
-
 
           savedProduct =
             data;
         }
 
-
         const imageFile =
           imageInput
             ?.files
             ?.[0];
-
 
         if (
           imageFile
@@ -5238,16 +4644,13 @@ function bindProductForm(
             );
         }
 
-
         closeModal();
-
 
         notify.success(
           product
             ? 'Məhsul yeniləndi.'
             : 'Məhsul əlavə edildi.'
         );
-
 
         await Promise.all([
           loadProducts(),
@@ -5257,7 +4660,6 @@ function bindProductForm(
           }),
         ]);
 
-
         renderAdminProducts();
 
         renderPosProducts();
@@ -5266,7 +4668,6 @@ function bindProductForm(
           '[SKy Fit Admin] Product save:',
           error
         );
-
 
         notify.error(
           getErrorMessage(
@@ -5284,11 +4685,6 @@ function bindProductForm(
   );
 }
 
-
-// ============================================================
-// 51. PRODUCT IMAGE VALIDATION
-// ============================================================
-
 function validateProductImage(
   file
 ) {
@@ -5298,7 +4694,6 @@ function validateProductImage(
       'image/png',
       'image/webp',
     ]);
-
 
   if (
     !allowed.has(
@@ -5310,7 +4705,6 @@ function validateProductImage(
     );
   }
 
-
   if (
     file.size >
     5 * 1024 * 1024
@@ -5320,11 +4714,6 @@ function validateProductImage(
     );
   }
 }
-
-
-// ============================================================
-// 52. PRODUCT IMAGE EXTENSION
-// ============================================================
 
 function productImageExtension(
   file
@@ -5336,7 +4725,6 @@ function productImageExtension(
     return 'png';
   }
 
-
   if (
     file.type ===
     'image/webp'
@@ -5344,14 +4732,8 @@ function productImageExtension(
     return 'webp';
   }
 
-
   return 'jpg';
 }
-
-
-// ============================================================
-// 53. PRODUCT STORAGE PATH
-// ============================================================
 
 function extractProductStoragePath(
   value
@@ -5361,11 +4743,9 @@ function extractProductStoragePath(
       value
     );
 
-
   if (!source) {
     return '';
   }
-
 
   if (
     !source.startsWith(
@@ -5381,28 +4761,23 @@ function extractProductStoragePath(
     );
   }
 
-
   try {
     const url =
       new URL(source);
 
-
     const marker =
       '/storage/v1/object/public/product-images/';
-
 
     const index =
       url.pathname.indexOf(
         marker
       );
 
-
     if (
       index === -1
     ) {
       return '';
     }
-
 
     return decodeURIComponent(
       url.pathname.slice(
@@ -5415,10 +4790,16 @@ function extractProductStoragePath(
   }
 }
 
+function productImagePathBelongsToProduct(path, productId) {
+  const safePath = normalizeString(path);
+  const safeId = normalizeString(productId);
 
-// ============================================================
-// 54. PRODUCT IMAGE UPLOAD
-// ============================================================
+  return Boolean(
+    safePath &&
+    safeId &&
+    safePath.startsWith(`${safeId}/`)
+  );
+}
 
 async function uploadProductImage(
   product,
@@ -5428,22 +4809,18 @@ async function uploadProductImage(
     file
   );
 
-
   const oldPath =
     extractProductStoragePath(
       product.image_url
     );
-
 
   const extension =
     productImageExtension(
       file
     );
 
-
   const path =
     `${product.id}/product-${Date.now()}.${extension}`;
-
 
   const {
     error:
@@ -5471,13 +4848,11 @@ async function uploadProductImage(
         }
       );
 
-
   if (
     uploadError
   ) {
     throw uploadError;
   }
-
 
   const {
     data,
@@ -5498,7 +4873,6 @@ async function uploadProductImage(
       .select('*')
       .single();
 
-
   if (error) {
     await supabase
       .storage
@@ -5511,15 +4885,15 @@ async function uploadProductImage(
         path,
       ]);
 
-
     throw error;
   }
 
-
   if (
-    oldPath &&
-    oldPath !==
-      path
+    productImagePathBelongsToProduct(
+      oldPath,
+      product.id
+    ) &&
+    oldPath !== path
   ) {
     supabase
       .storage
@@ -5548,14 +4922,8 @@ async function uploadProductImage(
       );
   }
 
-
   return data;
 }
-
-
-// ============================================================
-// 55. STOCK PRODUCTS FILTER
-// ============================================================
 
 function filteredStockProducts() {
   const search =
@@ -5565,7 +4933,6 @@ function filteredStockProducts() {
       )?.value
     );
 
-
   const filter =
     normalizeString(
       byId(
@@ -5574,14 +4941,12 @@ function filteredStockProducts() {
       'all'
     );
 
-
   return state.products
     .filter(
       product => {
         if (!search) {
           return true;
         }
-
 
         return [
           product.name,
@@ -5605,7 +4970,6 @@ function filteredStockProducts() {
             product
           );
 
-
         if (
           filter ===
           'low'
@@ -5615,7 +4979,6 @@ function filteredStockProducts() {
             'low'
           );
         }
-
 
         if (
           filter ===
@@ -5627,16 +4990,10 @@ function filteredStockProducts() {
           );
         }
 
-
         return true;
       }
     );
 }
-
-
-// ============================================================
-// 56. STOCK RENDER
-// ============================================================
 
 function renderStock() {
   renderStockProducts();
@@ -5644,31 +5001,22 @@ function renderStock() {
   renderStockMovements();
 }
 
-
-// ============================================================
-// 57. STOCK PRODUCT LIST
-// ============================================================
-
 function renderStockProducts() {
   const root =
     byId(
       'stock-list'
     );
 
-
   if (!root) {
     return;
   }
-
 
   clearElement(
     root
   );
 
-
   const products =
     filteredStockProducts();
-
 
   const table =
     createElement(
@@ -5678,7 +5026,6 @@ function renderStockProducts() {
           'admin-table',
       }
     );
-
 
   table.innerHTML = `
     <thead>
@@ -5694,13 +5041,11 @@ function renderStockProducts() {
     <tbody></tbody>
   `;
 
-
   const tbody =
     $(
       'tbody',
       table
     );
-
 
   products.forEach(
     product => {
@@ -5709,12 +5054,10 @@ function renderStockProducts() {
           product
         );
 
-
       const row =
         createElement(
           'tr'
         );
-
 
       row.innerHTML = `
         <td>
@@ -5737,7 +5080,6 @@ function renderStockProducts() {
 
         </td>
 
-
         <td>
           ${escapeHtml(
             money(
@@ -5747,7 +5089,6 @@ function renderStockProducts() {
             )
           )}
         </td>
-
 
         <td>
           <strong>
@@ -5767,7 +5108,6 @@ function renderStockProducts() {
           )}
         </td>
 
-
         <td>
           <span class="${meta.className}">
             ${escapeHtml(
@@ -5775,7 +5115,6 @@ function renderStockProducts() {
             )}
           </span>
         </td>
-
 
         <td>
 
@@ -5808,18 +5147,15 @@ function renderStockProducts() {
         </td>
       `;
 
-
       tbody.append(
         row
       );
     }
   );
 
-
   root.append(
     table
   );
-
 
   $$(
     '[data-stock-add]',
@@ -5841,7 +5177,6 @@ function renderStockProducts() {
                 )
             );
 
-
           if (product) {
             openStockAddModal(
               product,
@@ -5852,7 +5187,6 @@ function renderStockProducts() {
       );
     }
   );
-
 
   $$(
     '[data-stock-adjust]',
@@ -5874,7 +5208,6 @@ function renderStockProducts() {
                 )
             );
 
-
           if (product) {
             openStockAdjustModal(
               product,
@@ -5887,27 +5220,19 @@ function renderStockProducts() {
   );
 }
 
-
-// ============================================================
-// 58. STOCK MOVEMENTS
-// ============================================================
-
 function renderStockMovements() {
   const root =
     byId(
       'stock-movements-list'
     );
 
-
   if (!root) {
     return;
   }
 
-
   clearElement(
     root
   );
-
 
   const table =
     createElement(
@@ -5917,7 +5242,6 @@ function renderStockMovements() {
           'admin-table',
       }
     );
-
 
   table.innerHTML = `
     <thead>
@@ -5934,13 +5258,11 @@ function renderStockMovements() {
     <tbody></tbody>
   `;
 
-
   const tbody =
     $(
       'tbody',
       table
     );
-
 
   state.stockMovements
     .slice(
@@ -5953,7 +5275,6 @@ function renderStockMovements() {
           createElement(
             'tr'
           );
-
 
         row.innerHTML = `
           <td>
@@ -6018,23 +5339,16 @@ function renderStockMovements() {
           </td>
         `;
 
-
         tbody.append(
           row
         );
       }
     );
 
-
   root.append(
     table
   );
 }
-
-
-// ============================================================
-// 59. STOCK MOVEMENT LABEL
-// ============================================================
 
 function stockMovementLabel(
   type
@@ -6060,11 +5374,6 @@ function stockMovementLabel(
       );
   }
 }
-
-
-// ============================================================
-// 60. STOCK MOVEMENT CLASS
-// ============================================================
 
 function stockMovementClass(
   type
@@ -6096,11 +5405,6 @@ function stockMovementClass(
   }
 }
 
-
-// ============================================================
-// 61. ADD STOCK MODAL
-// ============================================================
-
 function openStockAddModal(
   product,
   trigger = null
@@ -6121,7 +5425,6 @@ function openStockAddModal(
         },
       }
     );
-
 
   content.innerHTML = `
     <div class="pos-confirm__summary">
@@ -6158,7 +5461,6 @@ function openStockAddModal(
       </div>
 
     </div>
-
 
     <div class="ui-field">
 
@@ -6190,7 +5492,6 @@ function openStockAddModal(
 
     </div>
 
-
     <div class="ui-field">
 
       <label
@@ -6220,7 +5521,6 @@ function openStockAddModal(
 
     </div>
 
-
     <div class="ui-field">
 
       <label
@@ -6240,7 +5540,6 @@ function openStockAddModal(
 
     </div>
 
-
     <button
       id="stock-add-submit"
       class="ui-button ui-button--primary ui-button--full"
@@ -6258,7 +5557,6 @@ function openStockAddModal(
 
     </button>
   `;
-
 
   openModal({
     eyebrow:
@@ -6281,9 +5579,6 @@ function openStockAddModal(
   });
 }
 
-
-// ============================================================
-// 62. ADD STOCK FORM
 //
 // add_stock(
 //   p_product_id,
@@ -6291,7 +5586,6 @@ function openStockAddModal(
 //   p_total_cost,
 //   p_note
 // )
-// ============================================================
 
 function bindStockAddForm(
   form,
@@ -6303,13 +5597,11 @@ function bindStockAddForm(
       form
     );
 
-
   const costInput =
     $(
       '#stock-add-total-cost',
       form
     );
-
 
   const noteInput =
     $(
@@ -6317,13 +5609,11 @@ function bindStockAddForm(
       form
     );
 
-
   const quantityError =
     $(
       '#stock-add-quantity-error',
       form
     );
-
 
   const submit =
     $(
@@ -6331,19 +5621,16 @@ function bindStockAddForm(
       form
     );
 
-
   form.addEventListener(
     'submit',
     async event => {
       event.preventDefault();
-
 
       const quantity =
         number(
           quantityInput
             ?.value
         );
-
 
       const totalCost =
         Math.max(
@@ -6354,14 +5641,12 @@ function bindStockAddForm(
           )
         );
 
-
       const note =
         normalizeString(
           noteInput
             ?.value,
           'Stok alışı'
         );
-
 
       if (
         quantity <= 0
@@ -6372,10 +5657,8 @@ function bindStockAddForm(
           'Miqdar sıfırdan böyük olmalıdır.'
         );
 
-
         return;
       }
-
 
       setButtonLoading(
         submit,
@@ -6386,13 +5669,12 @@ function bindStockAddForm(
         }
       );
 
-
       try {
         const {
           error,
         } =
           await supabase.rpc(
-            'add_stock',
+            RPC.addStock,
             {
               p_product_id:
                 product.id,
@@ -6408,19 +5690,15 @@ function bindStockAddForm(
             }
           );
 
-
         if (error) {
           throw error;
         }
 
-
         closeModal();
-
 
         notify.success(
           'Stok artırıldı.'
         );
-
 
         await Promise.all([
           loadProducts(),
@@ -6432,7 +5710,6 @@ function bindStockAddForm(
           }),
         ]);
 
-
         renderStock();
 
         renderAdminProducts();
@@ -6443,7 +5720,6 @@ function bindStockAddForm(
           '[SKy Fit Admin] add_stock:',
           error
         );
-
 
         notify.error(
           getErrorMessage(
@@ -6461,14 +5737,10 @@ function bindStockAddForm(
   );
 }
 
-
-// ============================================================
-// 63. STOCK ADJUST MODAL
 //
 // Bu "stok artır" deyil.
 // Inventar sayımı və ya səhv düzəlişi üçündür.
 // Səbəb məcburidir.
-// ============================================================
 
 function openStockAdjustModal(
   product,
@@ -6490,7 +5762,6 @@ function openStockAdjustModal(
         },
       }
     );
-
 
   content.innerHTML = `
     <div class="pos-confirm__summary">
@@ -6527,7 +5798,6 @@ function openStockAdjustModal(
       </div>
 
     </div>
-
 
     <div class="ui-field">
 
@@ -6560,7 +5830,6 @@ function openStockAdjustModal(
 
     </div>
 
-
     <div class="ui-field">
 
       <label
@@ -6585,7 +5854,6 @@ function openStockAdjustModal(
 
     </div>
 
-
     <button
       id="stock-adjust-submit"
       class="ui-button ui-button--primary ui-button--full"
@@ -6603,7 +5871,6 @@ function openStockAdjustModal(
 
     </button>
   `;
-
 
   openModal({
     eyebrow:
@@ -6626,11 +5893,6 @@ function openStockAdjustModal(
   });
 }
 
-
-// ============================================================
-// 64. STOCK ADJUST FORM
-// ============================================================
-
 function bindStockAdjustForm(
   form,
   product
@@ -6641,13 +5903,11 @@ function bindStockAdjustForm(
       form
     );
 
-
   const noteInput =
     $(
       '#stock-adjust-note',
       form
     );
-
 
   const noteError =
     $(
@@ -6655,19 +5915,16 @@ function bindStockAdjustForm(
       form
     );
 
-
   const submit =
     $(
       '#stock-adjust-submit',
       form
     );
 
-
   form.addEventListener(
     'submit',
     async event => {
       event.preventDefault();
-
 
       const newQuantity =
         number(
@@ -6676,13 +5933,11 @@ function bindStockAdjustForm(
           -1
         );
 
-
       const note =
         normalizeString(
           noteInput
             ?.value
         );
-
 
       if (
         newQuantity < 0
@@ -6691,10 +5946,8 @@ function bindStockAdjustForm(
           'Stok mənfi ola bilməz.'
         );
 
-
         return;
       }
-
 
       if (
         !note
@@ -6705,10 +5958,8 @@ function bindStockAdjustForm(
           'Stok düzəliş səbəbini yaz.'
         );
 
-
         return;
       }
-
 
       const confirmed =
         await confirmDialog({
@@ -6734,11 +5985,9 @@ function bindStockAdjustForm(
             'Ləğv et',
         });
 
-
       if (!confirmed) {
         return;
       }
-
 
       setButtonLoading(
         submit,
@@ -6749,13 +5998,12 @@ function bindStockAdjustForm(
         }
       );
 
-
       try {
         const {
           error,
         } =
           await supabase.rpc(
-            'adjust_stock',
+            RPC.adjustStock,
             {
               p_product_id:
                 product.id,
@@ -6768,19 +6016,15 @@ function bindStockAdjustForm(
             }
           );
 
-
         if (error) {
           throw error;
         }
 
-
         closeModal();
-
 
         notify.success(
           'Stok düzəlişi qeydə alındı.'
         );
-
 
         await Promise.all([
           loadProducts(),
@@ -6790,7 +6034,6 @@ function bindStockAdjustForm(
               50,
           }),
         ]);
-
 
         renderStock();
 
@@ -6802,7 +6045,6 @@ function bindStockAdjustForm(
           '[SKy Fit Admin] adjust_stock:',
           error
         );
-
 
         notify.error(
           getErrorMessage(
@@ -6820,11 +6062,6 @@ function bindStockAdjustForm(
   );
 }
 
-
-// ============================================================
-// 65. STOCK PRODUCT PICKER
-// ============================================================
-
 function openStockProductPicker() {
   const content =
     createElement(
@@ -6834,7 +6071,6 @@ function openStockProductPicker() {
           'compact-list',
       }
     );
-
 
   state.products
     .filter(
@@ -6857,7 +6093,6 @@ function openStockProductPicker() {
               },
             }
           );
-
 
         button.innerHTML = `
           <span class="compact-list-item__icon">
@@ -6900,12 +6135,10 @@ function openStockProductPicker() {
           </span>
         `;
 
-
         button.addEventListener(
           'click',
           () => {
             closeModal();
-
 
             setTimeout(
               () => {
@@ -6918,13 +6151,11 @@ function openStockProductPicker() {
           }
         );
 
-
         content.append(
           button
         );
       }
     );
-
 
   openModal({
     eyebrow:
@@ -6936,11 +6167,6 @@ function openStockProductPicker() {
     content,
   });
 }
-
-
-// ============================================================
-// 66. STOCK EVENTS
-// ============================================================
 
 function bindStockEvents() {
   byId(
@@ -6955,7 +6181,6 @@ function bindStockEvents() {
         await loadProducts();
       }
 
-
       if (
         state.products.length ===
         0
@@ -6964,26 +6189,19 @@ function bindStockEvents() {
           'Stok əlavə etmək üçün məhsul yoxdur.'
         );
 
-
         return;
       }
-
 
       openStockProductPicker();
     }
   );
 
-
   byId(
     'stock-search'
   )?.addEventListener(
     'input',
-    debounce(
-      renderStockProducts,
-      180
-    )
+    debounce(renderStockProducts, UI_CONFIG.debounceDelay)
   );
-
 
   byId(
     'stock-filter'
@@ -6992,11 +6210,6 @@ function bindStockEvents() {
     renderStockProducts
   );
 }
-
-
-// ============================================================
-// 67. QUICK POS BUTTON
-// ============================================================
 
 function bindQuickAction() {
   byId(
@@ -7011,13 +6224,6 @@ function bindQuickAction() {
   );
 }
 
-
-// ============================================================
-
-// ============================================================
-// 68. MEMBER FILTER
-// ============================================================
-
 function filteredMembers() {
   const search =
     normalizeSearch(
@@ -7025,7 +6231,6 @@ function filteredMembers() {
         'members-search'
       )?.value
     );
-
 
   const role =
     normalizeString(
@@ -7035,7 +6240,6 @@ function filteredMembers() {
       'all'
     );
 
-
   const status =
     normalizeString(
       byId(
@@ -7044,14 +6248,12 @@ function filteredMembers() {
       'all'
     );
 
-
   return state.members
     .filter(
       member => {
         if (!search) {
           return true;
         }
-
 
         const text =
           [
@@ -7066,7 +6268,6 @@ function filteredMembers() {
               'az-AZ'
             );
 
-
         return text.includes(
           search
         );
@@ -7080,7 +6281,6 @@ function filteredMembers() {
         ) {
           return true;
         }
-
 
         return (
           member.role ===
@@ -7100,7 +6300,6 @@ function filteredMembers() {
           );
         }
 
-
         if (
           status ===
           'inactive'
@@ -7111,16 +6310,10 @@ function filteredMembers() {
           );
         }
 
-
         return true;
       }
     );
 }
-
-
-// ============================================================
-// 69. MEMBER STATUS
-// ============================================================
 
 function memberStatusMeta(
   member
@@ -7138,7 +6331,6 @@ function memberStatusMeta(
     };
   }
 
-
   return {
     label:
       'Aktiv',
@@ -7148,31 +6340,22 @@ function memberStatusMeta(
   };
 }
 
-
-// ============================================================
-// 70. MEMBERS RENDER
-// ============================================================
-
 function renderMembers() {
   const root =
     byId(
       'members-list'
     );
 
-
   if (!root) {
     return;
   }
-
 
   clearElement(
     root
   );
 
-
   const members =
     filteredMembers();
-
 
   const table =
     createElement(
@@ -7182,7 +6365,6 @@ function renderMembers() {
           'admin-table',
       }
     );
-
 
   table.innerHTML = `
     <thead>
@@ -7198,13 +6380,11 @@ function renderMembers() {
     <tbody></tbody>
   `;
 
-
   const tbody =
     $(
       'tbody',
       table
     );
-
 
   members.forEach(
     member => {
@@ -7213,12 +6393,10 @@ function renderMembers() {
           member
         );
 
-
       const row =
         createElement(
           'tr'
         );
-
 
       row.innerHTML = `
         <td>
@@ -7232,7 +6410,6 @@ function renderMembers() {
                 )
               )}
             </span>
-
 
             <span class="admin-user-cell__identity">
 
@@ -7257,14 +6434,12 @@ function renderMembers() {
 
         </td>
 
-
         <td>
           ${escapeHtml(
             member.phone ||
             '—'
           )}
         </td>
-
 
         <td>
           <span class="${
@@ -7284,7 +6459,6 @@ function renderMembers() {
           </span>
         </td>
 
-
         <td>
           <span class="${status.className}">
             ${escapeHtml(
@@ -7293,7 +6467,6 @@ function renderMembers() {
           </span>
         </td>
 
-
         <td>
           ${formatDate(
             member.created_at
@@ -7301,18 +6474,15 @@ function renderMembers() {
         </td>
       `;
 
-
       tbody.append(
         row
       );
     }
   );
 
-
   root.append(
     table
   );
-
 
   if (
     members.length ===
@@ -7326,22 +6496,13 @@ function renderMembers() {
   }
 }
 
-
-// ============================================================
-// 71. MEMBERS EVENTS
-// ============================================================
-
 function bindMemberEvents() {
   byId(
     'members-search'
   )?.addEventListener(
     'input',
-    debounce(
-      renderMembers,
-      180
-    )
+    debounce(renderMembers, UI_CONFIG.debounceDelay)
   );
-
 
   byId(
     'members-role-filter'
@@ -7349,7 +6510,6 @@ function bindMemberEvents() {
     'change',
     renderMembers
   );
-
 
   byId(
     'members-status-filter'
@@ -7359,11 +6519,6 @@ function bindMemberEvents() {
   );
 }
 
-
-// ============================================================
-// 72. MEMBERSHIP FILTER
-// ============================================================
-
 function filteredMemberships() {
   const search =
     normalizeSearch(
@@ -7371,7 +6526,6 @@ function filteredMemberships() {
         'memberships-search'
       )?.value
     );
-
 
   const status =
     normalizeString(
@@ -7381,14 +6535,12 @@ function filteredMemberships() {
       'all'
     );
 
-
   return state.memberships
     .filter(
       membership => {
         if (!search) {
           return true;
         }
-
 
         const text =
           [
@@ -7414,7 +6566,6 @@ function filteredMemberships() {
               'az-AZ'
             );
 
-
         return text.includes(
           search
         );
@@ -7429,7 +6580,6 @@ function filteredMemberships() {
           return true;
         }
 
-
         if (
           status ===
           'active'
@@ -7439,7 +6589,6 @@ function filteredMemberships() {
           );
         }
 
-
         return (
           membership.status ===
           status
@@ -7447,11 +6596,6 @@ function filteredMemberships() {
       }
     );
 }
-
-
-// ============================================================
-// 73. MEMBERSHIP STATUS CLASS
-// ============================================================
 
 function membershipBadgeClass(
   membership
@@ -7466,7 +6610,6 @@ function membershipBadgeClass(
     );
   }
 
-
   if (
     membership.status ===
     'cancelled'
@@ -7476,16 +6619,10 @@ function membershipBadgeClass(
     );
   }
 
-
   return (
     'ui-badge ui-badge--warning'
   );
 }
-
-
-// ============================================================
-// 74. MEMBERSHIP RENDER
-// ============================================================
 
 function renderMemberships() {
   const root =
@@ -7493,20 +6630,16 @@ function renderMemberships() {
       'memberships-list'
     );
 
-
   if (!root) {
     return;
   }
-
 
   clearElement(
     root
   );
 
-
   const memberships =
     filteredMemberships();
-
 
   const table =
     createElement(
@@ -7516,7 +6649,6 @@ function renderMemberships() {
           'admin-table',
       }
     );
-
 
   table.innerHTML = `
     <thead>
@@ -7535,13 +6667,11 @@ function renderMemberships() {
     <tbody></tbody>
   `;
 
-
   const tbody =
     $(
       'tbody',
       table
     );
-
 
   memberships.forEach(
     membership => {
@@ -7549,7 +6679,6 @@ function renderMemberships() {
         createElement(
           'tr'
         );
-
 
       row.innerHTML = `
         <td>
@@ -7576,7 +6705,6 @@ function renderMemberships() {
 
         </td>
 
-
         <td>
           ${escapeHtml(
             membership
@@ -7585,7 +6713,6 @@ function renderMemberships() {
             'Üzvlük'
           )}
         </td>
-
 
         <td>
           <strong>
@@ -7597,20 +6724,17 @@ function renderMemberships() {
           </strong>
         </td>
 
-
         <td>
           ${formatDate(
             membership.start_date
           )}
         </td>
 
-
         <td>
           ${formatDate(
             membership.end_date
           )}
         </td>
-
 
         <td>
           <span class="${
@@ -7628,7 +6752,6 @@ function renderMemberships() {
           </span>
         </td>
 
-
         <td>
           <span class="${
             membershipBadgeClass(
@@ -7642,7 +6765,6 @@ function renderMemberships() {
             )}
           </span>
         </td>
-
 
         <td>
 
@@ -7675,18 +6797,15 @@ function renderMemberships() {
         </td>
       `;
 
-
       tbody.append(
         row
       );
     }
   );
 
-
   root.append(
     table
   );
-
 
   if (
     memberships.length ===
@@ -7700,27 +6819,19 @@ function renderMemberships() {
   }
 }
 
-
-// ============================================================
-// 75. MEMBERSHIP PLAN RENDER
-// ============================================================
-
 function renderMembershipPlans() {
   const root =
     byId(
       'membership-plans-grid'
     );
 
-
   if (!root) {
     return;
   }
 
-
   clearElement(
     root
   );
-
 
   state.membershipPlans
     .forEach(
@@ -7733,7 +6844,6 @@ function renderMembershipPlans() {
                 'admin-setting-card',
             }
           );
-
 
         card.innerHTML = `
           <div class="admin-setting-card__header">
@@ -7764,13 +6874,11 @@ function renderMembershipPlans() {
 
           </div>
 
-
           <strong class="admin-setting-card__title">
             ${escapeHtml(
               plan.name
             )}
           </strong>
-
 
           <span class="admin-setting-card__meta">
             ${escapeHtml(
@@ -7781,7 +6889,6 @@ function renderMembershipPlans() {
             gün
           </span>
 
-
           <strong class="admin-setting-card__price">
             ${escapeHtml(
               money(
@@ -7789,7 +6896,6 @@ function renderMembershipPlans() {
               )
             )}
           </strong>
-
 
           <button
             type="button"
@@ -7804,13 +6910,11 @@ function renderMembershipPlans() {
           </button>
         `;
 
-
         root.append(
           card
         );
       }
     );
-
 
   $$(
     '[data-plan-edit]',
@@ -7833,7 +6937,6 @@ function renderMembershipPlans() {
                   )
               );
 
-
           if (plan) {
             openMembershipPlanEditor(
               plan,
@@ -7846,14 +6949,10 @@ function renderMembershipPlans() {
   );
 }
 
-
-// ============================================================
-// 76. MEMBERSHIP PLAN EDITOR
 //
 // is_daily semantikasını burada dəyişmirik.
 // Bu planın biznes tipidir.
 // Admin qiymət, ad, müddət və aktivliyi dəyişə bilər.
-// ============================================================
 
 function openMembershipPlanEditor(
   plan,
@@ -7875,7 +6974,6 @@ function openMembershipPlanEditor(
         },
       }
     );
-
 
   content.innerHTML = `
     <div class="ui-field">
@@ -7903,7 +7001,6 @@ function openMembershipPlanEditor(
       </div>
 
     </div>
-
 
     <div class="modal-form__grid">
 
@@ -7934,7 +7031,6 @@ function openMembershipPlanEditor(
 
       </div>
 
-
       <div class="ui-field">
 
         <label
@@ -7964,7 +7060,6 @@ function openMembershipPlanEditor(
 
     </div>
 
-
     <label class="ui-check">
 
       <input
@@ -7983,7 +7078,6 @@ function openMembershipPlanEditor(
 
     </label>
 
-
     <div class="ui-info-card">
 
       <span class="ui-info-card__label">
@@ -7999,7 +7093,6 @@ function openMembershipPlanEditor(
       </strong>
 
     </div>
-
 
     <button
       id="membership-plan-submit"
@@ -8018,7 +7111,6 @@ function openMembershipPlanEditor(
 
     </button>
   `;
-
 
   openModal({
     eyebrow:
@@ -8041,11 +7133,6 @@ function openMembershipPlanEditor(
   });
 }
 
-
-// ============================================================
-// 77. MEMBERSHIP PLAN UPDATE
-// ============================================================
-
 function bindMembershipPlanForm(
   form,
   plan
@@ -8056,13 +7143,11 @@ function bindMembershipPlanForm(
       form
     );
 
-
   const priceInput =
     $(
       '#membership-plan-price',
       form
     );
-
 
   const durationInput =
     $(
@@ -8070,13 +7155,11 @@ function bindMembershipPlanForm(
       form
     );
 
-
   const activeInput =
     $(
       '#membership-plan-active',
       form
     );
-
 
   const submit =
     $(
@@ -8084,18 +7167,15 @@ function bindMembershipPlanForm(
       form
     );
 
-
   form.addEventListener(
     'submit',
     async event => {
       event.preventDefault();
 
-
       const name =
         normalizeString(
           nameInput?.value
         );
-
 
       const price =
         number(
@@ -8103,13 +7183,11 @@ function bindMembershipPlanForm(
           -1
         );
 
-
       const duration =
         number(
           durationInput?.value,
           0
         );
-
 
       if (
         name.length < 2
@@ -8118,10 +7196,8 @@ function bindMembershipPlanForm(
           'Plan adını düzgün daxil et.'
         );
 
-
         return;
       }
-
 
       if (
         price < 0
@@ -8130,10 +7206,8 @@ function bindMembershipPlanForm(
           'Plan qiyməti düzgün deyil.'
         );
 
-
         return;
       }
-
 
       if (
         !Number.isInteger(
@@ -8145,10 +7219,8 @@ function bindMembershipPlanForm(
           'Plan müddəti minimum 1 gün olmalıdır.'
         );
 
-
         return;
       }
-
 
       setButtonLoading(
         submit,
@@ -8158,7 +7230,6 @@ function bindMembershipPlanForm(
             'Yadda saxlanılır...',
         }
       );
-
 
       try {
         const {
@@ -8187,19 +7258,15 @@ function bindMembershipPlanForm(
               plan.id
             );
 
-
         if (error) {
           throw error;
         }
 
-
         closeModal();
-
 
         notify.success(
           'Üzvlük planı yeniləndi.'
         );
-
 
         await Promise.all([
           loadMembershipPlans(),
@@ -8210,14 +7277,12 @@ function bindMembershipPlanForm(
           }),
         ]);
 
-
         renderMembershipPlans();
       } catch (error) {
         console.error(
           '[SKy Fit Admin] Plan update:',
           error
         );
-
 
         notify.error(
           getErrorMessage(
@@ -8235,11 +7300,6 @@ function bindMembershipPlanForm(
   );
 }
 
-
-// ============================================================
-// 78. MEMBERSHIP CREATE MODAL
-// ============================================================
-
 async function openMembershipCreateModal(
   trigger = null
 ) {
@@ -8250,14 +7310,12 @@ async function openMembershipCreateModal(
     await loadMembers();
   }
 
-
   if (
     state.membershipPlans.length ===
     0
   ) {
     await loadMembershipPlans();
   }
-
 
   const plans =
     state.membershipPlans
@@ -8267,7 +7325,6 @@ async function openMembershipCreateModal(
           !plan.is_daily
       );
 
-
   if (
     plans.length ===
     0
@@ -8276,10 +7333,8 @@ async function openMembershipCreateModal(
       'Aktiv üzvlük planı yoxdur.'
     );
 
-
     return;
   }
-
 
   const content =
     createElement(
@@ -8297,7 +7352,6 @@ async function openMembershipCreateModal(
         },
       }
     );
-
 
   content.innerHTML = `
     <div class="ui-field">
@@ -8321,7 +7375,6 @@ async function openMembershipCreateModal(
       </select>
 
     </div>
-
 
     <div class="ui-field">
 
@@ -8370,7 +7423,6 @@ async function openMembershipCreateModal(
 
     </div>
 
-
     <div class="ui-field">
 
       <label
@@ -8392,7 +7444,6 @@ async function openMembershipCreateModal(
       </div>
 
     </div>
-
 
     <div class="ui-field">
 
@@ -8418,12 +7469,10 @@ async function openMembershipCreateModal(
 
     </div>
 
-
     <div
       id="membership-create-preview"
       class="pos-confirm__summary"
     ></div>
-
 
     <button
       id="membership-create-submit"
@@ -8442,7 +7491,6 @@ async function openMembershipCreateModal(
 
     </button>
   `;
-
 
   openModal({
     eyebrow:
@@ -8465,11 +7513,6 @@ async function openMembershipCreateModal(
   });
 }
 
-
-// ============================================================
-// 79. MEMBERSHIP CREATE FORM
-// ============================================================
-
 function bindMembershipCreateForm(
   form,
   plans
@@ -8480,13 +7523,11 @@ function bindMembershipCreateForm(
       form
     );
 
-
   const planInput =
     $(
       '#membership-create-plan',
       form
     );
-
 
   const startInput =
     $(
@@ -8494,13 +7535,11 @@ function bindMembershipCreateForm(
       form
     );
 
-
   const paymentInput =
     $(
       '#membership-create-payment',
       form
     );
-
 
   const preview =
     $(
@@ -8508,13 +7547,11 @@ function bindMembershipCreateForm(
       form
     );
 
-
   const submit =
     $(
       '#membership-create-submit',
       form
     );
-
 
   function selectedPlan() {
     return plans.find(
@@ -8526,18 +7563,15 @@ function bindMembershipCreateForm(
     );
   }
 
-
   function renderPreview() {
     const plan =
       selectedPlan();
-
 
     if (
       !preview
     ) {
       return;
     }
-
 
     if (!plan) {
       preview.innerHTML =
@@ -8546,12 +7580,10 @@ function bindMembershipCreateForm(
       return;
     }
 
-
     const start =
       normalizeString(
         startInput?.value
       );
-
 
     const startDate =
       start
@@ -8560,10 +7592,8 @@ function bindMembershipCreateForm(
           )
         : null;
 
-
     let endText =
       '—';
-
 
     if (
       startDate &&
@@ -8576,7 +7606,6 @@ function bindMembershipCreateForm(
           startDate
         );
 
-
       endDate.setDate(
         endDate.getDate() +
         number(
@@ -8585,13 +7614,11 @@ function bindMembershipCreateForm(
         1
       );
 
-
       endText =
         formatDate(
           endDate
         );
     }
-
 
     preview.innerHTML = `
       <div class="pos-confirm__row">
@@ -8605,7 +7632,6 @@ function bindMembershipCreateForm(
         </strong>
 
       </div>
-
 
       <div class="pos-confirm__row">
 
@@ -8622,7 +7648,6 @@ function bindMembershipCreateForm(
 
       </div>
 
-
       <div class="pos-confirm__row">
 
         <span>Bitmə tarixi</span>
@@ -8634,7 +7659,6 @@ function bindMembershipCreateForm(
         </strong>
 
       </div>
-
 
       <div class="pos-confirm__row pos-confirm__row--total">
 
@@ -8652,13 +7676,11 @@ function bindMembershipCreateForm(
     `;
   }
 
-
   planInput
     ?.addEventListener(
       'change',
       renderPreview
     );
-
 
   startInput
     ?.addEventListener(
@@ -8666,15 +7688,12 @@ function bindMembershipCreateForm(
       renderPreview
     );
 
-
   renderPreview();
-
 
   form.addEventListener(
     'submit',
     async event => {
       event.preventDefault();
-
 
       const memberId =
         normalizeString(
@@ -8682,20 +7701,17 @@ function bindMembershipCreateForm(
             ?.value
         );
 
-
       const planId =
         normalizeString(
           planInput
             ?.value
         );
 
-
       const startDate =
         normalizeString(
           startInput
             ?.value
         );
-
 
       const paymentStatus =
         normalizeString(
@@ -8704,36 +7720,29 @@ function bindMembershipCreateForm(
           'paid'
         );
 
-
       if (!memberId) {
         notify.warning(
           'Üzv seç.'
         );
 
-
         return;
       }
-
 
       if (!planId) {
         notify.warning(
           'Üzvlük planı seç.'
         );
 
-
         return;
       }
-
 
       if (!startDate) {
         notify.warning(
           'Başlanğıc tarixini seç.'
         );
 
-
         return;
       }
-
 
       setButtonLoading(
         submit,
@@ -8744,7 +7753,6 @@ function bindMembershipCreateForm(
         }
       );
 
-
       try {
         const {
           data:
@@ -8753,7 +7761,7 @@ function bindMembershipCreateForm(
           error,
         } =
           await supabase.rpc(
-            'create_membership',
+            RPC.createMembership,
             {
               p_member_id:
                 memberId,
@@ -8769,14 +7777,11 @@ function bindMembershipCreateForm(
             }
           );
 
-
         if (error) {
           throw error;
         }
 
-
         closeModal();
-
 
         notify.success(
           paymentStatus ===
@@ -8784,7 +7789,6 @@ function bindMembershipCreateForm(
             ? 'Üzvlük yaradıldı və borc hesaba yazıldı.'
             : 'Üzvlük yaradıldı.'
         );
-
 
         await Promise.all([
           loadMemberships(),
@@ -8797,15 +7801,13 @@ function bindMembershipCreateForm(
           }),
         ]);
 
-
         renderMemberships();
 
         renderDashboard();
 
-
         window.dispatchEvent(
           new CustomEvent(
-            'skyfit:admin-operation',
+            ADMIN_OPERATION_EVENT,
             {
               detail: {
                 type:
@@ -8824,7 +7826,6 @@ function bindMembershipCreateForm(
           error
         );
 
-
         notify.error(
           getErrorMessage(
             error,
@@ -8841,11 +7842,6 @@ function bindMembershipCreateForm(
   );
 }
 
-
-// ============================================================
-// 80. MEMBERSHIP EVENTS
-// ============================================================
-
 function bindMembershipEvents() {
   byId(
     'membership-create-button'
@@ -8858,17 +7854,12 @@ function bindMembershipEvents() {
     }
   );
 
-
   byId(
     'memberships-search'
   )?.addEventListener(
     'input',
-    debounce(
-      renderMemberships,
-      180
-    )
+    debounce(renderMemberships, UI_CONFIG.debounceDelay)
   );
-
 
   byId(
     'memberships-status-filter'
@@ -8878,11 +7869,6 @@ function bindMembershipEvents() {
   );
 }
 
-
-// ============================================================
-// 81. ATTENDANCE FILTER
-// ============================================================
-
 function filteredAttendance() {
   const search =
     normalizeSearch(
@@ -8890,7 +7876,6 @@ function filteredAttendance() {
         'attendance-search'
       )?.value
     );
-
 
   const type =
     normalizeString(
@@ -8900,14 +7885,12 @@ function filteredAttendance() {
       'all'
     );
 
-
   return state.attendance
     .filter(
       attendance => {
         if (!search) {
           return true;
         }
-
 
         const text =
           [
@@ -8929,7 +7912,6 @@ function filteredAttendance() {
               'az-AZ'
             );
 
-
         return text.includes(
           search
         );
@@ -8944,7 +7926,6 @@ function filteredAttendance() {
           return true;
         }
 
-
         return (
           attendance
             .attendance_type ===
@@ -8954,31 +7935,22 @@ function filteredAttendance() {
     );
 }
 
-
-// ============================================================
-// 82. ATTENDANCE RENDER
-// ============================================================
-
 function renderAttendanceAdmin() {
   const root =
     byId(
       'attendance-list'
     );
 
-
   if (!root) {
     return;
   }
-
 
   clearElement(
     root
   );
 
-
   const items =
     filteredAttendance();
-
 
   const todayCount =
     state.attendance
@@ -8992,14 +7964,12 @@ function renderAttendanceAdmin() {
       )
       .length;
 
-
   setText(
     byId(
       'attendance-today-count'
     ),
     todayCount
   );
-
 
   const table =
     createElement(
@@ -9009,7 +7979,6 @@ function renderAttendanceAdmin() {
           'admin-table',
       }
     );
-
 
   table.innerHTML = `
     <thead>
@@ -9026,13 +7995,11 @@ function renderAttendanceAdmin() {
     <tbody></tbody>
   `;
 
-
   const tbody =
     $(
       'tbody',
       table
     );
-
 
   items.forEach(
     attendance => {
@@ -9040,7 +8007,6 @@ function renderAttendanceAdmin() {
         createElement(
           'tr'
         );
-
 
       row.innerHTML = `
         <td>
@@ -9064,7 +8030,6 @@ function renderAttendanceAdmin() {
 
         </td>
 
-
         <td>
 
           <span class="${
@@ -9082,7 +8047,6 @@ function renderAttendanceAdmin() {
           </span>
 
         </td>
-
 
         <td>
           ${
@@ -9102,7 +8066,6 @@ function renderAttendanceAdmin() {
           }
         </td>
 
-
         <td>
           ${escapeHtml(
             attendance
@@ -9112,7 +8075,6 @@ function renderAttendanceAdmin() {
           )}
         </td>
 
-
         <td>
           ${formatDate(
             attendanceDate(
@@ -9120,7 +8082,6 @@ function renderAttendanceAdmin() {
             )
           )}
         </td>
-
 
         <td>
           ${formatTime(
@@ -9131,18 +8092,15 @@ function renderAttendanceAdmin() {
         </td>
       `;
 
-
       tbody.append(
         row
       );
     }
   );
 
-
   root.append(
     table
   );
-
 
   if (
     items.length ===
@@ -9156,11 +8114,6 @@ function renderAttendanceAdmin() {
   }
 }
 
-
-// ============================================================
-// 83. ATTENDANCE MODAL
-// ============================================================
-
 async function openAttendanceModal(
   trigger = null
 ) {
@@ -9171,14 +8124,12 @@ async function openAttendanceModal(
     await loadMembers();
   }
 
-
   if (
     state.membershipPlans.length ===
     0
   ) {
     await loadMembershipPlans();
   }
-
 
   const dailyPlan =
     state.membershipPlans
@@ -9187,7 +8138,6 @@ async function openAttendanceModal(
           plan.is_daily &&
           plan.is_active
       );
-
 
   const content =
     createElement(
@@ -9205,7 +8155,6 @@ async function openAttendanceModal(
         },
       }
     );
-
 
   content.innerHTML = `
     <div class="ui-field">
@@ -9229,7 +8178,6 @@ async function openAttendanceModal(
       </select>
 
     </div>
-
 
     <div class="ui-field">
 
@@ -9259,7 +8207,6 @@ async function openAttendanceModal(
 
     </div>
 
-
     <div class="ui-info-card">
 
       <span class="ui-info-card__label">
@@ -9285,7 +8232,6 @@ async function openAttendanceModal(
 
     </div>
 
-
     <button
       id="attendance-create-submit"
       class="ui-button ui-button--primary ui-button--full"
@@ -9303,7 +8249,6 @@ async function openAttendanceModal(
 
     </button>
   `;
-
 
   openModal({
     eyebrow:
@@ -9325,11 +8270,6 @@ async function openAttendanceModal(
   });
 }
 
-
-// ============================================================
-// 84. RECORD ATTENDANCE
-// ============================================================
-
 function bindAttendanceCreateForm(
   form
 ) {
@@ -9339,13 +8279,11 @@ function bindAttendanceCreateForm(
       form
     );
 
-
   const paymentInput =
     $(
       '#attendance-payment-method',
       form
     );
-
 
   const submit =
     $(
@@ -9353,19 +8291,16 @@ function bindAttendanceCreateForm(
       form
     );
 
-
   form.addEventListener(
     'submit',
     async event => {
       event.preventDefault();
-
 
       const memberId =
         normalizeString(
           memberInput
             ?.value
         );
-
 
       const paymentMethod =
         normalizeString(
@@ -9374,16 +8309,13 @@ function bindAttendanceCreateForm(
           'cash'
         );
 
-
       if (!memberId) {
         notify.warning(
           'Üzv seç.'
         );
 
-
         return;
       }
-
 
       setButtonLoading(
         submit,
@@ -9394,7 +8326,6 @@ function bindAttendanceCreateForm(
         }
       );
 
-
       try {
         const {
           data:
@@ -9403,7 +8334,7 @@ function bindAttendanceCreateForm(
           error,
         } =
           await supabase.rpc(
-            'record_attendance',
+            RPC.recordAttendance,
             {
               p_member_id:
                 memberId,
@@ -9413,19 +8344,15 @@ function bindAttendanceCreateForm(
             }
           );
 
-
         if (error) {
           throw error;
         }
 
-
         closeModal();
-
 
         notify.success(
           'Giriş qeydiyyatı tamamlandı.'
         );
-
 
         await Promise.all([
           loadAttendance(),
@@ -9436,15 +8363,13 @@ function bindAttendanceCreateForm(
           }),
         ]);
 
-
         renderAttendanceAdmin();
 
         renderDashboard();
 
-
         window.dispatchEvent(
           new CustomEvent(
-            'skyfit:admin-operation',
+            ADMIN_OPERATION_EVENT,
             {
               detail: {
                 type:
@@ -9463,7 +8388,6 @@ function bindAttendanceCreateForm(
           error
         );
 
-
         notify.error(
           getErrorMessage(
             error,
@@ -9480,11 +8404,6 @@ function bindAttendanceCreateForm(
   );
 }
 
-
-// ============================================================
-// 85. ATTENDANCE EVENTS
-// ============================================================
-
 function bindAttendanceAdminEvents() {
   byId(
     'attendance-create-button'
@@ -9497,17 +8416,12 @@ function bindAttendanceAdminEvents() {
     }
   );
 
-
   byId(
     'attendance-search'
   )?.addEventListener(
     'input',
-    debounce(
-      renderAttendanceAdmin,
-      180
-    )
+    debounce(renderAttendanceAdmin, UI_CONFIG.debounceDelay)
   );
-
 
   byId(
     'attendance-type-filter'
@@ -9517,11 +8431,6 @@ function bindAttendanceAdminEvents() {
   );
 }
 
-
-// ============================================================
-// 86. DEBT FILTER
-// ============================================================
-
 function filteredDebts() {
   const search =
     normalizeSearch(
@@ -9529,7 +8438,6 @@ function filteredDebts() {
         'debt-search'
       )?.value
     );
-
 
   const status =
     normalizeString(
@@ -9539,14 +8447,12 @@ function filteredDebts() {
       'open'
     );
 
-
   return state.debts
     .filter(
       account => {
         if (!search) {
           return true;
         }
-
 
         const text =
           [
@@ -9568,7 +8474,6 @@ function filteredDebts() {
               'az-AZ'
             );
 
-
         return text.includes(
           search
         );
@@ -9583,7 +8488,6 @@ function filteredDebts() {
           return true;
         }
 
-
         if (
           status ===
           'closed'
@@ -9595,7 +8499,6 @@ function filteredDebts() {
           );
         }
 
-
         return (
           debtBalance(
             account
@@ -9604,11 +8507,6 @@ function filteredDebts() {
       }
     );
 }
-
-
-// ============================================================
-// 87. DEBT TOTALS
-// ============================================================
 
 function renderDebtTotals(
   accounts
@@ -9620,7 +8518,6 @@ function renderDebtTotals(
           account
         ) > 0
     );
-
 
   const total =
     open.reduce(
@@ -9635,14 +8532,12 @@ function renderDebtTotals(
       0
     );
 
-
   setText(
     byId(
       'debt-total-amount'
     ),
     money(total)
   );
-
 
   setText(
     byId(
@@ -9652,36 +8547,26 @@ function renderDebtTotals(
   );
 }
 
-
-// ============================================================
-// 88. DEBTS RENDER
-// ============================================================
-
 function renderDebts() {
   const root =
     byId(
       'debt-accounts-list'
     );
 
-
   if (!root) {
     return;
   }
-
 
   clearElement(
     root
   );
 
-
   const accounts =
     filteredDebts();
-
 
   renderDebtTotals(
     state.debts
   );
-
 
   const table =
     createElement(
@@ -9691,7 +8576,6 @@ function renderDebts() {
           'admin-table',
       }
     );
-
 
   table.innerHTML = `
     <thead>
@@ -9707,13 +8591,11 @@ function renderDebts() {
     <tbody></tbody>
   `;
 
-
   const tbody =
     $(
       'tbody',
       table
     );
-
 
   accounts.forEach(
     account => {
@@ -9722,12 +8604,10 @@ function renderDebts() {
           account
         );
 
-
       const row =
         createElement(
           'tr'
         );
-
 
       row.innerHTML = `
         <td>
@@ -9754,7 +8634,6 @@ function renderDebts() {
 
         </td>
 
-
         <td>
           <strong class="${
             balance > 0
@@ -9767,13 +8646,11 @@ function renderDebts() {
           </strong>
         </td>
 
-
         <td>
           ${formatDateTime(
             account.updated_at
           )}
         </td>
-
 
         <td>
           <span class="${
@@ -9788,7 +8665,6 @@ function renderDebts() {
             }
           </span>
         </td>
-
 
         <td>
           ${
@@ -9811,18 +8687,15 @@ function renderDebts() {
         </td>
       `;
 
-
       tbody.append(
         row
       );
     }
   );
 
-
   root.append(
     table
   );
-
 
   $$(
     '[data-debt-pay]',
@@ -9844,7 +8717,6 @@ function renderDebts() {
                 )
             );
 
-
           if (account) {
             openDebtPaymentModal(
               account,
@@ -9856,14 +8728,8 @@ function renderDebts() {
     }
   );
 
-
   renderDebtTransactions();
 }
-
-
-// ============================================================
-// 89. DEBT TRANSACTION LABEL
-// ============================================================
 
 function debtTransactionLabel(
   transaction
@@ -9892,27 +8758,19 @@ function debtTransactionLabel(
   }
 }
 
-
-// ============================================================
-// 90. DEBT TRANSACTIONS RENDER
-// ============================================================
-
 function renderDebtTransactions() {
   const root =
     byId(
       'debt-transactions-list'
     );
 
-
   if (!root) {
     return;
   }
 
-
   clearElement(
     root
   );
-
 
   state.debtTransactions
     .slice(
@@ -9933,12 +8791,10 @@ function renderDebtTransactions() {
               )
           );
 
-
         const payment =
           transaction
             .transaction_type ===
           'payment';
-
 
         const item =
           createElement(
@@ -9948,7 +8804,6 @@ function renderDebtTransactions() {
                 'operation-item',
             }
           );
-
 
         item.innerHTML = `
           <span class="operation-item__icon">
@@ -10008,7 +8863,6 @@ function renderDebtTransactions() {
           </span>
         `;
 
-
         root.append(
           item
         );
@@ -10016,12 +8870,8 @@ function renderDebtTransactions() {
     );
 }
 
-
-// ============================================================
-// 91. DEBT PAYMENT MODAL
 //
 // debt_accounts PK = member_id.
-// ============================================================
 
 function openDebtPaymentModal(
   account,
@@ -10031,7 +8881,6 @@ function openDebtPaymentModal(
     debtBalance(
       account
     );
-
 
   const content =
     createElement(
@@ -10050,7 +8899,6 @@ function openDebtPaymentModal(
       }
     );
 
-
   content.innerHTML = `
     <div class="pos-confirm__summary">
 
@@ -10068,7 +8916,6 @@ function openDebtPaymentModal(
 
       </div>
 
-
       <div class="pos-confirm__row pos-confirm__row--total">
 
         <span>Cari borc</span>
@@ -10082,7 +8929,6 @@ function openDebtPaymentModal(
       </div>
 
     </div>
-
 
     <div class="ui-field">
 
@@ -10109,7 +8955,6 @@ function openDebtPaymentModal(
       </div>
 
     </div>
-
 
     <div class="ui-field">
 
@@ -10139,7 +8984,6 @@ function openDebtPaymentModal(
 
     </div>
 
-
     <button
       id="debt-payment-submit"
       class="ui-button ui-button--primary ui-button--full"
@@ -10157,7 +9001,6 @@ function openDebtPaymentModal(
 
     </button>
   `;
-
 
   openModal({
     eyebrow:
@@ -10180,9 +9023,6 @@ function openDebtPaymentModal(
   });
 }
 
-
-// ============================================================
-// 92. PAY DEBT
 //
 // Real RPC:
 //
@@ -10191,7 +9031,6 @@ function openDebtPaymentModal(
 //   p_amount,
 //   p_method
 // )
-// ============================================================
 
 function bindDebtPaymentForm(
   form,
@@ -10203,13 +9042,11 @@ function bindDebtPaymentForm(
       form
     );
 
-
   const methodInput =
     $(
       '#debt-payment-method',
       form
     );
-
 
   const submit =
     $(
@@ -10217,19 +9054,16 @@ function bindDebtPaymentForm(
       form
     );
 
-
   form.addEventListener(
     'submit',
     async event => {
       event.preventDefault();
-
 
       const amount =
         number(
           amountInput
             ?.value
         );
-
 
       const method =
         normalizeString(
@@ -10238,12 +9072,10 @@ function bindDebtPaymentForm(
           'cash'
         );
 
-
       const balance =
         debtBalance(
           account
         );
-
 
       if (
         amount <= 0 ||
@@ -10253,10 +9085,8 @@ function bindDebtPaymentForm(
           'Ödəniş məbləği düzgün deyil.'
         );
 
-
         return;
       }
-
 
       setButtonLoading(
         submit,
@@ -10267,13 +9097,12 @@ function bindDebtPaymentForm(
         }
       );
 
-
       try {
         const {
           error,
         } =
           await supabase.rpc(
-            'pay_debt',
+            RPC.payDebt,
             {
               p_member_id:
                 account.member_id,
@@ -10286,19 +9115,15 @@ function bindDebtPaymentForm(
             }
           );
 
-
         if (error) {
           throw error;
         }
 
-
         closeModal();
-
 
         notify.success(
           'Borc ödənişi qeydə alındı.'
         );
-
 
         await Promise.all([
           loadDebts(),
@@ -10310,7 +9135,6 @@ function bindDebtPaymentForm(
           }),
         ]);
 
-
         renderDebts();
 
         renderDashboard();
@@ -10319,7 +9143,6 @@ function bindDebtPaymentForm(
           '[SKy Fit Admin] pay_debt:',
           error
         );
-
 
         notify.error(
           getErrorMessage(
@@ -10337,22 +9160,13 @@ function bindDebtPaymentForm(
   );
 }
 
-
-// ============================================================
-// 93. DEBT EVENTS
-// ============================================================
-
 function bindDebtEvents() {
   byId(
     'debt-search'
   )?.addEventListener(
     'input',
-    debounce(
-      renderDebts,
-      180
-    )
+    debounce(renderDebts, UI_CONFIG.debounceDelay)
   );
-
 
   byId(
     'debt-status-filter'
@@ -10361,13 +9175,6 @@ function bindDebtEvents() {
     renderDebts
   );
 }
-
-
-// ============================================================
-
-// ============================================================
-// 94. FINANCE FILTER
-// ============================================================
 
 function filteredLedger() {
   const type =
@@ -10378,14 +9185,12 @@ function filteredLedger() {
       'all'
     );
 
-
   const from =
     normalizeString(
       byId(
         'finance-date-from'
       )?.value
     );
-
 
   const to =
     normalizeString(
@@ -10394,14 +9199,12 @@ function filteredLedger() {
       )?.value
     );
 
-
   const search =
     normalizeSearch(
       byId(
         'finance-search'
       )?.value
     );
-
 
   return state.ledger
     .filter(
@@ -10412,7 +9215,6 @@ function filteredLedger() {
         ) {
           return true;
         }
-
 
         return (
           ledgerType(
@@ -10429,7 +9231,6 @@ function filteredLedger() {
             entry.entry_date
           );
 
-
         if (
           from &&
           date < from
@@ -10437,14 +9238,12 @@ function filteredLedger() {
           return false;
         }
 
-
         if (
           to &&
           date > to
         ) {
           return false;
         }
-
 
         return true;
       }
@@ -10454,7 +9253,6 @@ function filteredLedger() {
         if (!search) {
           return true;
         }
-
 
         const text =
           [
@@ -10468,18 +9266,12 @@ function filteredLedger() {
               'az-AZ'
             );
 
-
         return text.includes(
           search
         );
       }
     );
 }
-
-
-// ============================================================
-// 95. FINANCE TOTALS
-// ============================================================
 
 function calculateFinanceTotals(
   entries
@@ -10505,7 +9297,6 @@ function calculateFinanceTotals(
         0
       );
 
-
   const expense =
     entries
       .filter(
@@ -10527,7 +9318,6 @@ function calculateFinanceTotals(
         0
       );
 
-
   return {
     income,
 
@@ -10539,11 +9329,6 @@ function calculateFinanceTotals(
   };
 }
 
-
-// ============================================================
-// 96. FINANCE KPI RENDER
-// ============================================================
-
 function renderFinanceKpis(
   totals
 ) {
@@ -10552,18 +9337,15 @@ function renderFinanceKpis(
       'finance-income'
     );
 
-
   const expense =
     byId(
       'finance-expense'
     );
 
-
   const balance =
     byId(
       'finance-balance'
     );
-
 
   setText(
     income,
@@ -10572,14 +9354,12 @@ function renderFinanceKpis(
     )
   );
 
-
   setText(
     expense,
     money(
       totals.expense
     )
   );
-
 
   setText(
     balance,
@@ -10588,18 +9368,15 @@ function renderFinanceKpis(
     )
   );
 
-
   income?.classList.add(
     'finance-value',
     'finance-value--income'
   );
 
-
   expense?.classList.add(
     'finance-value',
     'finance-value--expense'
   );
-
 
   balance?.classList.remove(
     'finance-value--income',
@@ -10607,11 +9384,9 @@ function renderFinanceKpis(
     'finance-value--neutral'
   );
 
-
   balance?.classList.add(
     'finance-value'
   );
-
 
   if (
     totals.balance > 0
@@ -10632,42 +9407,31 @@ function renderFinanceKpis(
   }
 }
 
-
-// ============================================================
-// 97. FINANCE RENDER
-// ============================================================
-
 function renderFinance() {
   const root =
     byId(
       'finance-ledger-list'
     );
 
-
   if (!root) {
     return;
   }
 
-
   const entries =
     filteredLedger();
-
 
   const totals =
     calculateFinanceTotals(
       entries
     );
 
-
   renderFinanceKpis(
     totals
   );
 
-
   clearElement(
     root
   );
-
 
   const table =
     createElement(
@@ -10677,7 +9441,6 @@ function renderFinance() {
           'admin-table finance-table',
       }
     );
-
 
   table.innerHTML = `
     <thead>
@@ -10694,13 +9457,11 @@ function renderFinance() {
     <tbody></tbody>
   `;
 
-
   const tbody =
     $(
       'tbody',
       table
     );
-
 
   entries.forEach(
     entry => {
@@ -10709,12 +9470,10 @@ function renderFinance() {
           entry
         );
 
-
       const row =
         createElement(
           'tr'
         );
-
 
       row.classList.add(
         type ===
@@ -10722,7 +9481,6 @@ function renderFinance() {
           ? 'finance-row--income'
           : 'finance-row--expense'
       );
-
 
       row.innerHTML = `
         <td>
@@ -10743,7 +9501,6 @@ function renderFinance() {
           </span>
         </td>
 
-
         <td>
           <span class="${
             type ===
@@ -10760,7 +9517,6 @@ function renderFinance() {
           </span>
         </td>
 
-
         <td>
           ${escapeHtml(
             entry.category ||
@@ -10768,14 +9524,12 @@ function renderFinance() {
           )}
         </td>
 
-
         <td>
           ${escapeHtml(
             entry.description ||
             '—'
           )}
         </td>
-
 
         <td>
 
@@ -10788,7 +9542,6 @@ function renderFinance() {
           </span>
 
         </td>
-
 
         <td>
           <strong class="${
@@ -10814,18 +9567,15 @@ function renderFinance() {
         </td>
       `;
 
-
       tbody.append(
         row
       );
     }
   );
 
-
   root.append(
     table
   );
-
 
   if (
     entries.length ===
@@ -10838,11 +9588,6 @@ function renderFinance() {
     );
   }
 }
-
-
-// ============================================================
-// 98. FINANCE REFERENCE LABEL
-// ============================================================
 
 function financeReferenceLabel(
   value
@@ -10878,11 +9623,6 @@ function financeReferenceLabel(
   }
 }
 
-
-// ============================================================
-// 99. FINANCE EVENTS
-// ============================================================
-
 function bindFinanceEvents() {
   byId(
     'finance-type-filter'
@@ -10891,14 +9631,12 @@ function bindFinanceEvents() {
     renderFinance
   );
 
-
   byId(
     'finance-date-from'
   )?.addEventListener(
     'change',
     renderFinance
   );
-
 
   byId(
     'finance-date-to'
@@ -10907,17 +9645,12 @@ function bindFinanceEvents() {
     renderFinance
   );
 
-
   byId(
     'finance-search'
   )?.addEventListener(
     'input',
-    debounce(
-      renderFinance,
-      180
-    )
+    debounce(renderFinance, UI_CONFIG.debounceDelay)
   );
-
 
   byId(
     'finance-reset-filter'
@@ -10929,58 +9662,45 @@ function bindFinanceEvents() {
           'finance-type-filter'
         );
 
-
       const from =
         byId(
           'finance-date-from'
         );
-
 
       const to =
         byId(
           'finance-date-to'
         );
 
-
       const search =
         byId(
           'finance-search'
         );
-
 
       if (type) {
         type.value =
           'all';
       }
 
-
       if (from) {
         from.value =
           '';
       }
-
 
       if (to) {
         to.value =
           '';
       }
 
-
       if (search) {
         search.value =
           '';
       }
 
-
       renderFinance();
     }
   );
 }
-
-
-// ============================================================
-// 100. TRAINER FILTER
-// ============================================================
 
 function filteredTrainers() {
   const search =
@@ -10990,7 +9710,6 @@ function filteredTrainers() {
       )?.value
     );
 
-
   const status =
     normalizeString(
       byId(
@@ -10999,14 +9718,12 @@ function filteredTrainers() {
       'all'
     );
 
-
   return state.trainers
     .filter(
       trainer => {
         if (!search) {
           return true;
         }
-
 
         const text =
           [
@@ -11020,7 +9737,6 @@ function filteredTrainers() {
             .toLocaleLowerCase(
               'az-AZ'
             );
-
 
         return text.includes(
           search
@@ -11039,7 +9755,6 @@ function filteredTrainers() {
           );
         }
 
-
         if (
           status ===
           'inactive'
@@ -11050,16 +9765,10 @@ function filteredTrainers() {
           );
         }
 
-
         return true;
       }
     );
 }
-
-
-// ============================================================
-// 101. TRAINER ADMIN CARD
-// ============================================================
 
 function createAdminTrainerCard(
   trainer
@@ -11068,7 +9777,6 @@ function createAdminTrainerCard(
     trainerImage(
       trainer
     );
-
 
   const card =
     createElement(
@@ -11083,7 +9791,6 @@ function createAdminTrainerCard(
         },
       }
     );
-
 
   card.innerHTML = `
     <button
@@ -11119,7 +9826,6 @@ function createAdminTrainerCard(
           `
       }
 
-
       <div class="trainer-card__content">
 
         <div class="admin-trainer-card__badges">
@@ -11140,7 +9846,6 @@ function createAdminTrainerCard(
 
         </div>
 
-
         <strong class="trainer-card__name">
           ${escapeHtml(
             trainerName(
@@ -11148,7 +9853,6 @@ function createAdminTrainerCard(
             )
           )}
         </strong>
-
 
         ${
           trainerSpecialty(
@@ -11166,7 +9870,6 @@ function createAdminTrainerCard(
             : ''
         }
 
-
         ${
           trainer.phone
             ? `
@@ -11179,7 +9882,6 @@ function createAdminTrainerCard(
             : ''
         }
 
-
         <span class="trainer-card__action">
           Redaktə et
         </span>
@@ -11188,7 +9890,6 @@ function createAdminTrainerCard(
 
     </button>
   `;
-
 
   $(
     '.admin-trainer-card__main',
@@ -11203,14 +9904,8 @@ function createAdminTrainerCard(
     }
   );
 
-
   return card;
 }
-
-
-// ============================================================
-// 102. TRAINER INITIALS
-// ============================================================
 
 function getTrainerInitials(
   trainer
@@ -11220,19 +9915,16 @@ function getTrainerInitials(
       trainer
     );
 
-
   const parts =
     name
       .split(' ')
       .filter(Boolean);
-
 
   if (
     parts.length === 0
   ) {
     return 'SK';
   }
-
 
   if (
     parts.length === 1
@@ -11247,7 +9939,6 @@ function getTrainerInitials(
       );
   }
 
-
   return (
     parts[0][0] +
     parts[
@@ -11258,31 +9949,22 @@ function getTrainerInitials(
   );
 }
 
-
-// ============================================================
-// 103. TRAINERS RENDER
-// ============================================================
-
 function renderAdminTrainers() {
   const root =
     byId(
       'admin-trainers-grid'
     );
 
-
   if (!root) {
     return;
   }
-
 
   clearElement(
     root
   );
 
-
   const trainers =
     filteredTrainers();
-
 
   trainers.forEach(
     trainer => {
@@ -11293,7 +9975,6 @@ function renderAdminTrainers() {
       );
     }
   );
-
 
   if (
     trainers.length ===
@@ -11307,18 +9988,12 @@ function renderAdminTrainers() {
   }
 }
 
-
-// ============================================================
-// 104. TRAINER EDITOR
-// ============================================================
-
 function openTrainerEditor(
   trainer = null,
   trigger = null
 ) {
   const editing =
     Boolean(trainer);
-
 
   const content =
     createElement(
@@ -11336,7 +10011,6 @@ function openTrainerEditor(
         },
       }
     );
-
 
   content.innerHTML = `
     <div class="ui-field">
@@ -11372,7 +10046,6 @@ function openTrainerEditor(
 
     </div>
 
-
     <div class="modal-form__grid">
 
       <div class="ui-field">
@@ -11403,7 +10076,6 @@ function openTrainerEditor(
 
       </div>
 
-
       <div class="ui-field">
 
         <label
@@ -11433,7 +10105,6 @@ function openTrainerEditor(
 
     </div>
 
-
     <div class="ui-field">
 
       <label
@@ -11461,7 +10132,6 @@ function openTrainerEditor(
 
     </div>
 
-
     <div class="ui-field">
 
       <label
@@ -11483,7 +10153,6 @@ function openTrainerEditor(
       )}</textarea>
 
     </div>
-
 
     <div class="modal-form__grid">
 
@@ -11516,7 +10185,6 @@ function openTrainerEditor(
 
       </div>
 
-
       <div class="ui-field">
 
         <label class="ui-field__label">
@@ -11547,7 +10215,6 @@ function openTrainerEditor(
 
     </div>
 
-
     <label class="ui-upload">
 
       <input
@@ -11574,7 +10241,6 @@ function openTrainerEditor(
 
     </label>
 
-
     <button
       id="trainer-admin-submit"
       class="ui-button ui-button--primary ui-button--full"
@@ -11596,7 +10262,6 @@ function openTrainerEditor(
 
     </button>
   `;
-
 
   openModal({
     eyebrow:
@@ -11621,11 +10286,6 @@ function openTrainerEditor(
   });
 }
 
-
-// ============================================================
-// 105. TRAINER FORM
-// ============================================================
-
 function bindTrainerForm(
   form,
   trainer
@@ -11636,13 +10296,11 @@ function bindTrainerForm(
       form
     );
 
-
   const specialtyInput =
     $(
       '#trainer-admin-specialty',
       form
     );
-
 
   const phoneInput =
     $(
@@ -11650,13 +10308,11 @@ function bindTrainerForm(
       form
     );
 
-
   const instagramInput =
     $(
       '#trainer-admin-instagram',
       form
     );
-
 
   const bioInput =
     $(
@@ -11664,13 +10320,11 @@ function bindTrainerForm(
       form
     );
 
-
   const sortInput =
     $(
       '#trainer-admin-sort',
       form
     );
-
 
   const activeInput =
     $(
@@ -11678,13 +10332,11 @@ function bindTrainerForm(
       form
     );
 
-
   const imageInput =
     $(
       '#trainer-admin-image',
       form
     );
-
 
   const nameError =
     $(
@@ -11692,25 +10344,21 @@ function bindTrainerForm(
       form
     );
 
-
   const submit =
     $(
       '#trainer-admin-submit',
       form
     );
 
-
   form.addEventListener(
     'submit',
     async event => {
       event.preventDefault();
 
-
       const fullName =
         normalizeString(
           nameInput?.value
         );
-
 
       if (
         fullName.length < 2
@@ -11721,10 +10369,8 @@ function bindTrainerForm(
           'Məşqçinin adını daxil et.'
         );
 
-
         return;
       }
-
 
       const payload = {
 
@@ -11777,7 +10423,6 @@ function bindTrainerForm(
           ),
       };
 
-
       setButtonLoading(
         submit,
         true,
@@ -11789,10 +10434,8 @@ function bindTrainerForm(
         }
       );
 
-
       try {
         let savedTrainer;
-
 
         if (trainer) {
           const {
@@ -11813,11 +10456,9 @@ function bindTrainerForm(
               .select('*')
               .single();
 
-
           if (error) {
             throw error;
           }
-
 
           savedTrainer =
             data;
@@ -11836,22 +10477,18 @@ function bindTrainerForm(
               .select('*')
               .single();
 
-
           if (error) {
             throw error;
           }
-
 
           savedTrainer =
             data;
         }
 
-
         const file =
           imageInput
             ?.files
             ?.[0];
-
 
         if (file) {
           savedTrainer =
@@ -11861,16 +10498,13 @@ function bindTrainerForm(
             );
         }
 
-
         closeModal();
-
 
         notify.success(
           trainer
             ? 'Məşqçi yeniləndi.'
             : 'Məşqçi əlavə edildi.'
         );
-
 
         await Promise.all([
           loadTrainers(),
@@ -11881,14 +10515,12 @@ function bindTrainerForm(
           }),
         ]);
 
-
         renderAdminTrainers();
       } catch (error) {
         console.error(
           '[SKy Fit Admin] Trainer save:',
           error
         );
-
 
         notify.error(
           getErrorMessage(
@@ -11906,11 +10538,6 @@ function bindTrainerForm(
   );
 }
 
-
-// ============================================================
-// 106. TRAINER IMAGE VALIDATION
-// ============================================================
-
 function validateTrainerImage(
   file
 ) {
@@ -11920,7 +10547,6 @@ function validateTrainerImage(
       'image/png',
       'image/webp',
     ]);
-
 
   if (
     !allowed.has(
@@ -11932,7 +10558,6 @@ function validateTrainerImage(
     );
   }
 
-
   if (
     file.size >
     5 * 1024 * 1024
@@ -11942,11 +10567,6 @@ function validateTrainerImage(
     );
   }
 }
-
-
-// ============================================================
-// 107. TRAINER IMAGE EXTENSION
-// ============================================================
 
 function trainerImageExtension(
   file
@@ -11958,7 +10578,6 @@ function trainerImageExtension(
     return 'png';
   }
 
-
   if (
     file.type ===
     'image/webp'
@@ -11966,14 +10585,8 @@ function trainerImageExtension(
     return 'webp';
   }
 
-
   return 'jpg';
 }
-
-
-// ============================================================
-// 108. TRAINER STORAGE PATH EXTRACTOR
-// ============================================================
 
 function extractTrainerStoragePath(
   value
@@ -11983,11 +10596,9 @@ function extractTrainerStoragePath(
       value
     );
 
-
   if (!source) {
     return '';
   }
-
 
   if (
     !source.startsWith(
@@ -12003,28 +10614,23 @@ function extractTrainerStoragePath(
     );
   }
 
-
   try {
     const url =
       new URL(source);
 
-
     const marker =
       '/storage/v1/object/public/trainer-images/';
-
 
     const index =
       url.pathname.indexOf(
         marker
       );
 
-
     if (
       index === -1
     ) {
       return '';
     }
-
 
     return decodeURIComponent(
       url.pathname.slice(
@@ -12037,10 +10643,16 @@ function extractTrainerStoragePath(
   }
 }
 
+function trainerImagePathBelongsToTrainer(path, trainerId) {
+  const safePath = normalizeString(path);
+  const safeId = normalizeString(trainerId);
 
-// ============================================================
-// 109. TRAINER IMAGE UPLOAD
-// ============================================================
+  return Boolean(
+    safePath &&
+    safeId &&
+    safePath.startsWith(`${safeId}/`)
+  );
+}
 
 async function uploadTrainerImage(
   trainer,
@@ -12050,22 +10662,18 @@ async function uploadTrainerImage(
     file
   );
 
-
   const oldPath =
     extractTrainerStoragePath(
       trainer.image_url
     );
-
 
   const extension =
     trainerImageExtension(
       file
     );
 
-
   const path =
     `${trainer.id}/trainer-${Date.now()}.${extension}`;
-
 
   const {
     error:
@@ -12093,11 +10701,9 @@ async function uploadTrainerImage(
         }
       );
 
-
   if (uploadError) {
     throw uploadError;
   }
-
 
   const {
     data,
@@ -12118,7 +10724,6 @@ async function uploadTrainerImage(
       .select('*')
       .single();
 
-
   if (error) {
     await supabase
       .storage
@@ -12131,13 +10736,14 @@ async function uploadTrainerImage(
         path,
       ]);
 
-
     throw error;
   }
 
-
   if (
-    oldPath &&
+    trainerImagePathBelongsToTrainer(
+      oldPath,
+      trainer.id
+    ) &&
     oldPath !== path
   ) {
     supabase
@@ -12167,14 +10773,8 @@ async function uploadTrainerImage(
       );
   }
 
-
   return data;
 }
-
-
-// ============================================================
-// 110. TRAINER EVENTS
-// ============================================================
 
 function bindTrainerAdminEvents() {
   byId(
@@ -12189,17 +10789,12 @@ function bindTrainerAdminEvents() {
     }
   );
 
-
   byId(
     'trainers-admin-search'
   )?.addEventListener(
     'input',
-    debounce(
-      renderAdminTrainers,
-      180
-    )
+    debounce(renderAdminTrainers, UI_CONFIG.debounceDelay)
   );
-
 
   byId(
     'trainers-status-filter'
@@ -12208,11 +10803,6 @@ function bindTrainerAdminEvents() {
     renderAdminTrainers
   );
 }
-
-
-// ============================================================
-// 111. HISTORY TABLE LABELS
-// ============================================================
 
 function historyTableLabel(
   table
@@ -12253,7 +10843,6 @@ function historyTableLabel(
       'Əməkdaş kassası',
   };
 
-
   return (
     labels[
       normalizeString(
@@ -12266,11 +10855,6 @@ function historyTableLabel(
     )
   );
 }
-
-
-// ============================================================
-// 112. HISTORY ACTION LABEL
-// ============================================================
 
 function historyActionLabel(
   action
@@ -12296,11 +10880,6 @@ function historyActionLabel(
       );
   }
 }
-
-
-// ============================================================
-// 113. HISTORY ACTION CLASS
-// ============================================================
 
 function historyActionClass(
   action
@@ -12332,15 +10911,9 @@ function historyActionClass(
   }
 }
 
-
-// ============================================================
-// 114. HISTORY OPERATORS
-// ============================================================
-
 function historyOperators() {
   const map =
     new Map();
-
 
   state.history.forEach(
     item => {
@@ -12349,7 +10922,6 @@ function historyOperators() {
       ) {
         return;
       }
-
 
       map.set(
         String(
@@ -12370,7 +10942,6 @@ function historyOperators() {
     }
   );
 
-
   return Array.from(
     map.values()
   ).sort(
@@ -12385,30 +10956,21 @@ function historyOperators() {
   );
 }
 
-
-// ============================================================
-// 115. HISTORY OPERATOR FILTER OPTIONS
-// ============================================================
-
 function syncHistoryOperatorFilter() {
   const select =
     byId(
       'history-operator-filter'
     );
 
-
   if (!select) {
     return;
   }
 
-
   const selected =
     select.value;
 
-
   const operators =
     historyOperators();
-
 
   select.innerHTML = `
     <option value="">
@@ -12438,7 +11000,6 @@ function syncHistoryOperatorFilter() {
       .join('')}
   `;
 
-
   if (
     operators.some(
       operator =>
@@ -12455,11 +11016,6 @@ function syncHistoryOperatorFilter() {
   }
 }
 
-
-// ============================================================
-// 116. HISTORY FILTER
-// ============================================================
-
 function filteredHistory() {
   const search =
     normalizeSearch(
@@ -12467,7 +11023,6 @@ function filteredHistory() {
         'history-search'
       )?.value
     );
-
 
   const table =
     normalizeString(
@@ -12477,14 +11032,12 @@ function filteredHistory() {
       'all'
     );
 
-
   const operator =
     normalizeString(
       byId(
         'history-operator-filter'
       )?.value
     );
-
 
   const from =
     normalizeString(
@@ -12493,14 +11046,12 @@ function filteredHistory() {
       )?.value
     );
 
-
   const to =
     normalizeString(
       byId(
         'history-date-to'
       )?.value
     );
-
 
   return state.history
     .filter(
@@ -12511,7 +11062,6 @@ function filteredHistory() {
         ) {
           return true;
         }
-
 
         return (
           item.table_name ===
@@ -12524,7 +11074,6 @@ function filteredHistory() {
         if (!operator) {
           return true;
         }
-
 
         return (
           String(
@@ -12545,7 +11094,6 @@ function filteredHistory() {
           return true;
         }
 
-
         const date =
           item.created_at
             ? item.created_at
@@ -12555,7 +11103,6 @@ function filteredHistory() {
                 )
             : '';
 
-
         if (
           from &&
           date < from
@@ -12563,14 +11110,12 @@ function filteredHistory() {
           return false;
         }
 
-
         if (
           to &&
           date > to
         ) {
           return false;
         }
-
 
         return true;
       }
@@ -12580,7 +11125,6 @@ function filteredHistory() {
         if (!search) {
           return true;
         }
-
 
         const text =
           [
@@ -12602,7 +11146,6 @@ function filteredHistory() {
               'az-AZ'
             );
 
-
         return text.includes(
           search
         );
@@ -12610,34 +11153,24 @@ function filteredHistory() {
     );
 }
 
-
-// ============================================================
-// 117. HISTORY RENDER
-// ============================================================
-
 function renderHistory() {
   const root =
     byId(
       'history-list'
     );
 
-
   if (!root) {
     return;
   }
 
-
   syncHistoryOperatorFilter();
-
 
   clearElement(
     root
   );
 
-
   const history =
     filteredHistory();
-
 
   history.forEach(
     item => {
@@ -12655,7 +11188,6 @@ function renderHistory() {
           }
         );
 
-
       row.innerHTML = `
         <span class="operation-item__icon">
           ${escapeHtml(
@@ -12664,7 +11196,6 @@ function renderHistory() {
             )
           )}
         </span>
-
 
         <span class="operation-item__content">
 
@@ -12689,7 +11220,6 @@ function renderHistory() {
 
           </strong>
 
-
           <span class="operation-item__meta">
             ${escapeHtml(
               historyTableLabel(
@@ -12703,7 +11233,6 @@ function renderHistory() {
               )
             )}
           </span>
-
 
           <span class="operation-item__operator">
             ID:
@@ -12719,7 +11248,6 @@ function renderHistory() {
           </span>
 
         </span>
-
 
         <span class="operation-item__side">
 
@@ -12738,7 +11266,6 @@ function renderHistory() {
         </span>
       `;
 
-
       row.addEventListener(
         'click',
         () => {
@@ -12749,13 +11276,11 @@ function renderHistory() {
         }
       );
 
-
       root.append(
         row
       );
     }
   );
-
 
   if (
     history.length ===
@@ -12768,7 +11293,6 @@ function renderHistory() {
     );
   }
 
-
   setText(
     byId(
       'history-result-count'
@@ -12776,11 +11300,6 @@ function renderHistory() {
     history.length
   );
 }
-
-
-// ============================================================
-// 118. AUDIT INITIALS
-// ============================================================
 
 function getAuditInitials(
   name
@@ -12791,12 +11310,10 @@ function getAuditInitials(
       'SK'
     );
 
-
   const parts =
     value
       .split(' ')
       .filter(Boolean);
-
 
   if (
     parts.length === 1
@@ -12811,7 +11328,6 @@ function getAuditInitials(
       );
   }
 
-
   return (
     parts[0][0] +
     parts[
@@ -12822,17 +11338,11 @@ function getAuditInitials(
   );
 }
 
-
-// ============================================================
-// 119. AUDIT CHANGE KEYS
-// ============================================================
-
 const AUDIT_HIDDEN_FIELDS =
   new Set([
     'updated_at',
     'operator_shift_id',
   ]);
-
 
 function auditChanges(
   oldData,
@@ -12845,14 +11355,12 @@ function auditChanges(
       ? oldData
       : {};
 
-
   const newObject =
     newData &&
     typeof newData ===
       'object'
       ? newData
       : {};
-
 
   const keys =
     new Set([
@@ -12864,7 +11372,6 @@ function auditChanges(
         newObject
       ),
     ]);
-
 
   return Array.from(
     keys
@@ -12879,10 +11386,8 @@ function auditChanges(
         const oldValue =
           oldObject[key];
 
-
         const newValue =
           newObject[key];
-
 
         return (
           JSON.stringify(
@@ -12906,11 +11411,6 @@ function auditChanges(
       })
     );
 }
-
-
-// ============================================================
-// 120. AUDIT FIELD LABEL
-// ============================================================
 
 function auditFieldLabel(
   key
@@ -13005,7 +11505,6 @@ function auditFieldLabel(
       'Əməliyyat növü',
   };
 
-
   return (
     labels[key] ||
     key
@@ -13015,11 +11514,6 @@ function auditFieldLabel(
       )
   );
 }
-
-
-// ============================================================
-// 121. AUDIT VALUE
-// ============================================================
 
 function formatAuditValue(
   key,
@@ -13033,7 +11527,6 @@ function formatAuditValue(
     return '—';
   }
 
-
   if (
     typeof value ===
     'boolean'
@@ -13042,7 +11535,6 @@ function formatAuditValue(
       ? 'Bəli'
       : 'Xeyr';
   }
-
 
   if (
     [
@@ -13063,7 +11555,6 @@ function formatAuditValue(
     );
   }
 
-
   if (
     [
       'start_date',
@@ -13078,7 +11569,6 @@ function formatAuditValue(
     );
   }
 
-
   if (
     typeof value ===
     'object'
@@ -13088,13 +11578,9 @@ function formatAuditValue(
     );
   }
 
-
   return String(value);
 }
 
-
-// ============================================================
-// 122. AUDIT DETAIL MODAL
 //
 // Burada artıq:
 // kim
@@ -13105,7 +11591,6 @@ function formatAuditValue(
 // nəyə
 //
 // hamısı görünür.
-// ============================================================
 
 function openAuditDetail(
   item,
@@ -13117,7 +11602,6 @@ function openAuditDetail(
       item.new_data
     );
 
-
   const content =
     createElement(
       'div',
@@ -13126,7 +11610,6 @@ function openAuditDetail(
           'audit-detail',
       }
     );
-
 
   const metadata =
     `
@@ -13143,7 +11626,6 @@ function openAuditDetail(
           </strong>
         </div>
 
-
         <div>
           <span>Rol</span>
 
@@ -13155,7 +11637,6 @@ function openAuditDetail(
             )}
           </strong>
         </div>
-
 
         <div>
           <span>Əməliyyat</span>
@@ -13169,7 +11650,6 @@ function openAuditDetail(
           </strong>
         </div>
 
-
         <div>
           <span>Bölmə</span>
 
@@ -13182,7 +11662,6 @@ function openAuditDetail(
           </strong>
         </div>
 
-
         <div>
           <span>Tarix</span>
 
@@ -13192,7 +11671,6 @@ function openAuditDetail(
             )}
           </strong>
         </div>
-
 
         <div>
           <span>Record ID</span>
@@ -13208,10 +11686,8 @@ function openAuditDetail(
       </div>
     `;
 
-
   let changesMarkup =
     '';
-
 
   if (
     changes.length > 0
@@ -13232,7 +11708,6 @@ function openAuditDetail(
                   )}
                 </strong>
 
-
                 <div class="audit-change__values">
 
                   <div class="audit-change__value audit-change__value--old">
@@ -13252,11 +11727,9 @@ function openAuditDetail(
 
                   </div>
 
-
                   <span class="audit-change__arrow">
                     →
                   </span>
-
 
                   <div class="audit-change__value audit-change__value--new">
 
@@ -13312,11 +11785,9 @@ function openAuditDetail(
     `;
   }
 
-
   content.innerHTML =
     metadata +
     changesMarkup;
-
 
   openModal({
     eyebrow:
@@ -13335,11 +11806,6 @@ function openAuditDetail(
   });
 }
 
-
-// ============================================================
-// 123. HISTORY RELOAD WITH SERVER FILTER
-// ============================================================
-
 async function reloadHistoryFromFilters() {
   const from =
     normalizeString(
@@ -13348,14 +11814,12 @@ async function reloadHistoryFromFilters() {
       )?.value
     );
 
-
   const to =
     normalizeString(
       byId(
         'history-date-to'
       )?.value
     );
-
 
   const actorId =
     normalizeString(
@@ -13364,14 +11828,11 @@ async function reloadHistoryFromFilters() {
       )?.value
     );
 
-
   let fromTimestamp =
     null;
 
-
   let toTimestamp =
     null;
-
 
   if (from) {
     fromTimestamp =
@@ -13380,14 +11841,12 @@ async function reloadHistoryFromFilters() {
       ).toISOString();
   }
 
-
   if (to) {
     toTimestamp =
       new Date(
         `${to}T23:59:59.999`
       ).toISOString();
   }
-
 
   await loadHistory({
     from:
@@ -13404,26 +11863,16 @@ async function reloadHistoryFromFilters() {
       2000,
   });
 
-
   renderHistory();
 }
-
-
-// ============================================================
-// 124. HISTORY EVENTS
-// ============================================================
 
 function bindHistoryEvents() {
   byId(
     'history-search'
   )?.addEventListener(
     'input',
-    debounce(
-      renderHistory,
-      180
-    )
+    debounce(renderHistory, UI_CONFIG.debounceDelay)
   );
-
 
   byId(
     'history-type-filter'
@@ -13432,14 +11881,12 @@ function bindHistoryEvents() {
     renderHistory
   );
 
-
   byId(
     'history-operator-filter'
   )?.addEventListener(
     'change',
     reloadHistoryFromFilters
   );
-
 
   byId(
     'history-date-from'
@@ -13448,14 +11895,12 @@ function bindHistoryEvents() {
     reloadHistoryFromFilters
   );
 
-
   byId(
     'history-date-to'
   )?.addEventListener(
     'change',
     reloadHistoryFromFilters
   );
-
 
   byId(
     'history-refresh-button'
@@ -13464,7 +11909,6 @@ function bindHistoryEvents() {
     async () => {
       await reloadHistoryFromFilters();
 
-
       notify.success(
         'Tarixçə yeniləndi.'
       );
@@ -13472,13 +11916,9 @@ function bindHistoryEvents() {
   );
 }
 
-
-// ============================================================
-// 125. GLOBAL ADMIN SEARCH
 //
 // Admin header-də universal search varsa uyğun tab-a keçir.
 // HTML-də yoxdursa heç bir problem yaratmır.
-// ============================================================
 
 function bindGlobalSearch() {
   const input =
@@ -13486,11 +11926,9 @@ function bindGlobalSearch() {
       'admin-global-search'
     );
 
-
   if (!input) {
     return;
   }
-
 
   input.addEventListener(
     'input',
@@ -13501,17 +11939,14 @@ function bindGlobalSearch() {
             input.value
           );
 
-
         if (!query) {
           return;
         }
-
 
         const normalized =
           normalizeSearch(
             query
           );
-
 
         const member =
           state.members.find(
@@ -13531,30 +11966,25 @@ function bindGlobalSearch() {
                 )
           );
 
-
         if (member) {
           setActiveTab(
             'members'
           );
-
 
           const search =
             byId(
               'members-search'
             );
 
-
           if (search) {
             search.value =
               query;
           }
 
-
           renderMembers();
 
           return;
         }
-
 
         const product =
           state.products.find(
@@ -13574,24 +12004,20 @@ function bindGlobalSearch() {
                 )
           );
 
-
         if (product) {
           setActiveTab(
             'products'
           );
-
 
           const search =
             byId(
               'products-admin-search'
             );
 
-
           if (search) {
             search.value =
               query;
           }
-
 
           renderAdminProducts();
         }
@@ -13600,11 +12026,6 @@ function bindGlobalSearch() {
     )
   );
 }
-
-
-// ============================================================
-// 126. AUTH CHANGE
-// ============================================================
 
 function bindAdminAuthEvents() {
   window.addEventListener(
@@ -13617,7 +12038,6 @@ function bindAdminAuthEvents() {
             ?.event
         );
 
-
       if (
         authEvent ===
         'SIGNED_OUT'
@@ -13628,10 +12048,8 @@ function bindAdminAuthEvents() {
             .login
         );
 
-
         return;
       }
-
 
       try {
         const identity =
@@ -13641,7 +12059,6 @@ function bindAdminAuthEvents() {
             force:
               true,
           });
-
 
         if (
           !identity
@@ -13653,10 +12070,8 @@ function bindAdminAuthEvents() {
               .login
           );
 
-
           return;
         }
-
 
         if (
           !identity.isStaff
@@ -13667,14 +12082,11 @@ function bindAdminAuthEvents() {
               .home
           );
 
-
           return;
         }
 
-
         state.identity =
           identity;
-
 
         renderOperator();
       } catch (error) {
@@ -13687,16 +12099,12 @@ function bindAdminAuthEvents() {
   );
 }
 
-
-// ============================================================
-// 127. ADMIN OPERATION EVENT
 //
 // Eyni səhifədə əməliyyat tamamlananda KPI-lar köhnə qalmasın.
-// ============================================================
 
 function bindAdminOperationEvents() {
   window.addEventListener(
-    'skyfit:admin-operation',
+    ADMIN_OPERATION_EVENT,
     () => {
       if (
         state.activeTab ===
@@ -13708,13 +12116,9 @@ function bindAdminOperationEvents() {
   );
 }
 
-
-// ============================================================
-// 128. PRELOAD CORE DATA
 //
 // Admin panel ilk açılarkən global search,
 // POS və üzv seçimləri üçün əsas data əvvəlcədən hazırlanır.
-// ============================================================
 
 async function preloadAdminData() {
   await Promise.all([
@@ -13723,11 +12127,6 @@ async function preloadAdminData() {
     loadMembershipPlans(),
   ]);
 }
-
-
-// ============================================================
-// 129. BIND ALL EVENTS
-// ============================================================
 
 function bindAdminEvents() {
   bindPosEvents();
@@ -13759,51 +12158,33 @@ function bindAdminEvents() {
   bindAdminOperationEvents();
 }
 
-
-// ============================================================
-// 130. INITIAL TAB
-// ============================================================
-
 function resolveInitialAdminTab() {
   const params =
-    new URLSearchParams(
-      window.location.search
-    );
+    new URLSearchParams(window.location.search);
 
+  const requested =
+    normalizeString(params.get('tab'));
 
-  return normalizeTab(
-    params.get(
-      'tab'
-    ) ||
-    'dashboard'
-  );
+  return requested
+    ? normalizeTab(requested)
+    : readStoredAdminTab();
 }
-
-
-// ============================================================
-// 131. INIT
-// ============================================================
 
 async function init() {
   try {
     const ready =
       await initAdminBase();
 
-
     if (!ready) {
       return;
     }
 
-
     await preloadAdminData();
-
 
     bindAdminEvents();
 
-
     const initialTab =
       resolveInitialAdminTab();
-
 
     setActiveTab(
       initialTab,
@@ -13813,14 +12194,12 @@ async function init() {
       }
     );
 
-
     await loadActiveTab();
   } catch (error) {
     console.error(
       '[SKy Fit Admin] Init:',
       error
     );
-
 
     notify.error(
       getErrorMessage(
@@ -13831,11 +12210,6 @@ async function init() {
   }
 }
 
-
-// ============================================================
-// 132. START
-// ============================================================
-
 asyncHandler(
   init,
   {
@@ -13843,9 +12217,3 @@ asyncHandler(
       true,
   }
 )();
-
-
-// ============================================================
-// SKY FIT PRO
-// ADMIN.JS COMPLETE
-// ============================================================
