@@ -1,15 +1,14 @@
-// ============================================================
-// SKY FIT PRO
-// Favorites Page Controller
-// File: js/favorites.js
-// ============================================================
+// SKy Fit Pro — sevimlilər səhifəsi controller-i
+// Senior Full Stack Developer: Qərib Səfərli
 
 import {
   supabase,
   TABLES,
+  UI_CONFIG,
 } from './config.js';
 
 import {
+  SKYFIT_EVENTS,
   byId,
   clearElement,
   createProductCard,
@@ -17,325 +16,206 @@ import {
   clearFavorites,
   bindSearchClear,
   debounce,
-  normalizeString,
+  normalizeSearch,
   showElement,
   hideElement,
   confirmDialog,
   notify,
+  getErrorMessage,
   asyncHandler,
 } from './core.js';
 
-import {
-  initLayout,
-} from './layout.js';
-
-
-// ============================================================
-// 01. STATE
-// ============================================================
+import { initLayout } from './layout.js';
 
 const state = {
   products: [],
   search: '',
+  loading: false,
 };
-
-
-// ============================================================
-// 02. DOM
-// ============================================================
 
 const elements = {
-  grid:
-    byId('favorites-grid'),
-
-  count:
-    byId('favorites-count'),
-
-  clearButton:
-    byId('favorites-clear-button'),
-
-  emptyState:
-    byId('favorites-empty-state'),
-
-  searchEmptyState:
-    byId('favorites-search-empty-state'),
-
-  searchInput:
-    byId('favorites-search-input'),
-
-  searchClear:
-    byId('favorites-search-clear'),
+  grid: byId('favorites-grid'),
+  count: byId('favorites-count'),
+  clearButton: byId('favorites-clear-button'),
+  emptyState: byId('favorites-empty-state'),
+  searchEmptyState: byId('favorites-search-empty-state'),
+  searchInput: byId('favorites-search-input'),
+  searchClear: byId('favorites-search-clear'),
 };
-
-
-// ============================================================
-// 03. FAVORITE IDS
-// ============================================================
 
 function favoriteIds() {
   return getFavoriteIds();
 }
 
-
-// ============================================================
-// 04. LOAD PRODUCTS
-// ============================================================
-
 async function loadFavoriteProducts() {
-  const ids =
-    favoriteIds();
+  if (state.loading) return;
 
+  const ids = favoriteIds();
 
   if (ids.length === 0) {
     state.products = [];
-
     render();
-
     return;
   }
 
+  state.loading = true;
 
-  const {
-    data,
-    error,
-  } =
-    await supabase
+  try {
+    const { data, error } = await supabase
       .from(TABLES.products)
-      .select('*')
-      .in(
-        'id',
-        ids
-      );
+      .select(`
+        id,
+        name,
+        description,
+        sku,
+        image_url,
+        category,
+        sale_mode,
+        stock_unit,
+        stock_quantity,
+        portion_size,
+        retail_price,
+        portion_price,
+        low_stock_threshold,
+        show_public,
+        is_active
+      `)
+      .in('id', ids)
+      .eq('is_active', true)
+      .eq('show_public', true);
 
+    if (error) throw error;
 
-  if (error) {
+    const products =
+      Array.isArray(data) ? data : [];
+
+    const byIdMap = new Map(
+      products.map(product => [
+        String(product.id),
+        product,
+      ])
+    );
+
+    state.products = ids
+      .map(id => byIdMap.get(String(id)))
+      .filter(Boolean);
+
+    render();
+  } catch (error) {
     console.error(
-      'Favorites products error:',
+      '[SKy Fit Favorites] Products:',
       error
     );
 
     state.products = [];
-
-    notify.error(
-      'Sevimli məhsullar yüklənmədi.'
-    );
-
     render();
 
-    return;
-  }
-
-
-  const products =
-    Array.isArray(data)
-      ? data
-      : [];
-
-
-  // localStorage sırasını qoruyuruq.
-  state.products =
-    ids
-      .map(
-        id =>
-          products.find(
-            product =>
-              String(product.id) ===
-              String(id)
-          )
+    notify.error(
+      getErrorMessage(
+        error,
+        'Sevimli məhsullar yüklənmədi.'
       )
-      .filter(Boolean);
-
-
-  render();
+    );
+  } finally {
+    state.loading = false;
+  }
 }
-
-
-// ============================================================
-// 05. FILTER
-// ============================================================
 
 function filteredProducts() {
-  const search =
-    normalizeString(
-      state.search
-    ).toLocaleLowerCase(
-      'az-AZ'
-    );
-
+  const search = normalizeSearch(state.search);
 
   if (!search) {
-    return [
-      ...state.products,
-    ];
+    return [...state.products];
   }
 
+  return state.products.filter(product => {
+    const text = normalizeSearch(
+      [
+        product?.name,
+        product?.description,
+        product?.category,
+        product?.sku,
+        product?.stock_unit,
+      ]
+        .filter(Boolean)
+        .join(' ')
+    );
 
-  return state.products.filter(
-    product => {
-      const text =
-        [
-          product?.name,
-          product?.description,
-          product?.unit,
-        ]
-          .filter(Boolean)
-          .join(' ')
-          .toLocaleLowerCase(
-            'az-AZ'
-          );
-
-
-      return text.includes(
-        search
-      );
-    }
-  );
+    return text.includes(search);
+  });
 }
-
-
-// ============================================================
-// 06. COUNTER
-// ============================================================
 
 function renderCounter() {
-  if (!elements.count) {
-    return;
-  }
+  if (!elements.count) return;
 
   elements.count.textContent =
-    String(
-      state.products.length
-    );
+    String(state.products.length);
 }
 
-
-// ============================================================
-// 07. EMPTY STATES
-// ============================================================
-
-function renderEmptyStates(
-  filtered
-) {
+function renderEmptyStates(filtered) {
   const hasFavorites =
     state.products.length > 0;
 
   const hasSearch =
-    Boolean(
-      normalizeString(
-        state.search
-      )
-    );
-
+    Boolean(normalizeSearch(state.search));
 
   if (!hasFavorites) {
-    showElement(
-      elements.emptyState
-    );
-
-    hideElement(
-      elements.searchEmptyState
-    );
-
-    hideElement(
-      elements.clearButton
-    );
-
+    showElement(elements.emptyState);
+    hideElement(elements.searchEmptyState);
+    hideElement(elements.clearButton);
     return;
   }
 
-
-  hideElement(
-    elements.emptyState
-  );
-
-  showElement(
-    elements.clearButton
-  );
-
+  hideElement(elements.emptyState);
+  showElement(elements.clearButton);
 
   if (
     hasSearch &&
     filtered.length === 0
   ) {
-    showElement(
-      elements.searchEmptyState
-    );
+    showElement(elements.searchEmptyState);
   } else {
-    hideElement(
-      elements.searchEmptyState
-    );
+    hideElement(elements.searchEmptyState);
   }
 }
-
-
-// ============================================================
-// 08. RENDER
-// ============================================================
 
 function render() {
-  if (!elements.grid) {
-    return;
-  }
+  if (!elements.grid) return;
 
+  clearElement(elements.grid);
 
-  clearElement(
-    elements.grid
-  );
+  const filtered = filteredProducts();
+  const fragment =
+    document.createDocumentFragment();
 
+  filtered.forEach(product => {
+    fragment.append(
+      createProductCard(product, {
+        showFavorite: true,
+        onFavoriteChange: (
+          item,
+          active
+        ) => {
+          if (active) return;
 
-  const filtered =
-    filteredProducts();
+          state.products =
+            state.products.filter(
+              product =>
+                String(product.id) !==
+                String(item.id)
+            );
 
+          render();
+        },
+      })
+    );
+  });
 
-  filtered.forEach(
-    product => {
-      const card =
-        createProductCard(
-          product,
-          {
-            showFavorite: true,
-
-            onFavoriteChange: (
-              item,
-              active
-            ) => {
-              if (!active) {
-                state.products =
-                  state.products.filter(
-                    product =>
-                      String(
-                        product.id
-                      ) !==
-                      String(
-                        item.id
-                      )
-                  );
-
-                render();
-              }
-            },
-          }
-        );
-
-
-      elements.grid.append(
-        card
-      );
-    }
-  );
-
+  elements.grid.append(fragment);
 
   renderCounter();
-
-  renderEmptyStates(
-    filtered
-  );
+  renderEmptyStates(filtered);
 }
-
-
-// ============================================================
-// 09. SEARCH
-// ============================================================
 
 function bindSearch() {
   if (
@@ -345,157 +225,119 @@ function bindSearch() {
     return;
   }
 
-
-  const updateSearch =
-    debounce(
-      value => {
-        state.search =
-          normalizeString(
-            value
-          );
-
-        render();
-      }
-    );
-
+  const updateSearch = debounce(
+    value => {
+      state.search = value;
+      render();
+    },
+    UI_CONFIG.debounceDelay
+  );
 
   bindSearchClear({
-    input:
-      elements.searchInput,
-
-    clearButton:
-      elements.searchClear,
-
-    onChange:
-      updateSearch,
+    input: elements.searchInput,
+    clearButton: elements.searchClear,
+    onChange: updateSearch,
   });
 }
 
-
-// ============================================================
-// 10. CLEAR FAVORITES
-// ============================================================
-
 function bindClearFavorites() {
-  elements.clearButton
-    ?.addEventListener(
-      'click',
-      async () => {
-        const confirmed =
-          await confirmDialog({
-            eyebrow:
-              'Sevimlilər',
+  elements.clearButton?.addEventListener(
+    'click',
+    async () => {
+      const confirmed =
+        await confirmDialog({
+          eyebrow: 'Sevimlilər',
+          title: 'Hamısı silinsin?',
+          message:
+            'Sevimli məhsullar siyahısı tam təmizlənəcək.',
+          confirmText: 'Təmizlə',
+          cancelText: 'Ləğv et',
+          danger: true,
+        });
 
-            title:
-              'Hamısı silinsin?',
+      if (!confirmed) return;
 
-            message:
-              'Sevimli məhsullar siyahısı tam təmizlənəcək.',
+      clearFavorites();
 
-            confirmText:
-              'Təmizlə',
+      state.products = [];
+      state.search = '';
 
-            cancelText:
-              'Ləğv et',
-
-            danger:
-              true,
-          });
-
-
-        if (!confirmed) {
-          return;
-        }
-
-
-        clearFavorites();
-
-        state.products = [];
-
-        state.search = '';
-
-
-        if (
-          elements.searchInput
-        ) {
-          elements.searchInput.value =
-            '';
-        }
-
-
-        render();
-
-
-        notify.success(
-          'Sevimlilər təmizləndi.'
-        );
+      if (elements.searchInput) {
+        elements.searchInput.value = '';
       }
-    );
+
+      if (elements.searchClear) {
+        elements.searchClear.hidden = true;
+      }
+
+      render();
+
+      notify.success(
+        'Sevimlilər təmizləndi.'
+      );
+    }
+  );
 }
-
-
-// ============================================================
-// 11. FAVORITES CHANGE EVENT
-// Digər tab və ya komponentdə dəyişiklik olarsa sinxron qalır.
-// ============================================================
 
 function bindFavoritesChange() {
   window.addEventListener(
-    'skyfit:favoriteschange',
-    async () => {
-      await loadFavoriteProducts();
+    SKYFIT_EVENTS.favoritesChange,
+    event => {
+      const ids =
+        Array.isArray(event.detail?.ids)
+          ? event.detail.ids.map(String)
+          : favoriteIds();
+
+      const currentIds = new Set(
+        state.products.map(product =>
+          String(product.id)
+        )
+      );
+
+      const hasUnknownProduct =
+        ids.some(id => !currentIds.has(id));
+
+      if (hasUnknownProduct) {
+        void loadFavoriteProducts();
+        return;
+      }
+
+      const allowed = new Set(ids);
+
+      state.products =
+        state.products.filter(product =>
+          allowed.has(String(product.id))
+        );
+
+      render();
     }
   );
-}
 
-
-// ============================================================
-// 12. AUTH CHANGE
-// Layout özü session dəyişməsini idarə edir.
-// ============================================================
-
-function bindAuthChange() {
   window.addEventListener(
-    'skyfit:authchange',
-    () => {
-      // Favorites hazırda localStorage əsaslıdır.
-      // Buna görə auth dəyişəndə məhsul siyahısını silmirik.
+    'storage',
+    event => {
+      if (
+        event.key !==
+        'skyfit-pro-favorites'
+      ) {
+        return;
+      }
+
+      void loadFavoriteProducts();
     }
   );
 }
-
-
-// ============================================================
-// 13. INIT
-// ============================================================
 
 async function init() {
   await initLayout();
 
   bindSearch();
-
   bindClearFavorites();
-
   bindFavoritesChange();
-
-  bindAuthChange();
 
   await loadFavoriteProducts();
 }
 
-
-// ============================================================
-// 14. START
-// ============================================================
-
-asyncHandler(
-  init,
-  {
-    notifyOnError: true,
-  }
-)();
-
-
-// ============================================================
-// FAVORITES.JS COMPLETE
-// ============================================================
+asyncHandler(init, {
+  notifyOnError: true,
+})();
