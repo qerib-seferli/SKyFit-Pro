@@ -3538,3 +3538,1678 @@ html[data-theme="light"]
 /* ================================================================
    HOME STEP 1 END
    ================================================================ */
+
+/* ================================================================
+   SKY FIT PRO
+   HOME PAGE UI — STEP 2
+
+   Product Toolbar
+   Product Cards — 1:1
+   Trainer Cards — 1:1
+   Home CTA
+
+   Senior Full Stack Developer: Qərib Səfərli
+   ================================================================ */
+
+
+/* ================================================================
+   26. PRODUCT / TRAINER SECTIONS
+   ================================================================ */
+
+.home-products,
+.home-trainers {
+
+  position:
+    relative;
+
+}
+
+
+/* ================================================================
+   27. PRODUCT TOOLBAR
+   ================================================================ */
+
+.product-toolbar {
+
+  width:
+    100%;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    space-between;
+
+  gap:
+    10px;
+
+  margin-bottom:
+    14px;
+
+}
+
+
+/* ================================================================
+   SEARCH
+   ================================================================ */
+
+.search-control {
+
+  position:
+    relative;
+
+  width:
+    100%;
+
+  max-width:
+    430px;
+
+  height:
+    42px;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  overflow:
+    hidden;
+
+  border:
+    1px solid var(--border);
+
+  border-radius:
+    11px;
+
+  background:
+    var(--surface);
+
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease;
+
+}
+
+
+.search-control:focus-within {
+
+  border-color:
+    var(--yellow-border);
+
+  background:
+    var(--surface-2);
+
+  box-shadow:
+    0
+    0
+    0
+    3px
+    rgba(255, 220, 0, 0.05);
+
+}
+
+
+.search-control__icon {
+
+  width:
+    40px;
+
+  height:
+    40px;
+
+  flex:
+    0 0 40px;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  color:
+    var(--text-faint);
+
+}
+
+
+.search-control__icon svg {
+
+  width:
+    17px;
+
+  height:
+    17px;
+
+}
+
+
+.search-control__input {
+
+  width:
+    100%;
+
+  min-width:
+    0;
+
+  height:
+    40px;
+
+  padding:
+    0 8px 0 0;
+
+  border:
+    0;
+
+  outline:
+    0;
+
+  color:
+    var(--text);
+
+  background:
+    transparent;
+
+  font-size:
+    12px;
+
+}
+
+
+.search-control__input::placeholder {
+
+  color:
+    var(--text-faint);
+
+}
+
+
+.search-control__clear {
+
+  width:
+    36px;
+
+  height:
+    40px;
+
+  flex:
+    0 0 36px;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  padding:
+    0;
+
+  border:
+    0;
+
+  color:
+    var(--text-faint);
+
+  background:
+    transparent;
+
+  cursor:
+    pointer;
+
+}
+
+
+.search-control__clear:hover {
+
+  color:
+    var(--yellow);
+
+}
+
+
+/* ================================================================
+   28. GRID SYSTEM
+
+   Desktop: 5 kart
+   Tablet: 4 / 3
+   Telefon: 3 kart
+
+   Kartların özü 1:1 qalır.
+   ================================================================ */
+
+.products-grid,
+.product-grid,
+.trainers-grid,
+.trainer-grid {
+
+  width:
+    100%;
+
+  display:
+    grid;
+
+  grid-template-columns:
+    repeat(5, minmax(0, 1fr));
+
+  align-items:
+    start;
+
+  gap:
+    10px;
+
+}
+
+
+/* ================================================================
+   29. PRODUCT CARD — STRICT 1:1
+   ================================================================ */
+
+.product-card {
+
+  position:
+    relative;
+
+  width:
+    100%;
+
+  min-width:
+    0;
+
+  aspect-ratio:
+    1 / 1;
+
+  overflow:
+    hidden;
+
+  display:
+    grid;
+
+  grid-template-rows:
+    minmax(0, 1fr)
+    67px;
+
+  border:
+    1px solid var(--border);
+
+  border-radius:
+    15px;
+
+  background:
+    var(--surface);
+
+  box-shadow:
+    0
+    6px
+    22px
+    rgba(0, 0, 0, 0.16);
+
+  cursor:
+    pointer;
+
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+
+}
+
+
+.product-card:hover {
+
+  border-color:
+    var(--yellow-border);
+
+  box-shadow:
+    0
+    11px
+    34px
+    rgba(0, 0, 0, 0.24),
+    0
+    0
+    24px
+    rgba(255, 220, 0, 0.055);
+
+  transform:
+    translateY(-3px);
+
+}
+
+
+/* ================================================================
+   PRODUCT MEDIA
+   ================================================================ */
+
+.product-card__media {
+
+  position:
+    relative;
+
+  min-width:
+    0;
+
+  min-height:
+    0;
+
+  overflow:
+    hidden;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  background:
+    linear-gradient(
+      145deg,
+      #ffffff,
+      #f4f5f6
+    );
+
+}
+
+
+/*
+   Gələcəkdə 1:1 şəkil yükləsən belə
+   məhsul kəsilməsin.
+*/
+
+.product-card__image {
+
+  width:
+    100%;
+
+  height:
+    100%;
+
+  padding:
+    10px;
+
+  object-fit:
+    contain;
+
+  object-position:
+    center;
+
+  transition:
+    transform 240ms ease;
+
+}
+
+
+.product-card:hover
+.product-card__image {
+
+  transform:
+    scale(1.025);
+
+}
+
+
+/* ================================================================
+   PRODUCT FALLBACK
+   ================================================================ */
+
+.product-card__image-fallback {
+
+  width:
+    100%;
+
+  height:
+    100%;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  color:
+    #a28e00;
+
+  background:
+    radial-gradient(
+      circle at center,
+      rgba(255, 220, 0, 0.13),
+      transparent 55%
+    ),
+    #f5f6f7;
+
+  font-family:
+    var(--font-display);
+
+  font-size:
+    30px;
+
+  font-weight:
+    700;
+
+}
+
+
+/* ================================================================
+   30. FAVORITE BUTTON
+   ================================================================ */
+
+.product-card__favorite {
+
+  position:
+    absolute;
+
+  z-index:
+    6;
+
+  top:
+    7px;
+
+  right:
+    7px;
+
+  width:
+    32px;
+
+  height:
+    32px;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  padding:
+    0;
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.25);
+
+  border-radius:
+    10px;
+
+  color:
+    #ffffff;
+
+  background:
+    rgba(5, 7, 10, 0.62);
+
+  box-shadow:
+    0
+    6px
+    16px
+    rgba(0, 0, 0, 0.20);
+
+  backdrop-filter:
+    blur(10px);
+
+  -webkit-backdrop-filter:
+    blur(10px);
+
+  cursor:
+    pointer;
+
+  transition:
+    transform 150ms ease,
+    color 150ms ease,
+    background 150ms ease,
+    border-color 150ms ease;
+
+}
+
+
+.product-card__favorite:hover {
+
+  transform:
+    scale(1.06);
+
+}
+
+
+.product-card__favorite.is-active {
+
+  color:
+    #ffffff;
+
+  border-color:
+    rgba(255, 95, 109, 0.48);
+
+  background:
+    rgba(255, 95, 109, 0.88);
+
+}
+
+
+.product-card__favorite svg {
+
+  width:
+    15px;
+
+  height:
+    15px;
+
+}
+
+
+/* ================================================================
+   31. STOCK BADGE
+   ================================================================ */
+
+.product-card__stock-badge {
+
+  position:
+    absolute;
+
+  z-index:
+    5;
+
+  top:
+    7px;
+
+  left:
+    7px;
+
+  max-width:
+    calc(100% - 52px);
+
+  min-height:
+    23px;
+
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  padding:
+    0 8px;
+
+  overflow:
+    hidden;
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.16);
+
+  border-radius:
+    999px;
+
+  color:
+    rgba(255, 255, 255, 0.86);
+
+  background:
+    rgba(5, 7, 10, 0.68);
+
+  backdrop-filter:
+    blur(8px);
+
+  -webkit-backdrop-filter:
+    blur(8px);
+
+  font-size:
+    8px;
+
+  font-weight:
+    700;
+
+  text-overflow:
+    ellipsis;
+
+  white-space:
+    nowrap;
+
+}
+
+
+/* mümkün stock state class-ları */
+
+.product-card__stock-badge.is-ok,
+.product-card__stock-badge.stock-ok,
+.product-card__stock-badge.status-active {
+
+  color:
+    #72edae;
+
+  border-color:
+    rgba(53, 218, 131, 0.34);
+
+}
+
+
+.product-card__stock-badge.is-low,
+.product-card__stock-badge.stock-low {
+
+  color:
+    #ffc46d;
+
+  border-color:
+    rgba(255, 173, 67, 0.38);
+
+}
+
+
+.product-card__stock-badge.is-empty,
+.product-card__stock-badge.stock-empty {
+
+  color:
+    #ff8992;
+
+  border-color:
+    rgba(255, 95, 109, 0.38);
+
+}
+
+
+/* ================================================================
+   32. PRODUCT BODY
+   ================================================================ */
+
+.product-card__body {
+
+  min-width:
+    0;
+
+  min-height:
+    67px;
+
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  justify-content:
+    center;
+
+  gap:
+    4px;
+
+  padding:
+    8px 10px;
+
+  border-top:
+    1px solid var(--border-soft);
+
+  background:
+    linear-gradient(
+      180deg,
+      var(--surface-2),
+      var(--surface)
+    );
+
+}
+
+
+/* ================================================================
+   PRODUCT NAME
+   ================================================================ */
+
+.product-card__name {
+
+  width:
+    100%;
+
+  overflow:
+    hidden;
+
+  color:
+    var(--text);
+
+  font-size:
+    12px;
+
+  line-height:
+    1.25;
+
+  font-weight:
+    700;
+
+  text-overflow:
+    ellipsis;
+
+  white-space:
+    nowrap;
+
+}
+
+
+/* ================================================================
+   PRICE / UNIT
+   ================================================================ */
+
+.product-card__meta {
+
+  min-width:
+    0;
+
+  display:
+    flex;
+
+  align-items:
+    baseline;
+
+  justify-content:
+    space-between;
+
+  gap:
+    7px;
+
+}
+
+
+.product-card__price {
+
+  flex:
+    0 0 auto;
+
+  color:
+    var(--yellow);
+
+  font-family:
+    var(--font-number);
+
+  font-size:
+    16px;
+
+  line-height:
+    1;
+
+  font-weight:
+    700;
+
+  font-variant-numeric:
+    tabular-nums;
+
+}
+
+
+.product-card__unit {
+
+  min-width:
+    0;
+
+  overflow:
+    hidden;
+
+  color:
+    var(--text-muted);
+
+  font-size:
+    9px;
+
+  line-height:
+    1;
+
+  text-overflow:
+    ellipsis;
+
+  white-space:
+    nowrap;
+
+}
+
+
+.product-card__stock-line {
+
+  overflow:
+    hidden;
+
+  color:
+    var(--text-faint);
+
+  font-size:
+    8px;
+
+  line-height:
+    1.1;
+
+  text-overflow:
+    ellipsis;
+
+  white-space:
+    nowrap;
+
+}
+
+
+/* ================================================================
+   33. TRAINER CARD — STRICT 1:1
+   ================================================================ */
+
+.trainer-card {
+
+  position:
+    relative;
+
+  width:
+    100%;
+
+  min-width:
+    0;
+
+  aspect-ratio:
+    1 / 1;
+
+  overflow:
+    hidden;
+
+  border:
+    1px solid var(--border);
+
+  border-radius:
+    15px;
+
+  background:
+    var(--surface);
+
+  box-shadow:
+    0
+    6px
+    22px
+    rgba(0, 0, 0, 0.17);
+
+  cursor:
+    pointer;
+
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+
+}
+
+
+.trainer-card:hover {
+
+  border-color:
+    var(--yellow-border);
+
+  box-shadow:
+    0
+    12px
+    34px
+    rgba(0, 0, 0, 0.26),
+    0
+    0
+    24px
+    rgba(255, 220, 0, 0.06);
+
+  transform:
+    translateY(-3px);
+
+}
+
+
+/* ================================================================
+   TRAINER MEDIA
+   ================================================================ */
+
+.trainer-card__media {
+
+  position:
+    relative;
+
+  width:
+    100%;
+
+  height:
+    100%;
+
+  overflow:
+    hidden;
+
+  background:
+    var(--surface-2);
+
+}
+
+
+.trainer-card__image {
+
+  width:
+    100%;
+
+  height:
+    100%;
+
+  object-fit:
+    cover;
+
+  object-position:
+    center 20%;
+
+  transition:
+    transform 280ms ease,
+    filter 280ms ease;
+
+}
+
+
+.trainer-card:hover
+.trainer-card__image {
+
+  transform:
+    scale(1.025);
+
+}
+
+
+/* ================================================================
+   TRAINER FALLBACK
+   ================================================================ */
+
+.trainer-card__image-fallback {
+
+  width:
+    100%;
+
+  height:
+    100%;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  color:
+    var(--yellow);
+
+  background:
+    radial-gradient(
+      circle at 50% 37%,
+      rgba(255, 220, 0, 0.15),
+      transparent 44%
+    ),
+    var(--surface-2);
+
+  font-family:
+    var(--font-display);
+
+  font-size:
+    34px;
+
+  font-weight:
+    700;
+
+}
+
+
+/* ================================================================
+   TRAINER OVERLAY
+   ================================================================ */
+
+.trainer-card__media::after {
+
+  content:
+    "";
+
+  position:
+    absolute;
+
+  z-index:
+    1;
+
+  inset:
+    28% 0 0;
+
+  pointer-events:
+    none;
+
+  background:
+    linear-gradient(
+      to top,
+      rgba(3, 4, 6, 0.98) 0%,
+      rgba(3, 4, 6, 0.82) 37%,
+      rgba(3, 4, 6, 0.36) 68%,
+      transparent 100%
+    );
+
+}
+
+
+/* ================================================================
+   TRAINER CONTENT
+   ================================================================ */
+
+.trainer-card__content {
+
+  position:
+    absolute;
+
+  z-index:
+    3;
+
+  right:
+    0;
+
+  bottom:
+    0;
+
+  left:
+    0;
+
+  display:
+    grid;
+
+  gap:
+    3px;
+
+  padding:
+    12px;
+
+}
+
+
+.trainer-card__name {
+
+  overflow:
+    hidden;
+
+  color:
+    #ffffff;
+
+  font-family:
+    var(--font-display);
+
+  font-size:
+    16px;
+
+  line-height:
+    1.05;
+
+  font-weight:
+    600;
+
+  text-overflow:
+    ellipsis;
+
+  text-transform:
+    uppercase;
+
+  white-space:
+    nowrap;
+
+}
+
+
+.trainer-card__specialty {
+
+  overflow:
+    hidden;
+
+  color:
+    rgba(255, 255, 255, 0.67);
+
+  font-size:
+    10px;
+
+  line-height:
+    1.2;
+
+  text-overflow:
+    ellipsis;
+
+  white-space:
+    nowrap;
+
+}
+
+
+.trainer-card__action {
+
+  width:
+    fit-content;
+
+  margin-top:
+    3px;
+
+  color:
+    var(--yellow);
+
+  font-size:
+    9px;
+
+  line-height:
+    1;
+
+  font-weight:
+    700;
+
+}
+
+
+/* ================================================================
+   34. HOME CTA
+   ================================================================ */
+
+.home-cta {
+
+  position:
+    relative;
+
+  overflow:
+    hidden;
+
+  min-height:
+    160px;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    space-between;
+
+  gap:
+    28px;
+
+  padding:
+    24px 26px;
+
+  border:
+    1px solid var(--yellow-border);
+
+  border-radius:
+    18px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 220, 0, 0.075),
+      rgba(255, 220, 0, 0.015) 38%,
+      var(--surface)
+    );
+
+  box-shadow:
+    0 14px
+    38px
+    rgba(0, 0, 0, 0.18);
+
+}
+
+
+.home-cta__glow {
+
+  position:
+    absolute;
+
+  right:
+    -90px;
+
+  bottom:
+    -150px;
+
+  width:
+    330px;
+
+  height:
+    330px;
+
+  border-radius:
+    50%;
+
+  background:
+    rgba(255, 220, 0, 0.075);
+
+  filter:
+    blur(65px);
+
+  pointer-events:
+    none;
+
+}
+
+
+.home-cta__content {
+
+  position:
+    relative;
+
+  z-index:
+    1;
+
+  min-width:
+    0;
+
+  max-width:
+    680px;
+
+}
+
+
+.home-cta__title {
+
+  margin:
+    0;
+
+  color:
+    var(--text);
+
+  font-family:
+    var(--font-display);
+
+  font-size:
+    clamp(27px, 3vw, 40px);
+
+  line-height:
+    1;
+
+  font-weight:
+    600;
+
+  text-transform:
+    uppercase;
+
+}
+
+
+.home-cta__description {
+
+  max-width:
+    550px;
+
+  margin:
+    8px 0 0;
+
+  color:
+    var(--text-muted);
+
+  font-size:
+    12px;
+
+  line-height:
+    1.5;
+
+}
+
+
+.home-cta__actions {
+
+  position:
+    relative;
+
+  z-index:
+    1;
+
+  flex:
+    0 0 auto;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  gap:
+    7px;
+
+}
+
+
+/* ================================================================
+   35. TABLET
+   ================================================================ */
+
+@media (max-width: 1100px) {
+
+  .products-grid,
+  .product-grid,
+  .trainers-grid,
+  .trainer-grid {
+
+    grid-template-columns:
+      repeat(4, minmax(0, 1fr));
+
+  }
+
+}
+
+
+@media (max-width: 850px) {
+
+  .products-grid,
+  .product-grid,
+  .trainers-grid,
+  .trainer-grid {
+
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr));
+
+    gap:
+      7px;
+
+  }
+
+}
+
+
+/* ================================================================
+   36. MOBILE
+   ================================================================ */
+
+@media (max-width: 700px) {
+
+  .product-toolbar {
+
+    align-items:
+      stretch;
+
+    flex-direction:
+      column;
+
+    margin-bottom:
+      10px;
+
+  }
+
+
+  .product-toolbar
+  .search-control {
+
+    max-width:
+      none;
+
+  }
+
+
+  /*
+     TELEFON:
+     Məhsul = 3 sütun
+     Məşqçi = 2 sütun
+
+     İkisi də 1:1.
+  */
+
+  .products-grid,
+  .product-grid {
+
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr));
+
+    gap:
+      5px;
+
+  }
+
+
+  .trainers-grid,
+  .trainer-grid {
+
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+
+    gap:
+      6px;
+
+  }
+
+
+  .product-card,
+  .trainer-card {
+
+    border-radius:
+      11px;
+
+  }
+
+
+  /* PRODUCT */
+
+  .product-card {
+
+    grid-template-rows:
+      minmax(0, 1fr)
+      50px;
+
+  }
+
+
+  .product-card__image {
+
+    padding:
+      5px;
+
+  }
+
+
+  .product-card__body {
+
+    min-height:
+      50px;
+
+    gap:
+      2px;
+
+    padding:
+      5px;
+
+  }
+
+
+  .product-card__name {
+
+    font-size:
+      8px;
+
+  }
+
+
+  .product-card__price {
+
+    font-size:
+      11px;
+
+  }
+
+
+  .product-card__unit {
+
+    font-size:
+      6px;
+
+  }
+
+
+  .product-card__stock-line {
+
+    font-size:
+      6px;
+
+  }
+
+
+  .product-card__favorite {
+
+    top:
+      4px;
+
+    right:
+      4px;
+
+    width:
+      25px;
+
+    height:
+      25px;
+
+    border-radius:
+      8px;
+
+  }
+
+
+  .product-card__favorite svg {
+
+    width:
+      12px;
+
+    height:
+      12px;
+
+  }
+
+
+  .product-card__stock-badge {
+
+    top:
+      4px;
+
+    left:
+      4px;
+
+    min-height:
+      18px;
+
+    max-width:
+      calc(100% - 38px);
+
+    padding:
+      0 5px;
+
+    font-size:
+      6px;
+
+  }
+
+
+  /* TRAINER */
+
+  .trainer-card__content {
+
+    padding:
+      8px;
+
+  }
+
+
+  .trainer-card__name {
+
+    font-size:
+      12px;
+
+  }
+
+
+  .trainer-card__specialty {
+
+    font-size:
+      8px;
+
+  }
+
+
+  .trainer-card__action {
+
+    font-size:
+      7px;
+
+  }
+
+
+  /* CTA */
+
+  .home-cta {
+
+    min-height:
+      0;
+
+    align-items:
+      flex-start;
+
+    flex-direction:
+      column;
+
+    gap:
+      14px;
+
+    padding:
+      17px;
+
+    border-radius:
+      15px;
+
+  }
+
+
+  .home-cta__title {
+
+    font-size:
+      27px;
+
+  }
+
+
+  .home-cta__actions {
+
+    width:
+      100%;
+
+  }
+
+
+  .home-cta__actions
+  .ui-button {
+
+    flex:
+      1;
+
+  }
+
+}
+
+
+/* ================================================================
+   37. VERY SMALL PHONE
+   ================================================================ */
+
+@media (max-width: 360px) {
+
+  .products-grid,
+  .product-grid {
+
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+
+  }
+
+}
+
+
+/* ================================================================
+   38. TOUCH
+   ================================================================ */
+
+@media (hover: none) {
+
+  .product-card:hover,
+  .trainer-card:hover {
+
+    transform:
+      none;
+
+  }
+
+
+  .product-card:hover
+  .product-card__image,
+  .trainer-card:hover
+  .trainer-card__image {
+
+    transform:
+      none;
+
+  }
+
+}
+
+
+/* ================================================================
+   HOME STEP 2 END
+   ================================================================ */
+
