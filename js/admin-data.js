@@ -5,7 +5,67 @@ import { supabase, TABLES, RPC, UI_CONFIG } from './config.js';
 import { rows, number, notify, getErrorMessage } from './core.js';
 
 export function createAdminDataService({ state, resetListLimit, renderDashboard }) {
-  async function loadRemotePage(key, options = {}
+  async function loadRemotePage(key, options = {}) {
+    const paging = state.remotePaging?.[key];
+
+    if (
+      !paging ||
+      paging.loading ||
+      (!paging.hasMore && options.append !== false)
+    ) {
+      return [];
+    }
+
+    const append = options.append !== false;
+    const pageSize = UI_CONFIG.lists?.pageSize || 50;
+
+    paging.loading = true;
+
+    try {
+      const offset = append ? paging.offset : 0;
+
+      const { data, error } = await supabase.rpc(
+        RPC.getAdminFeedV1,
+        {
+          p_feed: paging.feed,
+          p_offset: offset,
+          p_limit: pageSize,
+        }
+      );
+
+      if (error) {
+        throw error;
+      }
+
+      const items = rows(data);
+
+      paging.offset = offset + items.length;
+      paging.hasMore = items.length === pageSize;
+
+      const stateKey =
+        key === 'finance'
+          ? 'ledger'
+          : key === 'cash'
+            ? 'cashRegisterEntries'
+            : key;
+
+      state[stateKey] = append
+        ? [...(state[stateKey] || []), ...items]
+        : items;
+
+      return items;
+    } catch (error) {
+      console.error(
+        '[SKy Fit remote feed]',
+        key,
+        error
+      );
+
+      return [];
+    } finally {
+      paging.loading = false;
+    }
+  }
 
   function resetRemotePage(key) {
     const paging = state.remotePaging?.[key];
