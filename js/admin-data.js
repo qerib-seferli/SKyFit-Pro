@@ -666,9 +666,49 @@ export function createAdminDataService({ state, resetListLimit, renderDashboard 
     }
   }
 
-  async function loadCashRegisterEntries(options = {}
+async function loadCashRegisterEntries(options = {}) {
+  if (state.loading.cash) {
+    return state.cashRegisterEntries;
+  }
 
-  async function loadTrainers() {
+  state.loading.cash = true;
+  const append = options.append === true;
+
+  try {
+    if (!append) {
+      resetRemotePage('cash');
+      resetListLimit('cash');
+    }
+
+    const [, balanceResult] = await Promise.all([
+      loadRemotePage('cash', { append }),
+      supabase.rpc(RPC.getCashRegisterBalance),
+    ]);
+
+    if (balanceResult.error) {
+      throw balanceResult.error;
+    }
+
+    state.cashRegisterBalance = number(balanceResult.data);
+
+    return state.cashRegisterEntries;
+  } catch (error) {
+    console.error(
+      '[SKy Fit Kassa] Kassa kitabı:',
+      error
+    );
+
+    if (!append) {
+      state.cashRegisterEntries = [];
+    }
+
+    return state.cashRegisterEntries;
+  } finally {
+    state.loading.cash = false;
+  }
+}
+
+async function loadTrainers() {
     if (
       state.loading.trainers
     ) {
@@ -734,9 +774,74 @@ export function createAdminDataService({ state, resetListLimit, renderDashboard 
     }
   }
 
-  async function loadHistory(options = {}
+async function loadHistory(options = {}) {
+  if (state.loading.history) {
+    return state.history;
+  }
 
-  async function loadDashboard() {
+  state.loading.history = true;
+
+  try {
+    const filteredRequest = Boolean(
+      options.from ||
+      options.to ||
+      options.actorId
+    );
+
+    if (!filteredRequest) {
+      const append = options.append === true;
+
+      if (!append) {
+        resetRemotePage('history');
+        resetListLimit('history');
+      }
+
+      return await loadRemotePage(
+        'history',
+        { append }
+      );
+    }
+
+    const { data, error } = await supabase.rpc(
+      RPC.getOperatorActivity,
+      {
+        p_from: options.from || null,
+        p_to: options.to || null,
+        p_actor_id: options.actorId || null,
+        p_limit: options.limit || 500,
+      }
+    );
+
+    if (error) {
+      throw error;
+    }
+
+    state.history = rows(data);
+    state.remotePaging.history.hasMore = false;
+
+    return state.history;
+  } catch (error) {
+    console.error(
+      '[SKy Fit Admin] Audit history:',
+      error
+    );
+
+    state.history = [];
+
+    notify.error(
+      getErrorMessage(
+        error,
+        'Əməliyyat tarixçəsi yüklənmədi.'
+      )
+    );
+
+    return [];
+  } finally {
+    state.loading.history = false;
+  }
+}
+
+async function loadDashboard() {
     if (
       state.loading.dashboard
     ) {
