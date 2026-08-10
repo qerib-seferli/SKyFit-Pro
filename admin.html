@@ -323,45 +323,6 @@
               </span>
 
             </button>
-
-            <button
-              class="admin-navigation__item"
-              type="button"
-              data-admin-tab="attendance"
-              aria-selected="false"
-              id="admin-tab-attendance"
-              role="tab"
-              aria-controls="admin-panel-attendance"
-            >
-
-              <span
-                class="admin-navigation__icon"
-                aria-hidden="true"
-              >
-                <svg viewBox="0 0 24 24" fill="none">
-
-                  <path
-                    d="M5 4h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5V4Z"
-                    stroke="currentColor"
-                    stroke-width="1.7"
-                  />
-
-                  <path
-                    d="m13 12 6-4v8l-6-4Z"
-                    stroke="currentColor"
-                    stroke-width="1.7"
-                    stroke-linejoin="round"
-                  />
-
-                </svg>
-              </span>
-
-              <span>
-                Giriş
-              </span>
-
-            </button>
-
             <button
               class="admin-navigation__item"
               type="button"
@@ -524,6 +485,43 @@
             <button
               class="admin-navigation__item"
               type="button"
+              data-admin-tab="employees"
+              aria-selected="false"
+              id="admin-tab-employees"
+              role="tab"
+              aria-controls="admin-panel-employees"
+            >
+              <span class="admin-navigation__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.7"/>
+                  <path d="M3.5 19c.6-3.7 2.2-5.5 4.5-5.5s3.9 1.8 4.5 5.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                  <path d="M15 7h5M17.5 4.5v5M15 14h5M15 18h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                </svg>
+              </span>
+              <span>İşçilər</span>
+            </button>
+
+            <button
+              class="admin-navigation__item"
+              type="button"
+              data-admin-tab="reports"
+              aria-selected="false"
+              id="admin-tab-reports"
+              role="tab"
+              aria-controls="admin-panel-reports"
+            >
+              <span class="admin-navigation__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M5 19V11M10 19V5M15 19v-7M20 19V8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                  <path d="M4 19h17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                </svg>
+              </span>
+              <span>Hesabatlar</span>
+            </button>
+
+            <button
+              class="admin-navigation__item"
+              type="button"
               data-admin-tab="trainers"
               aria-selected="false"
               id="admin-tab-trainers"
@@ -609,82 +607,6 @@
       </aside>
 
       <div class="admin-content">
-
-        <header class="admin-topbar">
-
-          <div class="admin-topbar__heading">
-
-            <span class="section-eyebrow">
-              İdarəetmə sistemi
-            </span>
-
-            <h1 id="admin-page-title" class="admin-topbar__title">
-              SKy Fit Pro
-            </h1>
-
-          </div>
-
-          <div class="admin-topbar__actions">
-
-            <label class="admin-global-search">
-
-              <span
-                class="admin-global-search__icon"
-                aria-hidden="true"
-              >
-                <svg viewBox="0 0 24 24" fill="none">
-
-                  <circle
-                    cx="10.5"
-                    cy="10.5"
-                    r="5.5"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                  />
-
-                  <path
-                    d="m15 15 4.5 4.5"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                  />
-
-                </svg>
-              </span>
-
-              <input
-                id="admin-global-search"
-                type="search"
-                inputmode="search"
-                autocomplete="off"
-                placeholder="Üzv və ya məhsul axtar..."
-              
-                  spellcheck="false"
-                  aria-label="Üzv və ya məhsul axtar">
-
-            </label>
-
-            <span
-              id="admin-operator-label"
-              class="admin-topbar__operator"
-            >
-              —
-            </span>
-
-            <button
-              id="admin-quick-action-button"
-              class="ui-button ui-button--primary"
-              type="button"
-            >
-              <span class="ui-button__label">
-                Yeni satış
-              </span>
-            </button>
-
-          </div>
-
-        </header>
-
         <div class="admin-panels">
 
           <section
@@ -855,6 +777,27 @@
 
               </div>
 
+            </section>
+
+            <section class="admin-section dashboard-overview-v2">
+              <div class="admin-section__header">
+                <div>
+                  <span class="section-eyebrow">Kassa və trend</span>
+                  <h3 class="admin-section__title">Bu gün və son 14 gün</h3>
+                </div>
+                <button type="button" class="admin-section__link" data-admin-open-tab="reports">Hesabatlar</button>
+              </div>
+
+              <div class="dashboard-money-grid">
+                <article><span>KASSA</span><strong id="dashboard-cash-register">0,00 ₼</strong><small>Fiziki nağd qalıq</small></article>
+                <article><span>Bu gün nağd</span><strong id="dashboard-cash-today">0,00 ₼</strong><small>Nağd mədaxil</small></article>
+                <article><span>Bu gün kart</span><strong id="dashboard-card-today">0,00 ₼</strong><small>Kart mədaxili</small></article>
+                <article><span>Brüt qazanc</span><strong id="dashboard-profit-today">0,00 ₼</strong><small>Məhsul satış qazancı</small></article>
+                <article><span>Günlük giriş</span><strong id="dashboard-walkin-today">0</strong><small>Bu gün profilsiz giriş</small></article>
+              </div>
+
+              <div id="dashboard-trend-chart" class="dashboard-trend-wrap" aria-label="Son 14 gün mədaxil və məxaric qrafiki"></div>
+              <div class="dashboard-trend-legend"><span class="is-income">Mədaxil</span><span class="is-expense">Məxaric</span></div>
             </section>
 
             <div class="admin-dashboard-grid">
@@ -1134,6 +1077,22 @@
 
             </div>
 
+            <section class="admin-section pos-sales-history-section">
+              <div class="admin-section__header">
+                <div>
+                  <span class="section-eyebrow">Satış tarixçəsi</span>
+                  <h3 class="admin-section__title">Son satışlar</h3>
+                  <p class="admin-section__description">
+                    Satılan məhsullar, ödəniş üsulu, maya, qazanc və təhlükəsiz qaytarma/ləğv əməliyyatları.
+                  </p>
+                </div>
+                <button id="pos-sales-refresh" class="ui-button ui-button--glass" type="button">
+                  <span class="ui-button__label">Yenilə</span>
+                </button>
+              </div>
+              <div id="pos-sales-list" class="admin-table-wrap"></div>
+            </section>
+
           </section>
 
           <section
@@ -1412,130 +1371,6 @@
               ></div>
 
             </section>
-
-          </section>
-
-          <section
-            class="admin-panel is-hidden"
-            data-admin-panel="attendance"
-            id="admin-panel-attendance"
-            role="tabpanel"
-            aria-labelledby="admin-tab-attendance"
-            hidden
-          >
-
-            <div class="admin-panel__header">
-
-              <div>
-
-                <span class="section-eyebrow">
-                  Giriş nəzarəti
-                </span>
-
-                <h2 class="admin-panel__title">
-                  Giriş qeydiyyatı
-                </h2>
-
-                <p class="admin-panel__description">
-                  Aktiv üzvlüyü sistem avtomatik yoxlayır. Aktiv üzvlük
-                  yoxdursa günlük giriş tətbiq olunur.
-                </p>
-
-              </div>
-
-              <button
-                id="attendance-create-button"
-                class="ui-button ui-button--primary"
-                type="button"
-              >
-                <span class="ui-button__label">
-                  Girişi qeyd et
-                </span>
-              </button>
-
-            </div>
-
-            <div class="admin-mini-kpi-row">
-
-              <article class="admin-mini-kpi">
-
-                <span>
-                  Bu gün giriş
-                </span>
-
-                <strong id="attendance-today-count">
-                  0
-                </strong>
-
-              </article>
-
-            </div>
-
-            <div class="admin-toolbar">
-
-              <label class="search-control">
-
-                <span
-                  class="search-control__icon"
-                  aria-hidden="true"
-                >
-                  <svg viewBox="0 0 24 24" fill="none">
-
-                    <circle
-                      cx="10.5"
-                      cy="10.5"
-                      r="5.5"
-                      stroke="currentColor"
-                      stroke-width="1.8"
-                    />
-
-                    <path
-                      d="m15 15 4.5 4.5"
-                      stroke="currentColor"
-                      stroke-width="1.8"
-                      stroke-linecap="round"
-                    />
-
-                  </svg>
-                </span>
-
-                <input
-                  id="attendance-search"
-                  class="search-control__input"
-                  type="search"
-                  inputmode="search"
-                  autocomplete="off"
-                  placeholder="Üzv, telefon və ya operator..."
-                
-                  spellcheck="false"
-                  aria-label="Giriş tarixçəsində axtar">
-
-              </label>
-
-              <select
-                id="attendance-type-filter"
-                class="ui-select admin-toolbar__select"
-              
-                aria-label="Giriş tipi filtri">
-                <option value="all">
-                  Bütün girişlər
-                </option>
-
-                <option value="membership">
-                  Üzvlük ilə
-                </option>
-
-                <option value="daily">
-                  Günlük giriş
-                </option>
-              </select>
-
-            </div>
-
-            <div
-              id="attendance-list"
-              class="admin-table-wrap"
-            ></div>
 
           </section>
 
@@ -2150,6 +1985,141 @@
               <div id="cash-register-list" class="admin-table-wrap"></div>
             </section>
 
+          </section>
+
+          <section
+            class="admin-panel is-hidden"
+            data-admin-panel="employees"
+            id="admin-panel-employees"
+            role="tabpanel"
+            aria-labelledby="admin-tab-employees"
+            hidden
+          >
+            <div class="admin-panel__header">
+              <div>
+                <span class="section-eyebrow">Komanda və hesablaşma</span>
+                <h2 class="admin-panel__title">İşçilər və maaşlar</h2>
+                <p class="admin-panel__description">
+                  İşçi məlumatları, aylıq maaş, bonus, tutulma və açıq avanslar. Avans KASSA-dan çıxır, amma ayrıca biznes xərci sayılmır.
+                </p>
+              </div>
+              <button id="payroll-create-button" class="ui-button ui-button--primary" type="button">
+                <span class="ui-button__label">Maaş hesablaşması</span>
+              </button>
+            </div>
+
+            <div class="staff-summary-grid">
+              <article class="finance-summary-card">
+                <span>Aktiv işçilər</span>
+                <strong id="employees-active-count" class="finance-value">0</strong>
+                <small>Admin və əməkdaşlar</small>
+              </article>
+              <article class="finance-summary-card finance-summary-card--expense">
+                <span>Açıq avans</span>
+                <strong id="employees-advance-total" class="finance-value finance-value--expense">0,00 ₼</strong>
+                <small>İşçilərin qaytaracağı məbləğ</small>
+              </article>
+              <article class="finance-summary-card finance-summary-card--cash">
+                <span>Bu ay maaş</span>
+                <strong id="employees-payroll-month" class="finance-value">0,00 ₼</strong>
+                <small>Bağlanmış maaş hesablaşmaları</small>
+              </article>
+            </div>
+
+            <section class="admin-section">
+              <div class="admin-section__header">
+                <div>
+                  <span class="section-eyebrow">İşçi kartları</span>
+                  <h3 class="admin-section__title">Komanda</h3>
+                </div>
+              </div>
+              <div id="staff-management-list" class="admin-table-wrap"></div>
+            </section>
+
+            <section class="admin-section">
+              <div class="admin-section__header">
+                <div>
+                  <span class="section-eyebrow">Əmək haqqı</span>
+                  <h3 class="admin-section__title">Maaş tarixçəsi</h3>
+                </div>
+              </div>
+              <div id="staff-payroll-list" class="admin-table-wrap"></div>
+            </section>
+          </section>
+
+          <section
+            class="admin-panel is-hidden"
+            data-admin-panel="reports"
+            id="admin-panel-reports"
+            role="tabpanel"
+            aria-labelledby="admin-tab-reports"
+            hidden
+          >
+            <div class="admin-panel__header">
+              <div>
+                <span class="section-eyebrow">Biznes analitikası</span>
+                <h2 class="admin-panel__title">Hesabatlar</h2>
+                <p class="admin-panel__description">
+                  Mədaxil, məxaric, KASSA, satışın maya dəyəri, brüt qazanc, borclar və maaşlar bir baxışda.
+                </p>
+              </div>
+              <button id="reports-refresh-button" class="ui-button ui-button--glass" type="button">
+                <span class="ui-button__label">Yenilə</span>
+              </button>
+            </div>
+
+            <div class="admin-toolbar reports-toolbar">
+              <select id="reports-preset" class="ui-select" aria-label="Hesabat dövrü">
+                <option value="today">Bu gün</option>
+                <option value="week">Bu həftə</option>
+                <option value="month" selected>Bu ay</option>
+                <option value="last_month">Keçən ay</option>
+                <option value="year">Bu il</option>
+                <option value="custom">Xüsusi tarix</option>
+              </select>
+              <label class="admin-date-filter">
+                <span>Başlanğıc tarixi</span>
+                <input id="reports-date-from" class="ui-date-input" type="date" aria-label="Hesabat başlanğıc tarixi">
+              </label>
+              <label class="admin-date-filter">
+                <span>Son tarix</span>
+                <input id="reports-date-to" class="ui-date-input" type="date" aria-label="Hesabat son tarixi">
+              </label>
+              <button id="reports-apply-button" class="ui-button ui-button--primary" type="button">
+                <span class="ui-button__label">Hesabla</span>
+              </button>
+            </div>
+
+            <div class="reports-kpi-grid">
+              <article class="finance-summary-card finance-summary-card--income"><span>Mədaxil</span><strong id="report-income" class="finance-value finance-value--income">0,00 ₼</strong></article>
+              <article class="finance-summary-card finance-summary-card--expense"><span>Məxaric</span><strong id="report-expense" class="finance-value finance-value--expense">0,00 ₼</strong></article>
+              <article class="finance-summary-card finance-summary-card--balance"><span>Xalis nəticə</span><strong id="report-net" class="finance-value finance-value--neutral">0,00 ₼</strong></article>
+              <article class="finance-summary-card finance-summary-card--cash"><span>Fiziki KASSA</span><strong id="report-cash-register" class="finance-value">0,00 ₼</strong></article>
+              <article class="finance-summary-card"><span>Açıq borc</span><strong id="report-open-debt" class="finance-value finance-value--expense">0,00 ₼</strong></article>
+
+              <article class="finance-summary-card"><span>Məhsul satışı</span><strong id="report-sales-revenue" class="finance-value">0,00 ₼</strong></article>
+              <article class="finance-summary-card"><span>Məhsul mayası</span><strong id="report-sales-cost" class="finance-value">0,00 ₼</strong></article>
+              <article class="finance-summary-card finance-summary-card--income"><span>Brüt qazanc</span><strong id="report-sales-profit" class="finance-value finance-value--income">0,00 ₼</strong></article>
+              <article class="finance-summary-card"><span>Maaş xərci</span><strong id="report-payroll-expense" class="finance-value finance-value--expense">0,00 ₼</strong></article>
+              <article class="finance-summary-card"><span>İşçi avansı</span><strong id="report-staff-advance" class="finance-value finance-value--expense">0,00 ₼</strong></article>
+
+              <article class="finance-summary-card"><span>Üzvlük gəliri</span><strong id="report-membership-income" class="finance-value">0,00 ₼</strong></article>
+              <article class="finance-summary-card"><span>Günlük giriş</span><strong id="report-walkin-income" class="finance-value">0,00 ₼</strong></article>
+              <article class="finance-summary-card"><span>Borc ödənişi</span><strong id="report-debt-income" class="finance-value">0,00 ₼</strong></article>
+              <article class="finance-summary-card"><span>Nağd mədaxil</span><strong id="report-cash-income" class="finance-value">0,00 ₼</strong></article>
+              <article class="finance-summary-card"><span>Kart mədaxili</span><strong id="report-card-income" class="finance-value">0,00 ₼</strong></article>
+            </div>
+
+            <section class="admin-section">
+              <div class="admin-section__header">
+                <div>
+                  <span class="section-eyebrow">Məhsullar</span>
+                  <h3 class="admin-section__title">Ən çox satılanlar və qazanc</h3>
+                  <p class="admin-section__description">Satış məbləği ilə maya dəyəri ayrı göstərilir.</p>
+                </div>
+              </div>
+              <div id="report-top-products" class="admin-table-wrap"></div>
+            </section>
           </section>
 
           <section

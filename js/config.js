@@ -26,7 +26,7 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 export const APP_CONFIG = Object.freeze({
   name: 'SKy Fit Pro',
   shortName: 'SKy Fit',
-  version: '1.3.0',
+  version: '1.5.0',
   developer: 'Qərib Səfərli',
   developerTitle: 'Senior Full Stack Developer',
   locale: 'az-AZ',
@@ -124,6 +124,10 @@ export const UI_CONFIG = Object.freeze({
     dashboardLimit: 8,
     adminLimit: 300,
   }),
+  lists: Object.freeze({
+    pageSize: 50,
+    scrollThreshold: 96,
+  }),
 });
 
 // localStorage
@@ -163,6 +167,13 @@ export const RPC = Object.freeze({
   setCashRegisterBalance: 'set_cash_register_balance',
   getCashRegisterBalance: 'get_cash_register_balance',
   deleteProductSafely: 'delete_product_safely',
+  recordWalkInEntryV1: 'record_walk_in_entry_v1',
+  saveStaffEmploymentV1: 'save_staff_employment_v1',
+  settleStaffPayrollV1: 'settle_staff_payroll_v1',
+  reverseSaleV1: 'reverse_sale_v1',
+  getBusinessReportV1: 'get_business_report_v1',
+  getAdminFeedV1: 'get_admin_feed_v1',
+  getDashboardOverviewV2: 'get_dashboard_overview_v2',
 });
 
 // Supabase cədvəlləri
@@ -187,6 +198,10 @@ export const TABLES = Object.freeze({
   expenseCategories: 'expense_categories',
   incomeCategories: 'income_categories',
   cashRegisterEntries: 'cash_register_entries',
+  walkInEntries: 'walk_in_entries',
+  staffEmployment: 'staff_employment',
+  staffPayrolls: 'staff_payrolls',
+  saleReversals: 'sale_reversals',
 });
 
 // Konfiqurasiya yoxlaması

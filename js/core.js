@@ -32,7 +32,6 @@ export const PAYMENT_METHODS = Object.freeze({
   cash: 'cash',
   card: 'card',
   mixed: 'mixed',
-  transfer: 'transfer',
 });
 
 export const PAYMENT_STATUSES = Object.freeze({

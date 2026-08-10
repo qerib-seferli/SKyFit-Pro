@@ -5,7 +5,6 @@ import {
   supabase,
   APP_CONFIG,
   TABLES,
-  UI_CONFIG,
 } from './config.js';
 
 import {
@@ -13,14 +12,12 @@ import {
   $,
   byId,
   createElement,
-  clearElement,
   showElement,
   hideElement,
   setText,
   normalizeString,
   escapeHtml,
   formatDate,
-  formatTime,
   todayIso,
   getCurrentIdentity,
   getProfileName,
@@ -30,9 +27,6 @@ import {
   membershipIsActive,
   membershipDaysRemaining,
   membershipStatusLabel,
-  attendanceDate,
-  attendanceTypeLabel,
-  attendanceAmount,
   money,
   openModal,
   closeModal,
@@ -64,8 +58,6 @@ const state = {
   profile: null,
   membership: null,
   memberships: [],
-  attendance: [],
-  attendanceExpanded: false,
   avatarUploading: false,
   savingProfile: false,
 };
@@ -87,14 +79,7 @@ function getElements() {
     birthDate: byId('profile-birth-date'),
     address: byId('profile-address'),
 
-    membershipStatus: byId('profile-membership-status'),
-    membershipPlan: byId('profile-membership-plan'),
-    membershipExpiry: byId('profile-membership-expiry'),
-    membershipDays: byId('profile-membership-days'),
 
-    attendanceCount: byId('profile-attendance-count'),
-    lastAttendanceDate: byId('profile-last-attendance-date'),
-    lastAttendanceTime: byId('profile-last-attendance-time'),
 
     membershipCard: byId('profile-membership-card'),
     membershipEmpty: byId('profile-membership-empty'),
@@ -106,9 +91,6 @@ function getElements() {
     membershipCardPrice: byId('membership-card-price'),
     membershipCardProgress: byId('membership-card-progress'),
 
-    attendanceList: byId('profile-attendance-list'),
-    attendanceEmpty: byId('profile-attendance-empty'),
-    attendanceShowAll: byId('attendance-show-all-button'),
 
     changePasswordButton: byId('profile-change-password-button'),
     themeButton: byId('profile-theme-button'),
@@ -394,19 +376,6 @@ function renderMembership() {
     hideElement(elements.membershipCard);
     showElement(elements.membershipEmpty);
 
-    if (elements.membershipStatus) {
-      elements.membershipStatus.className =
-        'ui-badge ui-badge--neutral';
-
-      setText(
-        elements.membershipStatus,
-        'Üzvlük yoxdur'
-      );
-    }
-
-    setText(elements.membershipPlan, '—');
-    setText(elements.membershipExpiry, '—');
-    setText(elements.membershipDays, '—');
     resetMembershipProgress();
     return;
   }
@@ -418,33 +387,6 @@ function renderMembership() {
   const visual = membershipVisualState(membership);
   const days =
     membershipDaysRemaining(membership);
-
-  if (elements.membershipStatus) {
-    elements.membershipStatus.className =
-      visual.className;
-
-    setText(
-      elements.membershipStatus,
-      visual.label
-    );
-  }
-
-  setText(
-    elements.membershipPlan,
-    plan?.name || 'Üzvlük'
-  );
-
-  setText(
-    elements.membershipExpiry,
-    membership.end_date
-      ? formatDate(membership.end_date)
-      : '—'
-  );
-
-  setText(
-    elements.membershipDays,
-    visual.active ? `${days} gün` : 'Bitib'
-  );
 
   if (elements.membershipCardStatus) {
     elements.membershipCardStatus.className =
@@ -589,216 +531,6 @@ function renderMembershipProgress(membership) {
     progress,
     membershipProgressPercent(membership)
   );
-}
-
-async function loadAttendance() {
-  const profileId = state.identity?.profileId;
-
-  if (!profileId) {
-    state.attendance = [];
-    renderAttendance();
-    return;
-  }
-
-  const { data, error } = await supabase
-    .from(TABLES.attendance)
-    .select(`
-      id,
-      member_id,
-      membership_id,
-      attendance_type,
-      amount,
-      checked_in_at,
-      created_by,
-      updated_by,
-      operator_shift_id,
-      operator:profiles!attendance_created_by_fkey (
-        id,
-        full_name,
-        role,
-        avatar_url
-      )
-    `)
-    .eq('member_id', profileId)
-    .order('checked_in_at', { ascending: false })
-    .limit(UI_CONFIG.attendance.adminHistoryLimit);
-
-  if (error) {
-    console.error(
-      '[SKy Fit Profile] Attendance:',
-      error
-    );
-
-    state.attendance = [];
-    renderAttendance();
-
-    notify.error(
-      getErrorMessage(
-        error,
-        'Giriş tarixçəsi yüklənmədi.'
-      )
-    );
-
-    return;
-  }
-
-  state.attendance =
-    Array.isArray(data) ? data : [];
-
-  renderAttendance();
-}
-
-function renderAttendanceSummary() {
-  const elements = getElements();
-
-  setText(
-    elements.attendanceCount,
-    state.attendance.length
-  );
-
-  const latest = state.attendance[0];
-
-  if (!latest) {
-    setText(
-      elements.lastAttendanceDate,
-      'Giriş yoxdur'
-    );
-    setText(elements.lastAttendanceTime, '—');
-    return;
-  }
-
-  const date = attendanceDate(latest);
-
-  setText(
-    elements.lastAttendanceDate,
-    formatDate(date)
-  );
-
-  setText(
-    elements.lastAttendanceTime,
-    formatTime(date)
-  );
-}
-
-function renderAttendance() {
-  const elements = getElements();
-  renderAttendanceSummary();
-
-  if (!elements.attendanceList) return;
-
-  clearElement(elements.attendanceList);
-
-  if (state.attendance.length === 0) {
-    showElement(elements.attendanceEmpty);
-    hideElement(elements.attendanceShowAll);
-    return;
-  }
-
-  hideElement(elements.attendanceEmpty);
-
-  const limit =
-    UI_CONFIG.attendance.profileHistoryLimit;
-
-  const visible =
-    state.attendanceExpanded
-      ? state.attendance
-      : state.attendance.slice(0, limit);
-
-  const fragment =
-    document.createDocumentFragment();
-
-  visible.forEach(attendance => {
-    fragment.append(
-      createAttendanceRow(attendance)
-    );
-  });
-
-  elements.attendanceList.append(fragment);
-
-  if (!elements.attendanceShowAll) return;
-
-  if (state.attendance.length > limit) {
-    showElement(elements.attendanceShowAll);
-
-    setText(
-      elements.attendanceShowAll,
-      state.attendanceExpanded
-        ? 'Daha az göstər'
-        : 'Hamısını göstər'
-    );
-  } else {
-    hideElement(elements.attendanceShowAll);
-  }
-}
-
-function createAttendanceRow(attendance) {
-  const date = attendanceDate(attendance);
-
-  const operatorName = normalizeString(
-    attendance?.operator?.full_name,
-    'Sistem'
-  );
-
-  const amount = attendanceAmount(attendance);
-
-  const item = createElement('article', {
-    className: 'history-item',
-  });
-
-  item.innerHTML = `
-    <span class="history-item__icon" aria-hidden="true">
-      <svg viewBox="0 0 24 24" fill="none">
-        <path
-          d="M5 4h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5V4Z"
-          stroke="currentColor"
-          stroke-width="1.7"
-        />
-        <path
-          d="m13 12 6-4v8l-6-4Z"
-          stroke="currentColor"
-          stroke-width="1.7"
-          stroke-linejoin="round"
-        />
-      </svg>
-    </span>
-
-    <span class="history-item__content">
-      <strong class="history-item__title">
-        ${escapeHtml(
-          attendanceTypeLabel(attendance)
-        )}
-      </strong>
-      <span class="history-item__meta">
-        ${
-          amount > 0
-            ? `${escapeHtml(money(amount))} · `
-            : ''
-        }
-        Operator: ${escapeHtml(operatorName)}
-      </span>
-    </span>
-
-    <span class="history-item__side">
-      <strong>${escapeHtml(formatDate(date))}</strong>
-      <span>${escapeHtml(formatTime(date))}</span>
-    </span>
-  `;
-
-  return item;
-}
-
-function bindAttendanceEvents() {
-  getElements()
-    .attendanceShowAll
-    ?.addEventListener(
-      'click',
-      () => {
-        state.attendanceExpanded =
-          !state.attendanceExpanded;
-
-        renderAttendance();
-      }
-    );
 }
 
 function openProfileEditor() {
@@ -1560,16 +1292,12 @@ function bindProfileChangeEvents() {
 }
 
 async function loadProfileData() {
-  await Promise.all([
-    loadMemberships(),
-    loadAttendance(),
-  ]);
+  await loadMemberships();
 }
 
 function bindEvents() {
   bindEditAction();
   bindAvatarEvents();
-  bindAttendanceEvents();
   bindPasswordAction();
   bindThemeAction();
   bindLogoutAction();

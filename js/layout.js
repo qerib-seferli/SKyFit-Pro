@@ -441,16 +441,6 @@ function renderHeader(identity = shellIdentity()) {
     <header class="app-header">
       <div class="app-header__inner">
         <div class="app-header__side app-header__side--start">
-          <button
-            id="app-menu-button"
-            class="app-header__menu"
-            type="button"
-            aria-label="Menyunu aç"
-            aria-controls="app-drawer"
-            aria-expanded="${state.drawerOpen ? 'true' : 'false'}"
-          >
-            ${ICONS.menu}
-          </button>
           ${brandMarkup()}
         </div>
 
@@ -486,7 +476,6 @@ function renderHeader(identity = shellIdentity()) {
     </header>
   `;
 
-  byId('app-menu-button')?.addEventListener('click', openDrawer);
   bindAvatarFallbacks(root);
 }
 
@@ -745,7 +734,6 @@ export function openDrawer() {
   drawer?.setAttribute('aria-hidden', 'false');
   backdrop?.classList.add('is-open');
 
-  byId('app-menu-button')?.setAttribute('aria-expanded', 'true');
   document.body.classList.add('is-scroll-locked');
 
   requestAnimationFrame(() => {
@@ -765,7 +753,6 @@ export function closeDrawer() {
   drawer?.setAttribute('aria-hidden', 'true');
   backdrop?.classList.remove('is-open');
 
-  byId('app-menu-button')?.setAttribute('aria-expanded', 'false');
   document.body.classList.remove('is-scroll-locked');
 
   const focusTarget = previousDrawerFocus;
@@ -1031,7 +1018,13 @@ export async function refreshLayout(options = {}) {
 
 export async function initLayout() {
   renderImmediateShellFromCache();
-  return hydrateIdentity();
+  const identity = await hydrateIdentity();
+  if (identity?.isStaff && document.body.dataset.page !== 'admin') {
+    import('./quick-sale.js')
+      .then(module => module.initGlobalQuickSale())
+      .catch(error => console.error('[SKy Fit Layout] Global quick sale:', error));
+  }
+  return identity;
 }
 
 function handleThemeCycle() {
@@ -1229,8 +1222,13 @@ function bootstrapLayout() {
   }
 
   hydrateIdentity()
-    .then(() => {
+    .then(identity => {
       lastIdentityRefresh = Date.now();
+      if (identity?.isStaff && document.body.dataset.page !== 'admin') {
+        import('./quick-sale.js')
+          .then(module => module.initGlobalQuickSale())
+          .catch(error => console.error('[SKy Fit Layout] Global quick sale:', error));
+      }
 
       if (window.location.hash) {
         setTimeout(scrollToHash, 80);

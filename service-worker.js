@@ -23,13 +23,7 @@
 // Frontenddə böyük dəyişiklik etdikdə yalnız APP_VERSION-u
 // artırmaq kifayətdir:
 //
-// skyfit-pro-v1 -> skyfit-pro-v2
-//
-// Köhnə cache avtomatik silinəcək.
-// ============================================================
-
-const APP_VERSION =
-  'skyfit-pro-v1';
+const APP_VERSION = 'skyfit-pro-v1.5.0-final';
 
 
 const STATIC_CACHE =
@@ -77,18 +71,45 @@ const APP_SHELL = [
   // CSS
   './css/app.css',
 
-  // JS
-  './js/config.js',
-  './js/core.js',
-  './js/layout.js',
+  // JavaScript modules
+  './js/admin-dashboard.js',
+  './js/admin-data.js',
+  './js/admin-debt-actions.js',
+  './js/admin-debts.js',
+  './js/admin-events.js',
+  './js/admin-finance-actions.js',
+  './js/admin-finance.js',
+  './js/admin-history.js',
+  './js/admin-members.js',
+  './js/admin-membership-actions.js',
+  './js/admin-memberships.js',
+  './js/admin-pos.js',
+  './js/admin-product-editor.js',
+  './js/admin-products.js',
+  './js/admin-quick-sale.js',
+  './js/admin-reports.js',
+  './js/admin-router.js',
+  './js/admin-sales.js',
+  './js/admin-stock-actions.js',
+  './js/admin-stock.js',
+  './js/admin-trainers.js',
+  './js/admin-workforce.js',
+  './js/admin.js',
   './js/app.js',
   './js/auth.js',
-  './js/profile.js',
-  './js/admin.js',
+  './js/config.js',
+  './js/core.js',
   './js/favorites.js',
+  './js/layout.js',
+  './js/profile.js',
+  './js/quick-sale.js',
 
-  // PWA
+  // PWA metadata and primary icons
   './manifest.json',
+  './assets/icons/icon-192x192.png',
+  './assets/icons/icon-512x512.png',
+  './assets/icons/maskable-icon-192x192.png',
+  './assets/icons/maskable-icon-512x512.png',
 
 ].map(appUrl);
 
