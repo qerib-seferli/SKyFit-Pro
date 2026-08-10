@@ -275,6 +275,12 @@ const {
   loadDashboard,
 } = dataService;
 
+let quickSaleController = null;
+
+function renderQuickSaleProducts() {
+  return quickSaleController?.render?.();
+}
+
 const productEditorController = createAdminProductEditor({
   state, loadProducts, loadHistory, renderAdminProducts, renderPosProducts, renderQuickSaleProducts,
 });
@@ -357,7 +363,7 @@ const financeActionsController = createAdminFinanceActions({
 const adminRouter = createAdminRouter({ state, loadActiveTab });
 const { setActiveTab, bindTabEvents, resolveInitialAdminTab } = adminRouter;
 
-const quickSaleController = createAdminQuickSale({
+quickSaleController = createAdminQuickSale({
   state,
   loadProducts,
   productSaleVariants,
