@@ -941,7 +941,10 @@ export function createAdminMembershipActions(ctx) {
       'memberships-status-filter'
     )?.addEventListener(
       'change',
-      () => { resetListLimit('members'); renderMembers(); }hips
+      () => {
+        resetListLimit('memberships');
+        renderMemberships();
+      }
     );
   }
 
