@@ -9552,3 +9552,374 @@ body[data-page="admin"] .admin-navigation__icon { width: 27px; height: 27px; fle
   .reports-kpi-grid .finance-summary-card,
   .staff-summary-grid .finance-summary-card { min-height: 88px; padding: 10px; }
 }
+
+
+/* ============================================================
+   Admin live UX fix — 2026-08-11
+   Yalnız admin görünüş düzəlişləri
+   ============================================================ */
+
+/* Desktop sidebar scroll zamanı yerində qalır. */
+@media (min-width: 981px) {
+  body[data-page="admin"] .admin-sidebar {
+    position: sticky;
+    top: calc(var(--header-height) + var(--safe-top) + 8px);
+    align-self: start;
+    max-height: calc(100dvh - var(--header-height) - var(--safe-top) - 16px);
+    z-index: 30;
+  }
+
+  body[data-page="admin"] .admin-navigation {
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+  }
+}
+
+/* Footer-in altında/üstündə süni böyük boşluq yaratma. */
+body[data-page="admin"] {
+  padding-bottom: calc(var(--bottom-nav-height) + var(--safe-bottom) + 10px);
+}
+
+body[data-page="admin"] .admin-page {
+  padding-bottom: 0;
+}
+
+body[data-page="admin"] + #app-footer-root,
+body[data-page="admin"] #app-footer-root {
+  min-height: 0;
+}
+
+body[data-page="admin"] .app-footer {
+  margin-top: 8px;
+  margin-bottom: calc(var(--bottom-nav-height) + var(--safe-bottom) + 6px);
+  padding-top: 9px;
+  padding-bottom: 6px;
+}
+
+/* Modal close həmişə kliklənə bilsin. */
+.app-modal__header {
+  position: relative;
+  z-index: 3;
+}
+
+.app-modal__close {
+  position: relative;
+  z-index: 5;
+  pointer-events: auto !important;
+  touch-action: manipulation;
+  font-size: 18px;
+  line-height: 1;
+}
+
+/* Loader və semantik ikonlar daha aydın. */
+.app-loader__spinner {
+  width: 20px;
+  height: 20px;
+  border-width: 3px;
+  border-color: rgba(255,255,255,.16);
+  border-top-color: var(--accent);
+  box-shadow: 0 0 0 1px rgba(255,222,0,.08), 0 0 18px rgba(255,222,0,.16);
+}
+
+.compact-list-item__icon,
+.operation-item__icon,
+.ui-info-card__icon {
+  display: grid !important;
+  place-items: center !important;
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.compact-list-item__icon svg,
+.operation-item__icon svg,
+.ui-info-card__icon svg,
+.admin-navigation__icon svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+}
+
+/* Dashboard açıq borclar: məbləğ və tarix ayrı, iri, oxunaqlı. */
+#dashboard-open-debts .compact-list-item {
+  min-height: 62px;
+  gap: 10px;
+  padding: 10px 11px;
+}
+
+#dashboard-open-debts .compact-list-item__content {
+  gap: 3px;
+}
+
+#dashboard-open-debts .compact-list-item__title {
+  font-size: 13px;
+  line-height: 1.25;
+}
+
+#dashboard-open-debts .compact-list-item__meta {
+  font-size: 11.5px !important;
+}
+
+#dashboard-open-debts .compact-list-item__side {
+  min-width: 118px;
+  max-width: none;
+  display: grid;
+  justify-items: end;
+  gap: 3px;
+  overflow: visible;
+  white-space: normal;
+}
+
+#dashboard-open-debts .dashboard-debt-amount {
+  display: block;
+  font-size: 14px;
+  line-height: 1.15;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+#dashboard-open-debts .dashboard-debt-date {
+  display: block;
+  color: var(--text-muted);
+  font-size: 10.5px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+/* Cədvəl hüceyrələrində əsas/ikinci məlumat bir-birinin üstünə düşmür. */
+.admin-table__primary,
+.admin-table__secondary {
+  display: block;
+}
+
+.admin-table__primary {
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.admin-table__secondary {
+  margin-top: 3px;
+  color: var(--text-muted);
+  line-height: 1.25 !important;
+  white-space: nowrap;
+}
+
+.admin-person-cell,
+.admin-operator-cell,
+.admin-datetime-cell {
+  min-width: 150px;
+}
+
+.admin-operator-cell {
+  min-width: 185px;
+}
+
+.admin-datetime-cell {
+  min-width: 126px;
+}
+
+.admin-description-cell {
+  min-width: 210px;
+  max-width: 360px;
+  line-height: 1.4;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.admin-money-cell {
+  min-width: 116px;
+  white-space: nowrap;
+}
+
+/* Üzvlük tarixçəsi: hər sütuna nəfəs payı. */
+#memberships-list .admin-table {
+  min-width: 1080px;
+  table-layout: auto;
+}
+
+#memberships-list .admin-table th,
+#memberships-list .admin-table td {
+  padding: 11px 12px;
+}
+
+#memberships-list .admin-table th:nth-child(1),
+#memberships-list .admin-table td:nth-child(1) { min-width: 190px; }
+#memberships-list .admin-table th:nth-child(2),
+#memberships-list .admin-table td:nth-child(2) { min-width: 120px; }
+#memberships-list .admin-table th:nth-child(3),
+#memberships-list .admin-table td:nth-child(3) { min-width: 92px; white-space: nowrap; }
+#memberships-list .admin-table th:nth-child(4),
+#memberships-list .admin-table td:nth-child(4),
+#memberships-list .admin-table th:nth-child(5),
+#memberships-list .admin-table td:nth-child(5) { min-width: 108px; white-space: nowrap; }
+#memberships-list .admin-table th:nth-child(6),
+#memberships-list .admin-table td:nth-child(6),
+#memberships-list .admin-table th:nth-child(7),
+#memberships-list .admin-table td:nth-child(7) { min-width: 104px; }
+#memberships-list .admin-table th:nth-child(8),
+#memberships-list .admin-table td:nth-child(8) { min-width: 190px; }
+
+/* Borclar paneli boş sahəni daha yaxşı istifadə edir. */
+#admin-panel-debts .admin-mini-kpi-row {
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  max-width: 760px;
+}
+
+#admin-panel-debts .admin-toolbar {
+  max-width: 760px;
+}
+
+#debt-accounts-list .admin-table {
+  min-width: 920px;
+}
+
+#debt-accounts-list .admin-table th,
+#debt-accounts-list .admin-table td {
+  padding: 12px 12px;
+}
+
+.debt-account-amount .finance-amount {
+  font-size: 13.5px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.debt-account-date {
+  min-width: 150px;
+  white-space: nowrap;
+}
+
+.debt-account-action {
+  min-width: 118px;
+}
+
+/* Borc əməliyyatları: məbləğ və tarix artıq qarışmır. */
+#debt-transactions-list .operation-item {
+  min-height: 66px;
+  padding: 10px 12px;
+  gap: 10px;
+}
+
+#debt-transactions-list .operation-item__title {
+  font-size: 12.5px;
+}
+
+#debt-transactions-list .operation-item__meta {
+  margin-top: 2px;
+  font-size: 11.5px !important;
+}
+
+#debt-transactions-list .debt-operation-side {
+  min-width: 178px;
+  max-width: none;
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+  overflow: visible;
+  white-space: normal;
+}
+
+#debt-transactions-list .debt-operation-amount {
+  font-size: 13.5px;
+  line-height: 1.15;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+#debt-transactions-list .debt-operation-date {
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+/* Maliyyə və KASSA cədvəlləri: tarix/saat və məbləğ ayrı bloklar. */
+#finance-ledger-list .admin-table,
+#cash-register-list .admin-table {
+  table-layout: auto;
+}
+
+#finance-ledger-list .admin-table {
+  min-width: 1120px;
+}
+
+#cash-register-list .admin-table {
+  min-width: 900px;
+}
+
+#finance-ledger-list .admin-table th,
+#finance-ledger-list .admin-table td,
+#cash-register-list .admin-table th,
+#cash-register-list .admin-table td {
+  padding: 11px 12px;
+}
+
+#finance-ledger-list .finance-amount,
+#cash-register-list .finance-amount {
+  font-size: 13px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+/* Maaş hesablaşması: 2x2 simmetrik sahələr və bərabər input ölçüləri. */
+.payroll-form .payroll-form__grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 12px;
+}
+
+.payroll-form .payroll-form__grid .ui-field {
+  min-width: 0;
+  display: grid;
+  grid-template-rows: auto 48px auto;
+  align-content: start;
+  gap: 5px;
+}
+
+.payroll-form .payroll-form__grid .ui-input,
+.payroll-form .payroll-form__grid .ui-select,
+.payroll-form .payroll-form__grid .ui-date-input {
+  width: 100%;
+  min-height: 48px;
+  height: 48px;
+}
+
+.payroll-form .payroll-form__grid .ui-input__control,
+.payroll-form .payroll-form__grid input,
+.payroll-form .payroll-form__grid select {
+  min-height: 46px;
+}
+
+.payroll-form .payroll-preview {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+@media (max-width: 720px) {
+  #dashboard-open-debts .compact-list-item__side {
+    min-width: 96px;
+  }
+
+  #dashboard-open-debts .dashboard-debt-amount {
+    font-size: 12.5px;
+  }
+
+  #debt-transactions-list .debt-operation-side {
+    min-width: 138px;
+  }
+
+  .payroll-form .payroll-form__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .payroll-form .payroll-preview {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 430px) {
+  .payroll-form .payroll-form__grid {
+    grid-template-columns: 1fr;
+  }
+}

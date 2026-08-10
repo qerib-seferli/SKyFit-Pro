@@ -48,13 +48,13 @@ export function createAdminMembershipsController(ctx) {
     visibleListItems('memberships', memberships).forEach(membership => {
       const row = createElement('tr');
       row.innerHTML = `
-        <td><strong class="admin-table__primary">${escapeHtml(getProfileName(membership.member))}</strong><span class="admin-table__secondary">${escapeHtml(membership.member?.phone || membership.member?.email || '—')}</span></td>
+        <td class="admin-person-cell"><strong class="admin-table__primary">${escapeHtml(getProfileName(membership.member))}</strong><span class="admin-table__secondary">${escapeHtml(membership.member?.phone || membership.member?.email || '—')}</span></td>
         <td>${escapeHtml(membership.membership_plan?.name || 'Üzvlük')}</td>
         <td><strong>${escapeHtml(money(membership.price))}</strong></td>
         <td>${formatDate(membership.start_date)}</td><td>${formatDate(membership.end_date)}</td>
         <td><span class="${paymentStatusClass(membership.payment_status)}">${escapeHtml(paymentStatusLabel(membership.payment_status))}</span></td>
         <td><span class="${badgeClass(membership)}">${escapeHtml(membershipStatusLabel(membership))}</span></td>
-        <td><strong class="admin-table__primary">${escapeHtml(membership.created_by_profile?.full_name || 'Sistem')}</strong>${membership.updated_by_profile?.full_name ? `<span class="admin-table__secondary">Son dəyişiklik: ${escapeHtml(membership.updated_by_profile.full_name)}</span>` : ''}</td>`;
+        <td class="admin-operator-cell"><strong class="admin-table__primary">${escapeHtml(membership.created_by_profile?.full_name || 'Sistem')}</strong>${membership.updated_by_profile?.full_name ? `<span class="admin-table__secondary">Son dəyişiklik: ${escapeHtml(membership.updated_by_profile.full_name)}</span>` : ''}</td>`;
       tbody.append(row);
     });
     root.append(table);

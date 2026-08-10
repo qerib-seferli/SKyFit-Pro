@@ -1094,7 +1094,7 @@ export function openModal(options = {}) {
         ${options.eyebrow ? `<span class="app-modal__eyebrow">${escapeHtml(options.eyebrow)}</span>` : ''}
         <h2 class="app-modal__title">${escapeHtml(options.title || '')}</h2>
       </div>
-      <button type="button" class="app-modal__close" aria-label="Bağla">×</button>
+      <button type="button" class="app-modal__close" data-modal-close aria-label="Bağla">×</button>
     </header>
     <div class="app-modal__body"></div>
     ${options.footer ? '<footer class="app-modal__footer"></footer>' : ''}
@@ -1131,7 +1131,21 @@ export function openModal(options = {}) {
     closeOnBackdrop: options.closeOnBackdrop !== false,
   };
 
-  $('.app-modal__close', modal)?.addEventListener('click', () => closeModal());
+  const closeButton = $('.app-modal__close', modal);
+  const requestModalClose = event => {
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
+
+    if (activeModal?.modal === modal) {
+      closeModal();
+      return;
+    }
+
+    backdrop.remove();
+    document.body.classList.remove('is-scroll-locked');
+  };
+
+  closeButton?.addEventListener('click', requestModalClose, { capture: true });
   backdrop.addEventListener('click', event => {
     if (event.target === backdrop && activeModal?.closeOnBackdrop) closeModal();
   });

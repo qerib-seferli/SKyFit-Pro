@@ -203,7 +203,7 @@ function openPayrollModal(employee = null, trigger = null) {
   const content = createElement('form', { className: 'modal-form payroll-form', attrs: { novalidate: '' } });
   content.innerHTML = `
     <div class="ui-info-card"><span class="ui-info-card__icon">₼</span><span><strong>Maaş hesablaşması</strong><small>Avans əvvəl verildikdə xərc sayılmır. Maaş bağlananda avansdan tutulan hissə maaş xərcinə daxil olur, amma KASSA-dan ikinci dəfə çıxmır.</small></span></div>
-    <div class="modal-form__grid">
+    <div class="modal-form__grid payroll-form__grid">
       <div class="ui-field"><label class="ui-field__label">İşçi</label><select id="payroll-staff" class="ui-select">${state.staff.filter(x => x.is_active !== false).map(x => `<option value="${x.id}" ${x.id === defaultEmployee.id ? 'selected' : ''}>${escapeHtml(getProfileName(x))}</option>`).join('')}</select></div>
       <div class="ui-field"><label class="ui-field__label">Ay</label><input id="payroll-month" class="ui-date-input" type="month" value="${currentMonthIso()}"></div>
       <div class="ui-field"><label class="ui-field__label">Baza maaşı</label><div class="ui-input"><input id="payroll-base" class="ui-input__control" type="number" min="0" step="0.01"></div></div>

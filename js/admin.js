@@ -963,8 +963,8 @@ function renderDashboardLowStock() {
         );
 
       item.innerHTML = `
-        <span class="compact-list-item__icon">
-          SK
+        <span class="compact-list-item__icon" aria-hidden="true">
+          ${auditIconSvg({ table_name: 'products', action: 'UPDATE' })}
         </span>
 
         <span class="compact-list-item__content">
@@ -1255,7 +1255,7 @@ function renderDashboardDebts() {
 
         <span class="compact-list-item__side">
 
-          <strong class="finance-amount finance-amount--expense">
+          <strong class="dashboard-debt-amount finance-amount finance-amount--expense">
             ${escapeHtml(
               money(
                 debtBalance(
@@ -1265,7 +1265,7 @@ function renderDashboardDebts() {
             )}
           </strong>
 
-          <span>
+          <span class="dashboard-debt-date">
             ${formatDate(
               account.updated_at
             )}
