@@ -564,11 +564,38 @@ export function createAdminDataService({ state, resetListLimit, renderDashboard 
     }
   }
 
-  async function loadDebtTransactions(options = {}
+  async function loadDebtTransactions(options = {}) {
+    const append = options.append === true;
 
-  async function loadLedger(options = {}
+    if (!append) {
+      resetRemotePage('debtTransactions');
+      resetListLimit('debtTransactions');
+    }
 
-  async function loadStockMovements(options = {}
+    return loadRemotePage('debtTransactions', { append });
+  }
+
+  async function loadLedger(options = {}) {
+    const append = options.append === true;
+
+    if (!append) {
+      resetRemotePage('finance');
+      resetListLimit('finance');
+    }
+
+    return loadRemotePage('finance', { append });
+  }
+
+  async function loadStockMovements(options = {}) {
+    const append = options.append === true;
+
+    if (!append) {
+      resetRemotePage('stockMovements');
+      resetListLimit('stockMovements');
+    }
+
+    return loadRemotePage('stockMovements', { append });
+  }
 
   async function loadSales() {
     try {
