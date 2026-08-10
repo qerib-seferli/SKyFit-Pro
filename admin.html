@@ -516,7 +516,7 @@
               </span>
 
               <span>
-                Maliyyə
+                Kassa
               </span>
 
             </button>
@@ -800,7 +800,7 @@
                   </span>
 
                   <h3 class="admin-section__title">
-                    Maliyyə
+                    Mədaxil / Məxaric
                   </h3>
 
                 </div>
@@ -820,7 +820,7 @@
                 <article class="finance-summary-card finance-summary-card--income">
 
                   <span>
-                    Gəlir
+                    Mədaxil
                   </span>
 
                   <strong id="dashboard-income-today">
@@ -832,7 +832,7 @@
                 <article class="finance-summary-card finance-summary-card--expense">
 
                   <span>
-                    Xərc
+                    Məxaric
                   </span>
 
                   <strong id="dashboard-expense-today">
@@ -844,7 +844,7 @@
                 <article class="finance-summary-card finance-summary-card--balance">
 
                   <span>
-                    Balans
+                    Nəticə
                   </span>
 
                   <strong id="dashboard-balance-today">
@@ -2022,237 +2022,132 @@
             hidden
           >
 
-            <div class="admin-panel__header">
-
+            <div class="admin-panel__header kassa-header">
               <div>
-
-                <span class="section-eyebrow">
-                  Maliyyə
-                </span>
-
-                <h2 class="admin-panel__title">
-                  Gəlir və xərclər
-                </h2>
-
+                <span class="section-eyebrow">Kassa və maliyyə</span>
+                <h2 class="admin-panel__title">KASSA</h2>
                 <p class="admin-panel__description">
-                  Satış, üzvlük, günlük giriş, stok və borc
-                  ödənişlərinin maliyyə görünüşü.
+                  Fiziki nağd kassa, kart dövriyyəsi, mədaxil, məxaric və işçi avansları bir yerdə.
                 </p>
-
               </div>
 
+              <div class="admin-panel__actions kassa-actions">
+                <button id="cash-balance-button" class="ui-button ui-button--glass" type="button">
+                  Kassa qalığını düzəlt
+                </button>
+                <button id="staff-advance-button" class="ui-button ui-button--glass" type="button">
+                  İşçi avansı
+                </button>
+                <button id="income-create-button" class="ui-button ui-button--glass" type="button">
+                  + Mədaxil
+                </button>
+                <button id="expense-create-button" class="ui-button ui-button--primary" type="button">
+                  + Məxaric
+                </button>
+              </div>
             </div>
 
-            <div class="finance-summary-grid">
+            <div class="finance-summary-grid finance-summary-grid--kassa">
+              <article class="finance-summary-card finance-summary-card--cash">
+                <span>Fiziki KASSA</span>
+                <strong id="cash-register-balance" class="finance-value">0,00 ₼</strong>
+                <small>Yalnız nağd pul</small>
+              </article>
 
               <article class="finance-summary-card finance-summary-card--income">
-
-                <span>
-                  Gəlir
-                </span>
-
-                <strong
-                  id="finance-income"
-                  class="finance-value finance-value--income"
-                >
-                  0,00 ₼
-                </strong>
-
+                <span>Mədaxil</span>
+                <strong id="finance-income" class="finance-value finance-value--income">0,00 ₼</strong>
+                <small>Seçilmiş tarix aralığı</small>
               </article>
 
               <article class="finance-summary-card finance-summary-card--expense">
-
-                <span>
-                  Xərc
-                </span>
-
-                <strong
-                  id="finance-expense"
-                  class="finance-value finance-value--expense"
-                >
-                  0,00 ₼
-                </strong>
-
+                <span>Məxaric</span>
+                <strong id="finance-expense" class="finance-value finance-value--expense">0,00 ₼</strong>
+                <small>Seçilmiş tarix aralığı</small>
               </article>
 
               <article class="finance-summary-card finance-summary-card--balance">
-
-                <span>
-                  Balans
-                </span>
-
-                <strong
-                  id="finance-balance"
-                  class="finance-value finance-value--neutral"
-                >
-                  0,00 ₼
-                </strong>
-
+                <span>Nəticə</span>
+                <strong id="finance-balance" class="finance-value finance-value--neutral">0,00 ₼</strong>
+                <small>Mədaxil − Məxaric</small>
               </article>
 
+              <article class="finance-summary-card finance-summary-card--card">
+                <span>Kart dövriyyəsi</span>
+                <strong id="finance-card-turnover" class="finance-value">0,00 ₼</strong>
+                <small>Kassaya daxil deyil</small>
+              </article>
             </div>
 
-            <div class="admin-toolbar admin-toolbar--finance">
-
+            <div class="admin-toolbar admin-toolbar--finance kassa-filter-grid">
               <label class="search-control">
-
-                <span
-                  class="search-control__icon"
-                  aria-hidden="true"
-                >
+                <span class="search-control__icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24" fill="none">
-
-                    <circle
-                      cx="10.5"
-                      cy="10.5"
-                      r="5.5"
-                      stroke="currentColor"
-                      stroke-width="1.8"
-                    />
-
-                    <path
-                      d="m15 15 4.5 4.5"
-                      stroke="currentColor"
-                      stroke-width="1.8"
-                      stroke-linecap="round"
-                    />
-
+                    <circle cx="10.5" cy="10.5" r="5.5" stroke="currentColor" stroke-width="1.8"/>
+                    <path d="m15 15 4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
                   </svg>
                 </span>
-
                 <input
                   id="finance-search"
                   class="search-control__input"
                   type="search"
                   inputmode="search"
                   autocomplete="off"
-                  placeholder="Kateqoriya, açıqlama və ya mənbə..."
-                
+                  placeholder="Kateqoriya və ya açıqlama..."
                   spellcheck="false"
-                  aria-label="Maliyyə əməliyyatlarında axtar">
-
+                  aria-label="Kassa və maliyyə əməliyyatlarında axtar"
+                >
               </label>
 
-              <select
-                id="finance-type-filter"
-                class="ui-select admin-toolbar__select"
-              
-                aria-label="Maliyyə tipi filtri">
-                <option value="all">
-                  Gəlir + Xərc
-                </option>
-
-                <option value="income">
-                  Yalnız gəlir
-                </option>
-
-                <option value="expense">
-                  Yalnız xərc
-                </option>
+              <select id="finance-type-filter" class="ui-select admin-toolbar__select" aria-label="Mədaxil məxaric filtri">
+                <option value="all">Mədaxil + Məxaric</option>
+                <option value="income">Yalnız mədaxil</option>
+                <option value="expense">Yalnız məxaric</option>
               </select>
 
               <label class="admin-date-filter">
-
-                <span>
-                  Başlanğıc
-                </span>
-
-                <input
-                  id="finance-date-from"
-                  type="date"
-                  class="ui-date-input"
-                
-                  aria-label="Maliyyə başlanğıc tarixi">
-
+                <span>Başlanğıc tarixi</span>
+                <input id="finance-date-from" type="date" class="ui-date-input" aria-label="Başlanğıc tarixi">
               </label>
 
               <label class="admin-date-filter">
-
-                <span>
-                  Son
-                </span>
-
-                <input
-                  id="finance-date-to"
-                  type="date"
-                  class="ui-date-input"
-                
-                  aria-label="Maliyyə son tarixi">
-
+                <span>Son tarix</span>
+                <input id="finance-date-to" type="date" class="ui-date-input" aria-label="Son tarix">
               </label>
 
-              <button
-                id="finance-reset-filter"
-                class="ui-button ui-button--glass"
-                type="button"
-              >
-                <span class="ui-button__label">
-                  Təmizlə
-                </span>
+              <button id="finance-reset-filter" class="ui-button ui-button--glass" type="button">
+                <span class="ui-button__label">Filtri təmizlə</span>
               </button>
-
             </div>
 
-            <div class="finance-legend">
-
-              <span class="finance-legend__item finance-legend__item--income">
-
-                <span
-                  class="finance-legend__dot"
-                  aria-hidden="true"
-                ></span>
-
-                Gəlir
-
-              </span>
-
-              <span class="finance-legend__item finance-legend__item--expense">
-
-                <span
-                  class="finance-legend__dot"
-                  aria-hidden="true"
-                ></span>
-
-                Xərc
-
-              </span>
-
-              <span class="finance-legend__item finance-legend__item--balance">
-
-                <span
-                  class="finance-legend__dot"
-                  aria-hidden="true"
-                ></span>
-
-                Balans
-
-              </span>
-
+            <div class="kassa-explain">
+              <span><strong>Nağd satış</strong> → KASSA artır</span>
+              <span><strong>Kart satış</strong> → yalnız kart dövriyyəsi artır</span>
+              <span><strong>Nağd xərc / avans</strong> → KASSA azalır</span>
+              <span><strong>İşçi avansı</strong> → biznes xərci deyil, qaytarılacaq puldur</span>
             </div>
 
             <section class="admin-section">
-
               <div class="admin-section__header">
-
                 <div>
-
-                  <span class="section-eyebrow">
-                    Ledger
-                  </span>
-
-                  <h3 class="admin-section__title">
-                    Maliyyə əməliyyatları
-                  </h3>
-
+                  <span class="section-eyebrow">Mədaxil / Məxaric</span>
+                  <h3 class="admin-section__title">Maliyyə əməliyyatları</h3>
                 </div>
-
               </div>
+              <div id="finance-ledger-list" class="admin-table-wrap"></div>
+            </section>
 
-              <div
-                id="finance-ledger-list"
-                class="admin-table-wrap"
-              ></div>
-
+            <section class="admin-section">
+              <div class="admin-section__header">
+                <div>
+                  <span class="section-eyebrow">Fiziki pul</span>
+                  <h3 class="admin-section__title">Kassa hərəkətləri</h3>
+                  <p class="admin-section__description">
+                    Kassaya real daxil olan və kassadan real çıxan nağd pul.
+                  </p>
+                </div>
+              </div>
+              <div id="cash-register-list" class="admin-table-wrap"></div>
             </section>
 
           </section>
@@ -2504,7 +2399,11 @@
                 </option>
 
                 <option value="ledger_entries">
-                  Maliyyə
+                  Mədaxil / Məxaric
+                </option>
+
+                <option value="cash_register_entries">
+                  KASSA
                 </option>
 
                 <option value="staff_shifts">
@@ -2512,7 +2411,7 @@
                 </option>
 
                 <option value="staff_cash_transactions">
-                  Əməkdaş kassası
+                  İşçi avansları
                 </option>
               </select>
 

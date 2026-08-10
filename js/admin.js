@@ -117,6 +117,18 @@ const state = {
   ledger:
     [],
 
+  expenseCategories:
+    [],
+
+  incomeCategories:
+    [],
+
+  cashRegisterEntries:
+    [],
+
+  cashRegisterBalance:
+    0,
+
   trainers:
     [],
 
@@ -154,6 +166,9 @@ const state = {
       false,
 
     finance:
+      false,
+
+    cash:
       false,
 
     trainers:
@@ -414,7 +429,12 @@ async function loadActiveTab() {
       break;
 
     case 'attendance':
-      await loadAttendance();
+      await Promise.all([
+        loadAttendance(),
+        loadMembers(),
+        loadMembershipPlans(),
+        loadMemberships(),
+      ]);
       renderAttendanceAdmin();
       break;
 
@@ -442,7 +462,13 @@ async function loadActiveTab() {
       break;
 
     case 'finance':
-      await loadLedger();
+      await Promise.all([
+        loadLedger(),
+        loadExpenseCategories(),
+        loadIncomeCategories(),
+        loadCashRegisterEntries(),
+        loadMembers(),
+      ]);
       renderFinance();
       break;
 
@@ -1171,6 +1197,78 @@ async function loadSales() {
       [];
 
     return [];
+  }
+}
+
+
+async function loadExpenseCategories() {
+  try {
+    const { data, error } = await supabase
+      .from(TABLES.expenseCategories)
+      .select('id,name,category_group,sort_order,is_active')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true })
+      .order('name', { ascending: true });
+
+    if (error) throw error;
+    state.expenseCategories = rows(data);
+    return state.expenseCategories;
+  } catch (error) {
+    console.error('[SKy Fit Kassa] Xərc kateqoriyaları:', error);
+    state.expenseCategories = [];
+    return [];
+  }
+}
+
+async function loadIncomeCategories() {
+  try {
+    const { data, error } = await supabase
+      .from(TABLES.incomeCategories)
+      .select('id,name,sort_order,is_active')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true })
+      .order('name', { ascending: true });
+
+    if (error) throw error;
+    state.incomeCategories = rows(data);
+    return state.incomeCategories;
+  } catch (error) {
+    console.error('[SKy Fit Kassa] Mədaxil kateqoriyaları:', error);
+    state.incomeCategories = [];
+    return [];
+  }
+}
+
+async function loadCashRegisterEntries() {
+  if (state.loading.cash) return state.cashRegisterEntries;
+  state.loading.cash = true;
+
+  try {
+    const [entriesResult, balanceResult] = await Promise.all([
+      supabase
+        .from(TABLES.cashRegisterEntries)
+        .select(`
+          id,direction,entry_type,category,description,amount,entry_date,
+          reference_type,reference_id,created_by,operator_shift_id,created_at
+        `)
+        .order('created_at', { ascending: false })
+        .limit(500),
+      supabase.rpc(RPC.getCashRegisterBalance),
+    ]);
+
+    if (entriesResult.error) throw entriesResult.error;
+    if (balanceResult.error) throw balanceResult.error;
+
+    state.cashRegisterEntries = rows(entriesResult.data);
+    state.cashRegisterBalance = number(balanceResult.data);
+    return state.cashRegisterEntries;
+  } catch (error) {
+    console.error('[SKy Fit Kassa] Kassa kitabı:', error);
+    state.cashRegisterEntries = [];
+    state.cashRegisterBalance = 0;
+    return [];
+  } finally {
+    state.loading.cash = false;
   }
 }
 
@@ -2126,7 +2224,7 @@ function auditActionLabel(
       'Borc',
 
     ledger_entries:
-      'Maliyyə',
+      'Mədaxil / Məxaric',
 
     stock_movements:
       'Stok',
@@ -2138,7 +2236,13 @@ function auditActionLabel(
       'Növbə',
 
     staff_cash_transactions:
-      'Əməkdaş kassası',
+      'İşçi avansı',
+
+    cash_register_entries:
+      'KASSA',
+
+    expense_categories:
+      'Xərc kateqoriyası',
   };
 
   const actionNames = {
@@ -2301,15 +2405,92 @@ function paymentMethodLabel(
       value
     )
   ) {
+    case 'cash':
+      return 'Nağd';
+
     case 'card':
       return 'Kart';
 
-    case 'transfer':
-      return 'Köçürmə';
+    case 'mixed':
+      return 'Nağd + Kart';
+
+    case 'debt':
+      return 'Borc';
 
     default:
-      return 'Nağd';
+      return '—';
   }
+}
+
+
+function stockNumber(value, unit) {
+  const current = number(value);
+  const normalized = normalizeString(unit).toLocaleLowerCase('az-AZ');
+
+  if (['qram', 'qr', 'gram', 'kg', 'kq'].includes(normalized)) {
+    return current.toFixed(3);
+  }
+
+  if (Number.isInteger(current)) return String(current);
+  return current.toFixed(3);
+}
+
+function productStockText(product) {
+  return `${stockNumber(productStock(product), productStockUnit(product))} ${productStockUnit(product)}`;
+}
+
+function paymentMethodOptionsMarkup() {
+  return `
+    <option value="cash">Nağd</option>
+    <option value="card">Kart</option>
+    <option value="mixed">Nağd + Kart</option>
+  `;
+}
+
+function paymentSplitMarkup(prefix) {
+  return `
+    <div id="${prefix}-mixed-fields" class="payment-split-grid is-hidden">
+      <div class="ui-field">
+        <label class="ui-field__label" for="${prefix}-cash-amount">Nağd məbləğ</label>
+        <div class="ui-input">
+          <input id="${prefix}-cash-amount" class="ui-input__control" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00">
+        </div>
+      </div>
+      <div class="ui-field">
+        <label class="ui-field__label" for="${prefix}-card-amount">Kart məbləği</label>
+        <div class="ui-input">
+          <input id="${prefix}-card-amount" class="ui-input__control" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00">
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function readPaymentSplit(form, prefix, total) {
+  const method = normalizeString($(`#${prefix}-payment-method`, form)?.value, 'cash');
+  const amount = Math.max(0, number(total));
+
+  if (method === 'cash') return { method, cashAmount: amount, cardAmount: 0, valid: true };
+  if (method === 'card') return { method, cashAmount: 0, cardAmount: amount, valid: true };
+
+  const cashAmount = Math.max(0, number($(`#${prefix}-cash-amount`, form)?.value));
+  const cardAmount = Math.max(0, number($(`#${prefix}-card-amount`, form)?.value));
+  const valid = Math.abs((cashAmount + cardAmount) - amount) < 0.005;
+
+  return { method: 'mixed', cashAmount, cardAmount, valid };
+}
+
+function bindPaymentSplit(form, prefix) {
+  const method = $(`#${prefix}-payment-method`, form);
+  const fields = $(`#${prefix}-mixed-fields`, form);
+
+  const sync = () => {
+    const mixed = method?.value === 'mixed';
+    mixed ? showElement(fields) : hideElement(fields);
+  };
+
+  method?.addEventListener('change', sync);
+  sync();
 }
 
 function paymentStatusLabel(
@@ -2349,7 +2530,7 @@ function paymentStatusClass(
 
     case 'debt':
       return (
-        'ui-badge ui-badge--warning'
+        'ui-badge ui-badge--danger'
       );
 
     case 'refunded':
@@ -2799,7 +2980,7 @@ async function openPosSaleModal(
           ${escapeHtml(money(variants.length ? saleVariantPrice(variants[0]) : productPrice(product)))}
         </span>
         <span class="pos-confirm__stock">
-          Stok: ${escapeHtml(String(stock))} ${escapeHtml(productStockUnit(product))}
+          Stok: ${escapeHtml(stockNumber(stock, productStockUnit(product)))} ${escapeHtml(productStockUnit(product))}
         </span>
       </div>
     </div>
@@ -2832,12 +3013,12 @@ async function openPosSaleModal(
       <div class="ui-field">
         <label class="ui-field__label" for="pos-sale-payment-method">Ödəniş üsulu</label>
         <select id="pos-sale-payment-method" class="ui-select">
-          <option value="cash">Nağd</option>
-          <option value="card">Kart</option>
-          <option value="transfer">Köçürmə</option>
+          ${paymentMethodOptionsMarkup()}
         </select>
       </div>
     </div>
+
+    ${paymentSplitMarkup('pos-sale')}
 
     <div class="ui-field">
       <label class="ui-field__label" for="pos-sale-payment-status">Ödəniş vəziyyəti</label>
@@ -2928,6 +3109,7 @@ function bindPosSaleForm(
   const submit = $('#pos-sale-submit', form);
   const cancel = $('#pos-sale-cancel', form);
   const picker = $('#pos-sale-variant-picker', form);
+  const paymentMixedFields = $('#pos-sale-mixed-fields', form);
 
   let selectedVariant = variants[0] || null;
 
@@ -2976,7 +3158,7 @@ function bindPosSaleForm(
     setText($('#pos-sale-total', form), money(total));
     setText(
       $('#pos-sale-stock-deduction', form),
-      `${stockDeduction} ${productStockUnit(product)}`
+      `${stockNumber(stockDeduction, productStockUnit(product))} ${productStockUnit(product)}`
     );
     setText(
       $('#pos-sale-summary-variant', form),
@@ -2988,6 +3170,16 @@ function bindPosSaleForm(
   function syncPaymentStatus() {
     const debt = paymentStatusInput?.value === 'debt';
     debt ? showElement(memberField) : hideElement(memberField);
+
+    if (paymentMethodInput) {
+      paymentMethodInput.disabled = debt;
+    }
+
+    if (debt) {
+      hideElement(paymentMixedFields);
+    } else if (paymentMethodInput?.value === 'mixed') {
+      showElement(paymentMixedFields);
+    }
   }
 
   picker?.addEventListener('click', event => {
@@ -3011,6 +3203,13 @@ function bindPosSaleForm(
 
   quantityInput?.addEventListener('input', syncSummary);
   paymentStatusInput?.addEventListener('change', syncPaymentStatus);
+  paymentMethodInput?.addEventListener('change', () => {
+    if (paymentStatusInput?.value !== 'debt') {
+      paymentMethodInput.value === 'mixed'
+        ? showElement(paymentMixedFields)
+        : hideElement(paymentMixedFields);
+    }
+  });
   cancel?.addEventListener('click', closeModal);
 
   syncQuantityMode();
@@ -3021,10 +3220,13 @@ function bindPosSaleForm(
     event.preventDefault();
 
     const quantity = number(quantityInput?.value);
-    const paymentMethod = normalizeString(paymentMethodInput?.value, 'cash');
     const paymentStatus = normalizeString(paymentStatusInput?.value, 'paid');
     const memberId = normalizeString(memberInput?.value);
     const stockDeduction = quantity * currentDeductionPerUnit();
+    const total = quantity * currentPrice();
+    const payment = paymentStatus === 'debt'
+      ? { method: 'debt', cashAmount: 0, cardAmount: 0, valid: true }
+      : readPaymentSplit(form, 'pos-sale', total);
 
     if (quantity <= 0) {
       setFieldError(
@@ -3048,8 +3250,13 @@ function bindPosSaleForm(
       setFieldError(
         quantityInput,
         quantityError,
-        `Stok kifayət deyil. Cari stok: ${productStock(product)} ${productStockUnit(product)}.`
+        `Stok kifayət deyil. Cari stok: ${productStockText(product)}.`
       );
+      return;
+    }
+
+    if (!payment.valid) {
+      notify.warning(`Nağd + Kart cəmi ${money(total)} olmalıdır.`);
       return;
     }
 
@@ -3063,7 +3270,8 @@ function bindPosSaleForm(
       product,
       variant: selectedVariant,
       quantity,
-      paymentMethod,
+      cashAmount: payment.cashAmount,
+      cardAmount: payment.cardAmount,
       paymentStatus,
       memberId: paymentStatus === 'debt' ? memberId : null,
       button: submit,
@@ -3075,7 +3283,8 @@ async function executePosSale({
   product,
   variant = null,
   quantity,
-  paymentMethod,
+  cashAmount,
+  cardAmount,
   paymentStatus,
   memberId,
   button,
@@ -3089,10 +3298,8 @@ async function executePosSale({
   });
 
   try {
-    const useV2 = Boolean(variant);
-
     const items = [
-      useV2
+      variant
         ? {
             product_id: product.id,
             variant_id: variant.id,
@@ -3105,12 +3312,13 @@ async function executePosSale({
     ];
 
     const { data: saleId, error } = await supabase.rpc(
-      useV2 ? RPC.processSaleV2 : RPC.processSale,
+      RPC.processSaleV3,
       {
         p_member_id: memberId || null,
-        p_payment_method: paymentMethod,
         p_payment_status: paymentStatus,
         p_items: items,
+        p_cash_amount: cashAmount,
+        p_card_amount: cardAmount,
       }
     );
 
@@ -3127,6 +3335,7 @@ async function executePosSale({
       loadProducts(),
       loadSales(),
       loadLedger(),
+      loadCashRegisterEntries(),
       loadDebts(),
       loadHistory({ limit: 50 }),
     ]);
@@ -3372,18 +3581,7 @@ function createAdminProductCard(
           </span>
 
           <span class="admin-product-card__stock">
-            ${escapeHtml(
-              String(
-                productStock(
-                  product
-                )
-              )
-            )}
-            ${escapeHtml(
-              productStockUnit(
-                product
-              )
-            )}
+            ${escapeHtml(productStockText(product))}
           </span>
 
         </div>
@@ -3869,7 +4067,7 @@ function openProductEditor(
           class="ui-field__label"
           for="admin-product-sale-mode"
         >
-          Əsas satış qaydası
+          Məhsulun əsas satış üsulu
         </label>
 
         <select
@@ -3888,17 +4086,14 @@ function openProductEditor(
             Adi satış — 1 ədəd / 1 vahid
           </option>
 
-          <option
-            value="portion"
-            ${
-              mode ===
-                'portion'
-                ? 'selected'
-                : ''
-            }
-          >
-            Köhnə porsiya sistemi
-          </option>
+          ${editing || mode === 'portion' ? `
+            <option
+              value="portion"
+              ${mode === 'portion' ? 'selected' : ''}
+            >
+              Porsiya / qaşıq
+            </option>
+          ` : ''}
         </select>
 
       </div>
@@ -4246,26 +4441,28 @@ function openProductEditor(
 
     </label>
 
-    <button
-      id="admin-product-submit"
-      class="ui-button ui-button--primary ui-button--full"
-      type="submit"
-    >
+    <div class="product-editor-actions">
+      ${editing ? `
+        <button
+          id="admin-product-delete"
+          class="ui-button ui-button--danger"
+          type="button"
+        >
+          <span class="ui-button__label">Məhsulu sil</span>
+        </button>
+      ` : ''}
 
-      <span class="ui-button__label">
-        ${
-          editing
-            ? 'Yadda saxla'
-            : 'Məhsul əlavə et'
-        }
-      </span>
-
-      <span
-        class="ui-button__spinner is-hidden"
-        aria-hidden="true"
-      ></span>
-
-    </button>
+      <button
+        id="admin-product-submit"
+        class="ui-button ui-button--primary"
+        type="submit"
+      >
+        <span class="ui-button__label">
+          ${editing ? 'Yadda saxla' : 'Məhsul əlavə et'}
+        </span>
+        <span class="ui-button__spinner is-hidden" aria-hidden="true"></span>
+      </button>
+    </div>
   `;
 
   openModal({
@@ -4407,6 +4604,59 @@ function bindProductForm(
       '#admin-product-submit',
       form
     );
+
+  const deleteButton = $('#admin-product-delete', form);
+
+  deleteButton?.addEventListener('click', async () => {
+    if (!product?.id || state.busy) return;
+
+    const confirmed = await confirmDialog({
+      eyebrow: 'Məhsullar',
+      title: 'Məhsul silinsin?',
+      message: 'Məhsul heç bir satış və stok tarixçəsində istifadə olunmayıbsa tam silinəcək. Tarixçəsi varsa məlumat itkisi olmasın deyə arxivlənəcək və satışdan gizlənəcək.',
+      confirmText: 'Sil / arxivlə',
+      cancelText: 'Ləğv et',
+      danger: true,
+    });
+
+    if (!confirmed) return;
+
+    state.busy = true;
+    setButtonLoading(deleteButton, true, { loadingText: 'Silinir...' });
+
+    try {
+      const { data, error } = await supabase.rpc(RPC.deleteProductSafely, {
+        p_product_id: product.id,
+      });
+
+      if (error) throw error;
+
+      closeModal();
+      notify.success(
+        data === 'deleted'
+          ? 'Məhsul tam silindi.'
+          : 'Məhsul tarixçəsi olduğu üçün arxivləndi.'
+      );
+
+      await Promise.all([
+        loadProducts(),
+        loadStockMovements(),
+        loadHistory({ limit: 50 }),
+      ]);
+
+      renderAdminProducts();
+      renderPosProducts();
+      renderQuickSaleProducts();
+      renderStock();
+    } catch (error) {
+      console.error('[SKy Fit] Məhsul silmə:', error);
+      notify.error(getErrorMessage(error, 'Məhsul silinmədi.'));
+    } finally {
+      state.busy = false;
+      setButtonLoading(deleteButton, false);
+    }
+  });
+
 
   function syncSaleMode() {
     const portion =
@@ -5437,21 +5687,18 @@ function renderStockMovements() {
 
           <td>
             ${escapeHtml(
-              String(
-                number(
-                  movement.quantity
-                )
+              stockNumber(
+                movement.quantity,
+                movement.product?.stock_unit
               )
             )}
           </td>
 
           <td>
             ${escapeHtml(
-              String(
-                number(
-                  movement
-                    .balance_after
-                )
+              stockNumber(
+                movement.balance_after,
+                movement.product?.stock_unit
               )
             )}
           </td>
@@ -5579,18 +5826,7 @@ function openStockAddModal(
         <span>Cari stok</span>
 
         <strong>
-          ${escapeHtml(
-            String(
-              productStock(
-                product
-              )
-            )
-          )}
-          ${escapeHtml(
-            productStockUnit(
-              product
-            )
-          )}
+          ${escapeHtml(productStockText(product))}
         </strong>
       </div>
 
@@ -5680,6 +5916,19 @@ function openStockAddModal(
         0 yazsan maliyyədə xərc yaradılmayacaq.
       </span>
 
+    </div>
+
+    <div class="ui-field">
+      <label class="ui-field__label" for="stock-add-payment-method">
+        Alış ödənişi
+      </label>
+      <select id="stock-add-payment-method" class="ui-select">
+        <option value="cash">Nağd</option>
+        <option value="card">Kart</option>
+      </select>
+      <span class="ui-field__hint">
+        Nağd alış fiziki KASSA qalığından çıxacaq, kart alışı isə kassaya toxunmayacaq.
+      </span>
     </div>
 
     <div class="ui-field">
@@ -5774,6 +6023,8 @@ function bindStockAddForm(
       form
     );
 
+  const paymentInput = $('#stock-add-payment-method', form);
+
   const quantityError =
     $(
       '#stock-add-quantity-error',
@@ -5830,6 +6081,8 @@ function bindStockAddForm(
           'Stok alışı'
         );
 
+      const paymentMethod = normalizeString(paymentInput?.value, 'cash');
+
       if (
         quantity <= 0
       ) {
@@ -5856,7 +6109,7 @@ function bindStockAddForm(
           error,
         } =
           await supabase.rpc(
-            RPC.addStockV2,
+            RPC.addStockV3,
             {
               p_product_id:
                 product.id,
@@ -5867,8 +6120,8 @@ function bindStockAddForm(
               p_total_cost:
                 totalCost,
 
-              p_note:
-                note,
+              p_note: note,
+              p_payment_method: paymentMethod,
             }
           );
 
@@ -5886,6 +6139,7 @@ function bindStockAddForm(
           loadProducts(),
           loadStockMovements(),
           loadLedger(),
+          loadCashRegisterEntries(),
           loadHistory({
             limit:
               50,
@@ -5964,18 +6218,7 @@ function openStockAdjustModal(
         <span>Cari stok</span>
 
         <strong>
-          ${escapeHtml(
-            String(
-              productStock(
-                product
-              )
-            )
-          )}
-          ${escapeHtml(
-            productStockUnit(
-              product
-            )
-          )}
+          ${escapeHtml(productStockText(product))}
         </strong>
       </div>
 
@@ -6292,18 +6535,7 @@ function openStockProductPicker() {
             </strong>
 
             <span class="compact-list-item__meta">
-              ${escapeHtml(
-                String(
-                  productStock(
-                    product
-                  )
-                )
-              )}
-              ${escapeHtml(
-                productStockUnit(
-                  product
-                )
-              )}
+              ${escapeHtml(productStockText(product))}
               ·
               ${escapeHtml(
                 money(
@@ -6474,7 +6706,7 @@ function renderQuickSaleProducts() {
           }
         </span>
         <small>
-          ${escapeHtml(String(productStock(product)))} ${escapeHtml(productStockUnit(product))}
+          ${escapeHtml(productStockText(product))}
         </small>
       </span>
     `;
@@ -7146,139 +7378,68 @@ function renderMemberships() {
 }
 
 function renderMembershipPlans() {
-  const root =
-    byId(
-      'membership-plans-grid'
-    );
+  const root = byId('membership-plans-grid');
+  if (!root) return;
 
-  if (!root) {
-    return;
-  }
+  clearElement(root);
 
-  clearElement(
-    root
-  );
+  state.membershipPlans.forEach(plan => {
+    const card = createElement('article', {
+      className: `membership-plan-card${plan.is_daily ? ' membership-plan-card--daily' : ''}`,
+    });
 
-  state.membershipPlans
-    .forEach(
-      plan => {
-        const card =
-          createElement(
-            'article',
-            {
-              className:
-                'admin-setting-card',
-            }
-          );
+    card.innerHTML = `
+      <div class="membership-plan-card__top">
+        <span class="membership-plan-card__icon" aria-hidden="true">
+          ${plan.is_daily ? '1G' : '30G'}
+        </span>
 
-        card.innerHTML = `
-          <div class="admin-setting-card__header">
+        <span class="${plan.is_active ? 'ui-badge ui-badge--success' : 'ui-badge ui-badge--danger'}">
+          ${plan.is_active ? 'Aktiv' : 'Deaktiv'}
+        </span>
+      </div>
 
-            <span class="${
-              plan.is_daily
-                ? 'ui-badge ui-badge--warning'
-                : 'ui-badge ui-badge--success'
-            }">
-              ${
-                plan.is_daily
-                  ? 'Günlük giriş'
-                  : 'Üzvlük'
-              }
-            </span>
+      <div class="membership-plan-card__content">
+        <span class="membership-plan-card__type">
+          ${plan.is_daily ? 'Günlük giriş' : 'Üzvlük planı'}
+        </span>
+        <strong class="membership-plan-card__title">${escapeHtml(plan.name)}</strong>
+        <span class="membership-plan-card__duration">${escapeHtml(String(plan.duration_days))} gün</span>
+      </div>
 
-            <span class="${
-              plan.is_active
-                ? 'ui-badge ui-badge--success'
-                : 'ui-badge ui-badge--danger'
-            }">
-              ${
-                plan.is_active
-                  ? 'Aktiv'
-                  : 'Deaktiv'
-              }
-            </span>
+      <div class="membership-plan-card__price">
+        <strong>${escapeHtml(money(plan.price))}</strong>
+        <span>${plan.is_daily ? '1 giriş üçün' : `${escapeHtml(String(plan.duration_days))} gün üçün`}</span>
+      </div>
 
-          </div>
+      <button
+        type="button"
+        class="ui-button ui-button--glass ui-button--full"
+        data-plan-edit="${escapeHtml(plan.id)}"
+      >
+        <span class="ui-button__label">Planı redaktə et</span>
+      </button>
+    `;
 
-          <strong class="admin-setting-card__title">
-            ${escapeHtml(
-              plan.name
-            )}
-          </strong>
+    root.append(card);
+  });
 
-          <span class="admin-setting-card__meta">
-            ${escapeHtml(
-              String(
-                plan.duration_days
-              )
-            )}
-            gün
-          </span>
-
-          <strong class="admin-setting-card__price">
-            ${escapeHtml(
-              money(
-                plan.price
-              )
-            )}
-          </strong>
-
-          <button
-            type="button"
-            class="ui-button ui-button--glass ui-button--full"
-            data-plan-edit="${escapeHtml(
-              plan.id
-            )}"
-          >
-            <span class="ui-button__label">
-              Redaktə et
-            </span>
-          </button>
-        `;
-
-        root.append(
-          card
-        );
-      }
-    );
-
-  $$(
-    '[data-plan-edit]',
-    root
-  ).forEach(
-    button => {
-      button.addEventListener(
-        'click',
-        () => {
-          const plan =
-            state.membershipPlans
-              .find(
-                item =>
-                  String(
-                    item.id
-                  ) ===
-                  String(
-                    button.dataset
-                      .planEdit
-                  )
-              );
-
-          if (plan) {
-            openMembershipPlanEditor(
-              plan,
-              button
-            );
-          }
-        }
+  $$('[data-plan-edit]', root).forEach(button => {
+    button.addEventListener('click', () => {
+      const plan = state.membershipPlans.find(
+        item => String(item.id) === String(button.dataset.planEdit)
       );
-    }
-  );
+
+      if (plan) openMembershipPlanEditor(plan, button);
+    });
+  });
 }
 
 //
 // is_daily semantikasını burada dəyişmirik.
 // Bu planın biznes tipidir.
 // Admin qiymət, ad, müddət və aktivliyi dəyişə bilər.
+//
 
 function openMembershipPlanEditor(
   plan,
@@ -7771,29 +7932,28 @@ async function openMembershipCreateModal(
 
     </div>
 
-    <div class="ui-field">
+    <div class="payment-status-grid">
+      <div class="ui-field">
+        <label class="ui-field__label" for="membership-create-payment">
+          Ödəniş vəziyyəti
+        </label>
+        <select id="membership-create-payment" class="ui-select">
+          <option value="paid">Ödənilib</option>
+          <option value="debt">Borc yaz</option>
+        </select>
+      </div>
 
-      <label
-        class="ui-field__label"
-        for="membership-create-payment"
-      >
-        Ödəniş
-      </label>
-
-      <select
-        id="membership-create-payment"
-        class="ui-select"
-      >
-        <option value="paid">
-          Ödənilib
-        </option>
-
-        <option value="debt">
-          Borc yaz
-        </option>
-      </select>
-
+      <div class="ui-field" id="membership-payment-method-field">
+        <label class="ui-field__label" for="membership-payment-method">
+          Ödəniş üsulu
+        </label>
+        <select id="membership-payment-method" class="ui-select">
+          ${paymentMethodOptionsMarkup()}
+        </select>
+      </div>
     </div>
+
+    ${paymentSplitMarkup('membership')}
 
     <div
       id="membership-create-preview"
@@ -7866,6 +8026,10 @@ function bindMembershipCreateForm(
       '#membership-create-payment',
       form
     );
+
+  const paymentMethodInput = $('#membership-payment-method', form);
+  const paymentMethodField = $('#membership-payment-method-field', form);
+  const mixedFields = $('#membership-mixed-fields', form);
 
   const preview =
     $(
@@ -8014,7 +8178,23 @@ function bindMembershipCreateForm(
       renderPreview
     );
 
+  const syncMembershipPayment = () => {
+    const debt = paymentInput?.value === 'debt';
+    debt ? hideElement(paymentMethodField) : showElement(paymentMethodField);
+    if (debt) {
+      hideElement(mixedFields);
+    } else if (paymentMethodInput?.value === 'mixed') {
+      showElement(mixedFields);
+    } else {
+      hideElement(mixedFields);
+    }
+  };
+
+  paymentInput?.addEventListener('change', syncMembershipPayment);
+  paymentMethodInput?.addEventListener('change', syncMembershipPayment);
+
   renderPreview();
+  syncMembershipPayment();
 
   form.addEventListener(
     'submit',
@@ -8046,6 +8226,11 @@ function bindMembershipCreateForm(
           'paid'
         );
 
+      const plan = selectedPlan();
+      const payment = paymentStatus === 'debt'
+        ? { cashAmount: 0, cardAmount: 0, valid: true }
+        : readPaymentSplit(form, 'membership', number(plan?.price));
+
       if (!memberId) {
         notify.warning(
           'Üzv seç.'
@@ -8070,6 +8255,11 @@ function bindMembershipCreateForm(
         return;
       }
 
+      if (!payment.valid) {
+        notify.warning(`Nağd + Kart cəmi ${money(number(plan?.price))} olmalıdır.`);
+        return;
+      }
+
       setButtonLoading(
         submit,
         true,
@@ -8087,19 +8277,14 @@ function bindMembershipCreateForm(
           error,
         } =
           await supabase.rpc(
-            RPC.createMembership,
+            RPC.createMembershipV2,
             {
-              p_member_id:
-                memberId,
-
-              p_plan_id:
-                planId,
-
-              p_start_date:
-                startDate,
-
-              p_payment_status:
-                paymentStatus,
+              p_member_id: memberId,
+              p_plan_id: planId,
+              p_start_date: startDate,
+              p_payment_status: paymentStatus,
+              p_cash_amount: payment.cashAmount,
+              p_card_amount: payment.cardAmount,
             }
           );
 
@@ -8121,6 +8306,7 @@ function bindMembershipCreateForm(
           loadDebts(),
           loadDebtTransactions(),
           loadLedger(),
+          loadCashRegisterEntries(),
           loadHistory({
             limit:
               50,
@@ -8505,32 +8691,17 @@ async function openAttendanceModal(
 
     </div>
 
-    <div class="ui-field">
+    <div id="attendance-payment-panel" class="attendance-payment-panel">
+      <div class="ui-field">
+        <label class="ui-field__label" for="attendance-payment-method">
+          Günlük giriş ödənişi
+        </label>
+        <select id="attendance-payment-method" class="ui-select">
+          ${paymentMethodOptionsMarkup()}
+        </select>
+      </div>
 
-      <label
-        class="ui-field__label"
-        for="attendance-payment-method"
-      >
-        Günlük giriş lazım olarsa ödəniş üsulu
-      </label>
-
-      <select
-        id="attendance-payment-method"
-        class="ui-select"
-      >
-        <option value="cash">
-          Nağd
-        </option>
-
-        <option value="card">
-          Kart
-        </option>
-
-        <option value="transfer">
-          Köçürmə
-        </option>
-      </select>
-
+      ${paymentSplitMarkup('attendance')}
     </div>
 
     <div class="ui-info-card">
@@ -8596,138 +8767,115 @@ async function openAttendanceModal(
   });
 }
 
-function bindAttendanceCreateForm(
-  form
-) {
-  const memberInput =
-    $(
-      '#attendance-create-member',
-      form
+function bindAttendanceCreateForm(form) {
+  const memberInput = $('#attendance-create-member', form);
+  const paymentInput = $('#attendance-payment-method', form);
+  const paymentPanel = $('#attendance-payment-panel', form);
+  const mixedFields = $('#attendance-mixed-fields', form);
+  const submit = $('#attendance-create-submit', form);
+
+  const dailyPlan = state.membershipPlans.find(
+    plan => plan.is_daily && plan.is_active
+  );
+
+  function selectedMemberHasActiveMembership() {
+    const memberId = normalizeString(memberInput?.value);
+    if (!memberId) return false;
+
+    return state.memberships.some(item =>
+      String(item.member_id) === String(memberId) &&
+      membershipIsActive(item)
     );
+  }
 
-  const paymentInput =
-    $(
-      '#attendance-payment-method',
-      form
-    );
+  function syncPaymentPanel() {
+    const hasMembership = selectedMemberHasActiveMembership();
 
-  const submit =
-    $(
-      '#attendance-create-submit',
-      form
-    );
+    if (hasMembership) {
+      hideElement(paymentPanel);
+      hideElement(mixedFields);
+      return;
+    }
 
-  form.addEventListener(
-    'submit',
-    async event => {
-      event.preventDefault();
+    showElement(paymentPanel);
+    paymentInput?.value === 'mixed'
+      ? showElement(mixedFields)
+      : hideElement(mixedFields);
+  }
 
-      const memberId =
-        normalizeString(
-          memberInput
-            ?.value
-        );
+  memberInput?.addEventListener('change', syncPaymentPanel);
+  paymentInput?.addEventListener('change', syncPaymentPanel);
+  syncPaymentPanel();
 
-      const paymentMethod =
-        normalizeString(
-          paymentInput
-            ?.value,
-          'cash'
-        );
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
 
-      if (!memberId) {
-        notify.warning(
-          'Üzv seç.'
-        );
+    const memberId = normalizeString(memberInput?.value);
+    if (!memberId) {
+      notify.warning('Üzv seç.');
+      return;
+    }
 
-        return;
-      }
+    const hasMembership = selectedMemberHasActiveMembership();
+    const dailyPrice = hasMembership ? 0 : number(dailyPlan?.price);
 
-      setButtonLoading(
-        submit,
-        true,
+    if (!hasMembership && !dailyPlan) {
+      notify.warning('Aktiv günlük giriş planı tapılmadı.');
+      return;
+    }
+
+    const payment = hasMembership
+      ? { cashAmount: 0, cardAmount: 0, valid: true }
+      : readPaymentSplit(form, 'attendance', dailyPrice);
+
+    if (!payment.valid) {
+      notify.warning(`Nağd + Kart cəmi ${money(dailyPrice)} olmalıdır.`);
+      return;
+    }
+
+    setButtonLoading(submit, true, { loadingText: 'Qeyd olunur...' });
+
+    try {
+      const { data: attendanceId, error } = await supabase.rpc(
+        RPC.recordAttendanceV2,
         {
-          loadingText:
-            'Qeyd olunur...',
+          p_member_id: memberId,
+          p_cash_amount: payment.cashAmount,
+          p_card_amount: payment.cardAmount,
         }
       );
 
-      try {
-        const {
-          data:
-            attendanceId,
+      if (error) throw error;
 
-          error,
-        } =
-          await supabase.rpc(
-            RPC.recordAttendance,
-            {
-              p_member_id:
-                memberId,
+      closeModal();
+      notify.success(
+        hasMembership
+          ? 'Aktiv üzvlük ilə giriş qeydə alındı.'
+          : `Günlük giriş ${money(dailyPrice)} qeydə alındı.`
+      );
 
-              p_payment_method:
-                paymentMethod,
-            }
-          );
+      await Promise.all([
+        loadAttendance(),
+        loadLedger(),
+        loadCashRegisterEntries(),
+        loadHistory({ limit: 50 }),
+      ]);
 
-        if (error) {
-          throw error;
-        }
+      renderAttendanceAdmin();
+      renderDashboard();
 
-        closeModal();
-
-        notify.success(
-          'Giriş qeydiyyatı tamamlandı.'
-        );
-
-        await Promise.all([
-          loadAttendance(),
-          loadLedger(),
-          loadHistory({
-            limit:
-              50,
-          }),
-        ]);
-
-        renderAttendanceAdmin();
-
-        renderDashboard();
-
-        window.dispatchEvent(
-          new CustomEvent(
-            ADMIN_OPERATION_EVENT,
-            {
-              detail: {
-                type:
-                  'attendance',
-
-                attendanceId,
-
-                memberId,
-              },
-            }
-          )
-        );
-      } catch (error) {
-        console.error(
-          '[SKy Fit Admin] record_attendance:',
-          error
-        );
-
-        notify.error(
-          getErrorMessage(
-            error,
-            'Giriş qeydiyyatı alınmadı.'
-          )
-        );
-      } finally {
-        setButtonLoading(
-          submit,
-          false
-        );
-      }
+      window.dispatchEvent(
+        new CustomEvent(ADMIN_OPERATION_EVENT, {
+          detail: { type: 'attendance', attendanceId, memberId },
+        })
+      );
+    } catch (error) {
+      console.error('[SKy Fit Admin] record_attendance_v2:', error);
+      notify.error(getErrorMessage(error, 'Giriş qeydiyyatı tamamlanmadı.'));
+    } finally {
+      setButtonLoading(submit, false);
     }
-  );
+  });
 }
 
 function bindAttendanceAdminEvents() {
@@ -9283,32 +9431,15 @@ function openDebtPaymentModal(
     </div>
 
     <div class="ui-field">
-
-      <label
-        class="ui-field__label"
-        for="debt-payment-method"
-      >
+      <label class="ui-field__label" for="debt-payment-method">
         Ödəniş üsulu
       </label>
-
-      <select
-        id="debt-payment-method"
-        class="ui-select"
-      >
-        <option value="cash">
-          Nağd
-        </option>
-
-        <option value="card">
-          Kart
-        </option>
-
-        <option value="transfer">
-          Köçürmə
-        </option>
+      <select id="debt-payment-method" class="ui-select">
+        ${paymentMethodOptionsMarkup()}
       </select>
-
     </div>
+
+    ${paymentSplitMarkup('debt')}
 
     <button
       id="debt-payment-submit"
@@ -9380,6 +9511,8 @@ function bindDebtPaymentForm(
       form
     );
 
+  bindPaymentSplit(form, 'debt');
+
   form.addEventListener(
     'submit',
     async event => {
@@ -9391,12 +9524,7 @@ function bindDebtPaymentForm(
             ?.value
         );
 
-      const method =
-        normalizeString(
-          methodInput
-            ?.value,
-          'cash'
-        );
+      const payment = readPaymentSplit(form, 'debt', amount);
 
       const balance =
         debtBalance(
@@ -9414,6 +9542,11 @@ function bindDebtPaymentForm(
         return;
       }
 
+      if (!payment.valid) {
+        notify.warning(`Nağd + Kart cəmi ${money(amount)} olmalıdır.`);
+        return;
+      }
+
       setButtonLoading(
         submit,
         true,
@@ -9428,16 +9561,12 @@ function bindDebtPaymentForm(
           error,
         } =
           await supabase.rpc(
-            RPC.payDebt,
+            RPC.payDebtV2,
             {
-              p_member_id:
-                account.member_id,
-
-              p_amount:
-                amount,
-
-              p_method:
-                method,
+              p_member_id: account.member_id,
+              p_amount: amount,
+              p_cash_amount: payment.cashAmount,
+              p_card_amount: payment.cardAmount,
             }
           );
 
@@ -9455,6 +9584,7 @@ function bindDebtPaymentForm(
           loadDebts(),
           loadDebtTransactions(),
           loadLedger(),
+          loadCashRegisterEntries(),
           loadHistory({
             limit:
               50,
@@ -9655,118 +9785,121 @@ function calculateFinanceTotals(
   };
 }
 
-function renderFinanceKpis(
-  totals
-) {
-  const income =
-    byId(
-      'finance-income'
-    );
+function renderFinanceKpis(totals, entries) {
+  const income = byId('finance-income');
+  const expense = byId('finance-expense');
+  const balance = byId('finance-balance');
+  const cash = byId('cash-register-balance');
+  const card = byId('finance-card-turnover');
 
-  const expense =
-    byId(
-      'finance-expense'
-    );
+  setText(income, money(totals.income));
+  setText(expense, money(totals.expense));
+  setText(balance, money(totals.balance));
+  setText(cash, money(state.cashRegisterBalance));
 
-  const balance =
-    byId(
-      'finance-balance'
-    );
-
-  setText(
-    income,
-    money(
-      totals.income
-    )
+  const cardTurnover = entries.reduce(
+    (sum, entry) => sum + number(entry.card_amount),
+    0
   );
+  setText(card, money(cardTurnover));
 
-  setText(
-    expense,
-    money(
-      totals.expense
-    )
-  );
-
-  setText(
-    balance,
-    money(
-      totals.balance
-    )
-  );
-
-  income?.classList.add(
-    'finance-value',
-    'finance-value--income'
-  );
-
-  expense?.classList.add(
-    'finance-value',
-    'finance-value--expense'
-  );
+  income?.classList.add('finance-value', 'finance-value--income');
+  expense?.classList.add('finance-value', 'finance-value--expense');
+  cash?.classList.add('finance-value');
+  card?.classList.add('finance-value');
 
   balance?.classList.remove(
     'finance-value--income',
     'finance-value--expense',
     'finance-value--neutral'
   );
+  balance?.classList.add('finance-value');
 
-  balance?.classList.add(
-    'finance-value'
-  );
-
-  if (
-    totals.balance > 0
-  ) {
-    balance?.classList.add(
-      'finance-value--income'
-    );
-  } else if (
-    totals.balance < 0
-  ) {
-    balance?.classList.add(
-      'finance-value--expense'
-    );
+  if (totals.balance > 0) {
+    balance?.classList.add('finance-value--income');
+  } else if (totals.balance < 0) {
+    balance?.classList.add('finance-value--expense');
   } else {
-    balance?.classList.add(
-      'finance-value--neutral'
+    balance?.classList.add('finance-value--neutral');
+  }
+}
+
+function renderCashRegister() {
+  const root = byId('cash-register-list');
+  if (!root) return;
+
+  clearElement(root);
+
+  const table = createElement('table', {
+    className: 'admin-table cash-register-table',
+  });
+
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th>Tarix</th>
+        <th>Hərəkət</th>
+        <th>Kateqoriya</th>
+        <th>Açıqlama</th>
+        <th>Məbləğ</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  `;
+
+  const tbody = $('tbody', table);
+
+  state.cashRegisterEntries.forEach(entry => {
+    const incoming = entry.direction === 'in';
+    const row = createElement('tr');
+
+    row.innerHTML = `
+      <td>
+        <strong class="admin-table__primary">${formatDate(entry.entry_date)}</strong>
+        <span class="admin-table__secondary">${formatTime(entry.created_at)}</span>
+      </td>
+      <td>
+        <span class="${incoming ? 'ui-badge ui-badge--success' : 'ui-badge ui-badge--danger'}">
+          ${incoming ? 'Kassaya daxil' : 'Kassadan çıxış'}
+        </span>
+      </td>
+      <td>${escapeHtml(entry.category || '—')}</td>
+      <td>${escapeHtml(entry.description || '—')}</td>
+      <td>
+        <strong class="${incoming ? 'finance-amount finance-amount--income' : 'finance-amount finance-amount--expense'}">
+          ${incoming ? '+' : '−'} ${escapeHtml(money(entry.amount))}
+        </strong>
+      </td>
+    `;
+
+    tbody.append(row);
+  });
+
+  root.append(table);
+
+  if (!state.cashRegisterEntries.length) {
+    root.append(
+      createDashboardEmpty(
+        'Kassa kitabı yenidir. “Kassa qalığını düzəlt” ilə hazır fiziki nağd qalığı bir dəfə qeyd et.'
+      )
     );
   }
 }
 
 function renderFinance() {
-  const root =
-    byId(
-      'finance-ledger-list'
-    );
+  const root = byId('finance-ledger-list');
+  if (!root) return;
 
-  if (!root) {
-    return;
-  }
+  const entries = filteredLedger();
+  const totals = calculateFinanceTotals(entries);
 
-  const entries =
-    filteredLedger();
+  renderFinanceKpis(totals, entries);
+  renderCashRegister();
+  clearElement(root);
 
-  const totals =
-    calculateFinanceTotals(
-      entries
-    );
-
-  renderFinanceKpis(
-    totals
-  );
-
-  clearElement(
-    root
-  );
-
-  const table =
-    createElement(
-      'table',
-      {
-        className:
-          'admin-table finance-table',
-      }
-    );
+  const table = createElement('table', {
+    className: 'admin-table finance-table',
+  });
 
   table.innerHTML = `
     <thead>
@@ -9775,257 +9908,581 @@ function renderFinance() {
         <th>Növ</th>
         <th>Kateqoriya</th>
         <th>Açıqlama</th>
+        <th>Ödəniş</th>
         <th>Mənbə</th>
         <th>Məbləğ</th>
       </tr>
     </thead>
-
     <tbody></tbody>
   `;
 
-  const tbody =
-    $(
-      'tbody',
-      table
+  const tbody = $('tbody', table);
+
+  entries.forEach(entry => {
+    const type = ledgerType(entry);
+    const row = createElement('tr');
+
+    row.classList.add(
+      type === 'income' ? 'finance-row--income' : 'finance-row--expense'
     );
 
-  entries.forEach(
-    entry => {
-      const type =
-        ledgerType(
-          entry
-        );
+    row.innerHTML = `
+      <td>
+        <strong class="admin-table__primary">${formatDate(entry.entry_date)}</strong>
+        <span class="admin-table__secondary">${entry.created_at ? formatTime(entry.created_at) : ''}</span>
+      </td>
+      <td>
+        <span class="${type === 'income' ? 'ui-badge ui-badge--success' : 'ui-badge ui-badge--danger'}">
+          ${type === 'income' ? 'Mədaxil' : 'Məxaric'}
+        </span>
+      </td>
+      <td>${escapeHtml(entry.category || '—')}</td>
+      <td>${escapeHtml(entry.description || '—')}</td>
+      <td>
+        <span class="ui-badge ui-badge--neutral">
+          ${escapeHtml(paymentMethodLabel(entry.payment_method))}
+        </span>
+      </td>
+      <td>
+        <span class="ui-badge ui-badge--neutral">
+          ${escapeHtml(financeReferenceLabel(entry.reference_type))}
+        </span>
+      </td>
+      <td>
+        <strong class="${type === 'income' ? 'finance-amount finance-amount--income' : 'finance-amount finance-amount--expense'}">
+          ${type === 'income' ? '+' : '−'} ${escapeHtml(money(ledgerAmount(entry)))}
+        </strong>
+      </td>
+    `;
 
-      const row =
-        createElement(
-          'tr'
-        );
+    tbody.append(row);
+  });
 
-      row.classList.add(
-        type ===
-          'income'
-          ? 'finance-row--income'
-          : 'finance-row--expense'
-      );
+  root.append(table);
 
-      row.innerHTML = `
-        <td>
-          <strong class="admin-table__primary">
-            ${formatDate(
-              entry.entry_date
-            )}
-          </strong>
-
-          <span class="admin-table__secondary">
-            ${
-              entry.created_at
-                ? formatTime(
-                    entry.created_at
-                  )
-                : ''
-            }
-          </span>
-        </td>
-
-        <td>
-          <span class="${
-            type ===
-              'income'
-              ? 'ui-badge ui-badge--success'
-              : 'ui-badge ui-badge--danger'
-          }">
-            ${
-              type ===
-                'income'
-                ? 'Gəlir'
-                : 'Xərc'
-            }
-          </span>
-        </td>
-
-        <td>
-          ${escapeHtml(
-            entry.category ||
-            '—'
-          )}
-        </td>
-
-        <td>
-          ${escapeHtml(
-            entry.description ||
-            '—'
-          )}
-        </td>
-
-        <td>
-
-          <span class="ui-badge ui-badge--neutral">
-            ${escapeHtml(
-              financeReferenceLabel(
-                entry.reference_type
-              )
-            )}
-          </span>
-
-        </td>
-
-        <td>
-          <strong class="${
-            type ===
-              'income'
-              ? 'finance-amount finance-amount--income'
-              : 'finance-amount finance-amount--expense'
-          }">
-            ${
-              type ===
-                'income'
-                ? '+'
-                : '−'
-            }
-            ${escapeHtml(
-              money(
-                ledgerAmount(
-                  entry
-                )
-              )
-            )}
-          </strong>
-        </td>
-      `;
-
-      tbody.append(
-        row
-      );
-    }
-  );
-
-  root.append(
-    table
-  );
-
-  if (
-    entries.length ===
-    0
-  ) {
+  if (!entries.length) {
     root.append(
-      createDashboardEmpty(
-        'Seçilmiş filtrə uyğun maliyyə əməliyyatı yoxdur.'
-      )
+      createDashboardEmpty('Seçilmiş filtrə uyğun maliyyə əməliyyatı yoxdur.')
     );
   }
 }
 
-function financeReferenceLabel(
-  value
-) {
-  switch (
-    normalizeString(
-      value
-    )
-  ) {
+function financeReferenceLabel(value) {
+  switch (normalizeString(value)) {
     case 'sale':
       return 'POS satış';
-
     case 'membership':
       return 'Üzvlük';
-
     case 'attendance':
       return 'Günlük giriş';
-
     case 'stock':
-      return 'Stok';
-
+      return 'Stok alışı';
     case 'debt_payment':
       return 'Borc ödənişi';
-
+    case 'manual_income':
+      return 'Əlavə mədaxil';
+    case 'manual_expense':
+      return 'Zal xərci';
+    case 'staff_cash_advance':
+      return 'İşçi avansı';
     case 'staff_cash_repayment':
-      return 'Avans ödənişi';
-
+      return 'Avans qaytarması';
     default:
-      return normalizeString(
-        value,
-        'Digər'
-      );
+      return normalizeString(value, 'Digər');
   }
+}
+
+function expenseCategoryOptionsMarkup() {
+  const groups = new Map();
+
+  state.expenseCategories.forEach(item => {
+    const group = normalizeString(item.category_group, 'Digər');
+    if (!groups.has(group)) groups.set(group, []);
+    groups.get(group).push(item);
+  });
+
+  return Array.from(groups.entries())
+    .map(([group, items]) => `
+      <optgroup label="${escapeHtml(group)}">
+        ${items.map(item => `
+          <option value="${escapeHtml(item.name)}">${escapeHtml(item.name)}</option>
+        `).join('')}
+      </optgroup>
+    `)
+    .join('');
+}
+
+function incomeCategoryOptionsMarkup() {
+  return state.incomeCategories
+    .map(item => `<option value="${escapeHtml(item.name)}">${escapeHtml(item.name)}</option>`)
+    .join('');
+}
+
+function openIncomeModal(trigger = null) {
+  const content = createElement('form', {
+    className: 'modal-form',
+    attrs: { id: 'income-create-form', novalidate: '' },
+  });
+
+  content.innerHTML = `
+    <div class="modal-form__grid">
+      <div class="ui-field">
+        <label class="ui-field__label" for="income-category">Mədaxil kateqoriyası</label>
+        <select id="income-category" class="ui-select">
+          ${incomeCategoryOptionsMarkup()}
+        </select>
+      </div>
+
+      <div class="ui-field">
+        <label class="ui-field__label" for="income-date">Tarix</label>
+        <input id="income-date" class="ui-date-input" type="date" value="${todayIso()}">
+      </div>
+    </div>
+
+    <div class="modal-form__grid">
+      <div class="ui-field">
+        <label class="ui-field__label" for="income-amount">Məbləğ</label>
+        <div class="ui-input">
+          <input id="income-amount" class="ui-input__control" type="number" inputmode="decimal" min="0.01" step="0.01" placeholder="0.00">
+        </div>
+      </div>
+
+      <div class="ui-field">
+        <label class="ui-field__label" for="income-payment-method">Ödəniş üsulu</label>
+        <select id="income-payment-method" class="ui-select">
+          <option value="cash">Nağd</option>
+          <option value="card">Kart</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="ui-field">
+      <label class="ui-field__label" for="income-description">Açıqlama / qeyd</label>
+      <textarea id="income-description" class="ui-textarea" rows="3" maxlength="500" placeholder="Məs: Məşqçi aylıq zal ödənişi"></textarea>
+    </div>
+
+    <div class="ui-info-card">
+      <span class="ui-info-card__icon">i</span>
+      <span>
+        <strong>Adi satış, üzvlük və günlük giriş burada təkrar yazılmır</strong>
+        <small>Onlar avtomatik mədaxil yaradır. Bu forma yalnız personal məşq, məşqçi ödənişi, sponsorluq və digər əlavə gəlirlər üçündür.</small>
+      </span>
+    </div>
+
+    <button id="income-submit" class="ui-button ui-button--primary ui-button--full" type="submit">
+      <span class="ui-button__label">Mədaxili qeydə al</span>
+      <span class="ui-button__spinner is-hidden" aria-hidden="true"></span>
+    </button>
+  `;
+
+  openModal({
+    eyebrow: 'Mədaxil',
+    title: 'Əlavə gəlir qeydə al',
+    content,
+    trigger,
+    onOpen: () => {
+      const submit = $('#income-submit', content);
+
+      content.addEventListener('submit', async event => {
+        event.preventDefault();
+
+        const category = normalizeString($('#income-category', content)?.value);
+        const amount = number($('#income-amount', content)?.value);
+        const paymentMethod = normalizeString($('#income-payment-method', content)?.value, 'cash');
+        const entryDate = normalizeString($('#income-date', content)?.value, todayIso());
+        const description = normalizeString($('#income-description', content)?.value);
+
+        if (!category || amount <= 0) {
+          notify.warning('Kateqoriya və düzgün məbləğ daxil et.');
+          return;
+        }
+
+        setButtonLoading(submit, true, { loadingText: 'Qeyd olunur...' });
+
+        try {
+          const { error } = await supabase.rpc(RPC.recordIncomeV1, {
+            p_category: category,
+            p_description: description || null,
+            p_amount: amount,
+            p_payment_method: paymentMethod,
+            p_entry_date: entryDate,
+          });
+
+          if (error) throw error;
+
+          closeModal();
+          notify.success('Mədaxil qeydə alındı.');
+          await Promise.all([
+            loadLedger(),
+            loadCashRegisterEntries(),
+            loadHistory({ limit: 50 }),
+          ]);
+          renderFinance();
+          renderDashboard();
+        } catch (error) {
+          console.error('[SKy Fit Kassa] Mədaxil:', error);
+          notify.error(getErrorMessage(error, 'Mədaxil qeydə alınmadı.'));
+        } finally {
+          setButtonLoading(submit, false);
+        }
+      });
+    },
+  });
+}
+
+function openExpenseModal(trigger = null) {
+  const content = createElement('form', {
+    className: 'modal-form',
+    attrs: { id: 'expense-create-form', novalidate: '' },
+  });
+
+  content.innerHTML = `
+    <div class="modal-form__grid">
+      <div class="ui-field">
+        <label class="ui-field__label" for="expense-category">Xərc kateqoriyası</label>
+        <select id="expense-category" class="ui-select">
+          ${expenseCategoryOptionsMarkup()}
+        </select>
+      </div>
+
+      <div class="ui-field">
+        <label class="ui-field__label" for="expense-date">Tarix</label>
+        <input id="expense-date" class="ui-date-input" type="date" value="${todayIso()}">
+      </div>
+    </div>
+
+    <div class="modal-form__grid">
+      <div class="ui-field">
+        <label class="ui-field__label" for="expense-amount">Məbləğ</label>
+        <div class="ui-input">
+          <input id="expense-amount" class="ui-input__control" type="number" inputmode="decimal" min="0.01" step="0.01" placeholder="0.00">
+        </div>
+      </div>
+
+      <div class="ui-field">
+        <label class="ui-field__label" for="expense-payment-method">Ödəniş üsulu</label>
+        <select id="expense-payment-method" class="ui-select">
+          <option value="cash">Nağd</option>
+          <option value="card">Kart</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="ui-field">
+      <label class="ui-field__label" for="expense-description">Açıqlama / qeyd</label>
+      <textarea id="expense-description" class="ui-textarea" rows="3" maxlength="500" placeholder="Məs: Avqust ayı elektrik ödənişi"></textarea>
+    </div>
+
+    <div class="ui-info-card">
+      <span class="ui-info-card__icon">i</span>
+      <span>
+        <strong>Nağd xərc kassadan avtomatik çıxacaq</strong>
+        <small>Kartla ödənən xərc məxaricə düşür, amma fiziki KASSA qalığını azaltmır.</small>
+      </span>
+    </div>
+
+    <button id="expense-submit" class="ui-button ui-button--primary ui-button--full" type="submit">
+      <span class="ui-button__label">Xərci qeydə al</span>
+      <span class="ui-button__spinner is-hidden" aria-hidden="true"></span>
+    </button>
+  `;
+
+  openModal({
+    eyebrow: 'Məxaric',
+    title: 'Zal xərci əlavə et',
+    content,
+    trigger,
+    onOpen: () => {
+      const submit = $('#expense-submit', content);
+
+      content.addEventListener('submit', async event => {
+        event.preventDefault();
+
+        const category = normalizeString($('#expense-category', content)?.value);
+        const amount = number($('#expense-amount', content)?.value);
+        const paymentMethod = normalizeString($('#expense-payment-method', content)?.value, 'cash');
+        const entryDate = normalizeString($('#expense-date', content)?.value, todayIso());
+        const description = normalizeString($('#expense-description', content)?.value);
+
+        if (!category || amount <= 0) {
+          notify.warning('Kateqoriya və düzgün məbləğ daxil et.');
+          return;
+        }
+
+        setButtonLoading(submit, true, { loadingText: 'Qeyd olunur...' });
+
+        try {
+          const { error } = await supabase.rpc(RPC.recordExpenseV2, {
+            p_category: category,
+            p_description: description || null,
+            p_amount: amount,
+            p_payment_method: paymentMethod,
+            p_entry_date: entryDate,
+          });
+
+          if (error) throw error;
+
+          closeModal();
+          notify.success('Xərc qeydə alındı.');
+
+          await Promise.all([
+            loadLedger(),
+            loadCashRegisterEntries(),
+            loadHistory({ limit: 50 }),
+          ]);
+
+          renderFinance();
+          renderDashboard();
+        } catch (error) {
+          console.error('[SKy Fit Kassa] Xərc:', error);
+          notify.error(getErrorMessage(error, 'Xərc qeydə alınmadı.'));
+        } finally {
+          setButtonLoading(submit, false);
+        }
+      });
+    },
+  });
+}
+
+function openCashBalanceModal(trigger = null) {
+  const content = createElement('form', {
+    className: 'modal-form',
+    attrs: { id: 'cash-balance-form', novalidate: '' },
+  });
+
+  content.innerHTML = `
+    <div class="pos-confirm__summary">
+      <div class="pos-confirm__row pos-confirm__row--total">
+        <span>Sistemdə cari KASSA</span>
+        <strong>${escapeHtml(money(state.cashRegisterBalance))}</strong>
+      </div>
+    </div>
+
+    <div class="ui-field">
+      <label class="ui-field__label" for="cash-target-balance">Fiziki kassada hazırda neçə AZN var?</label>
+      <div class="ui-input">
+        <input id="cash-target-balance" class="ui-input__control" type="number" inputmode="decimal" min="0" step="0.01" value="${number(state.cashRegisterBalance).toFixed(2)}">
+      </div>
+      <span class="ui-field__hint">Sistem yalnız fərqi Kassa düzəlişi kimi tarixçəyə yazacaq.</span>
+    </div>
+
+    <div class="ui-field">
+      <label class="ui-field__label" for="cash-balance-note">Səbəb</label>
+      <textarea id="cash-balance-note" class="ui-textarea" rows="3" maxlength="300" placeholder="Məs: İlkin kassa qalığı / fiziki sayım"></textarea>
+    </div>
+
+    <button id="cash-balance-submit" class="ui-button ui-button--primary ui-button--full" type="submit">
+      <span class="ui-button__label">Kassa qalığını təsdiqlə</span>
+      <span class="ui-button__spinner is-hidden" aria-hidden="true"></span>
+    </button>
+  `;
+
+  openModal({
+    eyebrow: 'KASSA',
+    title: 'Kassa qalığını düzəlt',
+    content,
+    trigger,
+    onOpen: () => {
+      const submit = $('#cash-balance-submit', content);
+
+      content.addEventListener('submit', async event => {
+        event.preventDefault();
+
+        const target = number($('#cash-target-balance', content)?.value);
+        const note = normalizeString($('#cash-balance-note', content)?.value);
+
+        if (target < 0 || !note) {
+          notify.warning('Fiziki kassa qalığını və düzəliş səbəbini yaz.');
+          return;
+        }
+
+        setButtonLoading(submit, true, { loadingText: 'Yazılır...' });
+
+        try {
+          const { error } = await supabase.rpc(RPC.setCashRegisterBalance, {
+            p_target_balance: target,
+            p_note: note,
+          });
+
+          if (error) throw error;
+
+          closeModal();
+          notify.success('Fiziki KASSA qalığı yeniləndi.');
+          await Promise.all([
+            loadCashRegisterEntries(),
+            loadHistory({ limit: 50 }),
+          ]);
+          renderFinance();
+        } catch (error) {
+          console.error('[SKy Fit Kassa] Qalıq:', error);
+          notify.error(getErrorMessage(error, 'Kassa qalığı yenilənmədi.'));
+        } finally {
+          setButtonLoading(submit, false);
+        }
+      });
+    },
+  });
+}
+
+function staffOptionsMarkup() {
+  return state.members
+    .filter(item => ['admin', 'staff'].includes(normalizeString(item.role)) && item.is_active !== false)
+    .map(item => `
+      <option value="${escapeHtml(item.id)}">${escapeHtml(getProfileName(item))} · ${escapeHtml(roleLabel(item.role))}</option>
+    `)
+    .join('');
+}
+
+function openStaffAdvanceModal(trigger = null) {
+  const content = createElement('form', {
+    className: 'modal-form',
+    attrs: { id: 'staff-advance-form', novalidate: '' },
+  });
+
+  content.innerHTML = `
+    <div class="ui-info-card">
+      <span class="ui-info-card__icon">i</span>
+      <span>
+        <strong>İşçi avansı biznes xərci deyil</strong>
+        <small>Məsələn kassada 150 ₼ varsa, işçi 30 ₼ və başqa işçi 20 ₼ götürəndə KASSA 100 ₼ qalır. Məbləğ işçinin qaytaracağı borc kimi saxlanılır.</small>
+      </span>
+    </div>
+
+    <div class="modal-form__grid">
+      <div class="ui-field">
+        <label class="ui-field__label" for="staff-advance-action">Əməliyyat</label>
+        <select id="staff-advance-action" class="ui-select">
+          <option value="advance">Kassadan avans ver</option>
+          <option value="repayment">Avans qaytarması qəbul et</option>
+        </select>
+      </div>
+
+      <div class="ui-field">
+        <label class="ui-field__label" for="staff-advance-person">İşçi</label>
+        <select id="staff-advance-person" class="ui-select">
+          <option value="">İşçi seç</option>
+          ${staffOptionsMarkup()}
+        </select>
+      </div>
+    </div>
+
+    <div class="ui-field">
+      <label class="ui-field__label" for="staff-advance-amount">Məbləğ</label>
+      <div class="ui-input">
+        <input id="staff-advance-amount" class="ui-input__control" type="number" inputmode="decimal" min="0.01" step="0.01" placeholder="0.00">
+      </div>
+    </div>
+
+    <div class="ui-field">
+      <label class="ui-field__label" for="staff-advance-note">Qeyd</label>
+      <textarea id="staff-advance-note" class="ui-textarea" rows="3" maxlength="300" placeholder="Məs: Şəxsi ehtiyac üçün avans"></textarea>
+    </div>
+
+    <button id="staff-advance-submit" class="ui-button ui-button--primary ui-button--full" type="submit">
+      <span class="ui-button__label">Əməliyyatı təsdiqlə</span>
+      <span class="ui-button__spinner is-hidden" aria-hidden="true"></span>
+    </button>
+  `;
+
+  openModal({
+    eyebrow: 'KASSA',
+    title: 'İşçi avansı',
+    content,
+    trigger,
+    onOpen: () => {
+      const submit = $('#staff-advance-submit', content);
+
+      content.addEventListener('submit', async event => {
+        event.preventDefault();
+
+        const action = normalizeString($('#staff-advance-action', content)?.value, 'advance');
+        const staffId = normalizeString($('#staff-advance-person', content)?.value);
+        const amount = number($('#staff-advance-amount', content)?.value);
+        const note = normalizeString($('#staff-advance-note', content)?.value);
+
+        if (!staffId || amount <= 0) {
+          notify.warning('İşçi və düzgün məbləğ seç.');
+          return;
+        }
+
+        setButtonLoading(submit, true, { loadingText: 'Qeyd olunur...' });
+
+        try {
+          const { error } = await supabase.rpc(
+            action === 'repayment'
+              ? RPC.repayStaffCashAdvanceV2
+              : RPC.takeStaffCashAdvanceV2,
+            {
+              p_staff_id: staffId,
+              p_amount: amount,
+              p_note: note || null,
+            }
+          );
+
+          if (error) throw error;
+
+          closeModal();
+          notify.success(
+            action === 'repayment'
+              ? 'Avans qaytarması kassaya daxil edildi.'
+              : 'İşçi avansı kassadan çıxıldı.'
+          );
+
+          await Promise.all([
+            loadCashRegisterEntries(),
+            loadHistory({ limit: 50 }),
+          ]);
+
+          renderFinance();
+        } catch (error) {
+          console.error('[SKy Fit Kassa] İşçi avansı:', error);
+          notify.error(getErrorMessage(error, 'İşçi avans əməliyyatı tamamlanmadı.'));
+        } finally {
+          setButtonLoading(submit, false);
+        }
+      });
+    },
+  });
 }
 
 function bindFinanceEvents() {
-  byId(
-    'finance-type-filter'
-  )?.addEventListener(
-    'change',
-    renderFinance
-  );
-
-  byId(
-    'finance-date-from'
-  )?.addEventListener(
-    'change',
-    renderFinance
-  );
-
-  byId(
-    'finance-date-to'
-  )?.addEventListener(
-    'change',
-    renderFinance
-  );
-
-  byId(
-    'finance-search'
-  )?.addEventListener(
+  byId('finance-type-filter')?.addEventListener('change', renderFinance);
+  byId('finance-date-from')?.addEventListener('change', renderFinance);
+  byId('finance-date-to')?.addEventListener('change', renderFinance);
+  byId('finance-search')?.addEventListener(
     'input',
     debounce(renderFinance, UI_CONFIG.debounceDelay)
   );
 
-  byId(
-    'finance-reset-filter'
-  )?.addEventListener(
-    'click',
-    () => {
-      const type =
-        byId(
-          'finance-type-filter'
-        );
+  byId('income-create-button')?.addEventListener('click', event => {
+    openIncomeModal(event.currentTarget);
+  });
 
-      const from =
-        byId(
-          'finance-date-from'
-        );
+  byId('expense-create-button')?.addEventListener('click', event => {
+    openExpenseModal(event.currentTarget);
+  });
 
-      const to =
-        byId(
-          'finance-date-to'
-        );
+  byId('cash-balance-button')?.addEventListener('click', event => {
+    openCashBalanceModal(event.currentTarget);
+  });
 
-      const search =
-        byId(
-          'finance-search'
-        );
+  byId('staff-advance-button')?.addEventListener('click', event => {
+    openStaffAdvanceModal(event.currentTarget);
+  });
 
-      if (type) {
-        type.value =
-          'all';
-      }
+  byId('finance-reset-filter')?.addEventListener('click', () => {
+    const type = byId('finance-type-filter');
+    const from = byId('finance-date-from');
+    const to = byId('finance-date-to');
+    const search = byId('finance-search');
 
-      if (from) {
-        from.value =
-          '';
-      }
+    if (type) type.value = 'all';
+    if (from) from.value = '';
+    if (to) to.value = '';
+    if (search) search.value = '';
 
-      if (to) {
-        to.value =
-          '';
-      }
-
-      if (search) {
-        search.value =
-          '';
-      }
-
-      renderFinance();
-    }
-  );
+    renderFinance();
+  });
 }
 
 function filteredTrainers() {
@@ -11163,13 +11620,19 @@ function historyTableLabel(
       'Borc',
 
     ledger_entries:
-      'Maliyyə',
+      'Mədaxil / Məxaric',
 
     staff_shifts:
       'İş növbəsi',
 
     staff_cash_transactions:
-      'Əməkdaş kassası',
+      'İşçi avansı',
+
+    cash_register_entries:
+      'KASSA',
+
+    expense_categories:
+      'Xərc kateqoriyası',
   };
 
   return (
@@ -11779,6 +12242,12 @@ function auditFieldLabel(
     payment_method:
       'Ödəniş üsulu',
 
+    cash_amount:
+      'Nağd məbləğ',
+
+    card_amount:
+      'Kart məbləği',
+
     status:
       'Status',
 
@@ -11890,6 +12359,8 @@ function formatAuditValue(
       'total_amount',
       'subtotal',
       'balance',
+      'cash_amount',
+      'card_amount',
     ].includes(
       key
     )

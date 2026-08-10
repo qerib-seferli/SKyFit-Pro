@@ -31,6 +31,7 @@ export const STORAGE_KEYS = Object.freeze({
 export const PAYMENT_METHODS = Object.freeze({
   cash: 'cash',
   card: 'card',
+  mixed: 'mixed',
   transfer: 'transfer',
 });
 

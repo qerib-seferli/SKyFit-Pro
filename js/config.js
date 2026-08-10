@@ -26,7 +26,7 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 export const APP_CONFIG = Object.freeze({
   name: 'SKy Fit Pro',
   shortName: 'SKy Fit',
-  version: '1.1.0',
+  version: '1.3.0',
   developer: 'Qərib Səfərli',
   developerTitle: 'Senior Full Stack Developer',
   locale: 'az-AZ',
@@ -137,20 +137,32 @@ export const STORAGE_KEYS = Object.freeze({
 export const RPC = Object.freeze({
   processSale: 'process_sale',
   processSaleV2: 'process_sale_v2',
+  processSaleV3: 'process_sale_v3',
   addStock: 'add_stock',
   addStockV2: 'add_stock_v2',
+  addStockV3: 'add_stock_v3',
   adjustStock: 'adjust_stock',
   createMembership: 'create_membership',
+  createMembershipV2: 'create_membership_v2',
   refreshMembershipStatuses: 'refresh_membership_statuses',
   payDebt: 'pay_debt',
+  payDebtV2: 'pay_debt_v2',
   recordAttendance: 'record_attendance',
+  recordAttendanceV2: 'record_attendance_v2',
   checkInMember: 'check_in_member',
   openStaffShift: 'open_staff_shift',
   closeStaffShift: 'close_staff_shift',
   getShiftSummary: 'get_shift_summary',
   getOperatorActivity: 'get_operator_activity',
   takeStaffCashAdvance: 'take_staff_cash_advance',
+  takeStaffCashAdvanceV2: 'take_staff_cash_advance_v2',
   repayStaffCashAdvance: 'repay_staff_cash_advance',
+  repayStaffCashAdvanceV2: 'repay_staff_cash_advance_v2',
+  recordExpenseV2: 'record_expense_v2',
+  recordIncomeV1: 'record_income_v1',
+  setCashRegisterBalance: 'set_cash_register_balance',
+  getCashRegisterBalance: 'get_cash_register_balance',
+  deleteProductSafely: 'delete_product_safely',
 });
 
 // Supabase cədvəlləri
@@ -172,6 +184,9 @@ export const TABLES = Object.freeze({
   staffCashAccounts: 'staff_cash_accounts',
   staffCashTransactions: 'staff_cash_transactions',
   auditLog: 'audit_log',
+  expenseCategories: 'expense_categories',
+  incomeCategories: 'income_categories',
+  cashRegisterEntries: 'cash_register_entries',
 });
 
 // Konfiqurasiya yoxlaması
