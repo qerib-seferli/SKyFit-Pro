@@ -2443,6 +2443,12 @@ function productDisplayUnit(product) {
     : `${variants.length} satış seçimi`;
 }
 
+function productDisplayPriceLabel(product) {
+  const variants = productSaleVariants(product);
+  const price = money(productDisplayPrice(product));
+  return variants.length > 1 ? `${price}-dan` : price;
+}
+
 function filteredPosProducts() {
   const search =
     normalizeSearch(
@@ -2632,10 +2638,8 @@ function createPosCard(
 
         <span class="pos-product-card__price">
           ${escapeHtml(
-            money(
-              productDisplayPrice(
-                product
-              )
+            productDisplayPriceLabel(
+              product
             )
           )}
         </span>
@@ -3524,19 +3528,64 @@ function bindProductEvents() {
 }
 
 
-function saleVariantEditorRowMarkup(variant = {}, index = 0) {
+function normalizedStockUnit(value) {
+  const unit = normalizeString(value, 'ədəd').toLocaleLowerCase('az-AZ');
+
+  if (['qr', 'qram', 'g', 'gram'].includes(unit)) return 'qram';
+  if (['tablet', 'kapsul', 'tablet/kapsul', 'tablet / kapsul'].includes(unit)) return 'tablet';
+  if (['ml', 'millilitr'].includes(unit)) return 'ml';
+  if (['l', 'litr', 'liter'].includes(unit)) return 'litr';
+  if (['kq', 'kg', 'kiloqram'].includes(unit)) return 'kq';
+  return unit || 'ədəd';
+}
+
+function stockUnitLabel(value) {
+  switch (normalizedStockUnit(value)) {
+    case 'qram': return 'qram';
+    case 'tablet': return 'tablet';
+    case 'ml': return 'ml';
+    case 'litr': return 'litr';
+    case 'kq': return 'kq';
+    default: return 'ədəd';
+  }
+}
+
+function stockUnitOptionMarkup(currentValue) {
+  const current = normalizedStockUnit(currentValue);
+  const options = [
+    ['ədəd', 'Ədəd — su, shaker, bütöv məhsul'],
+    ['qram', 'Qram — protein, kreatin, toz məhsul'],
+    ['tablet', 'Tablet / kapsul'],
+    ['ml', 'Millilitr'],
+    ['litr', 'Litr'],
+    ['kq', 'Kiloqram'],
+  ];
+
+  if (!options.some(([value]) => value === current)) {
+    options.push([current, currentValue || current]);
+  }
+
+  return options.map(([value, label]) => `
+    <option value="${escapeHtml(value)}" ${value === current ? 'selected' : ''}>
+      ${escapeHtml(label)}
+    </option>
+  `).join('');
+}
+
+function saleVariantEditorRowMarkup(variant = {}, index = 0, stockUnit = 'ədəd') {
   const type = saleVariantType(variant);
   const name = normalizeString(variant?.name);
   const deduction = variant?.stock_deduction ?? '';
   const price = variant?.price ?? '';
   const sortOrder = variant?.sort_order ?? index * 10;
   const quick = variant?.is_quick_sale === true;
+  const unit = stockUnitLabel(stockUnit);
 
   return `
     <div class="sale-variant-editor-row" data-sale-variant-row data-variant-id="${escapeHtml(variant?.id || '')}">
       <div class="sale-variant-editor-row__main">
         <div class="ui-field">
-          <label class="ui-field__label">Ad</label>
+          <label class="ui-field__label">Satış seçiminin adı</label>
           <div class="ui-input">
             <input
               class="ui-input__control"
@@ -3544,13 +3593,14 @@ function saleVariantEditorRowMarkup(variant = {}, index = 0) {
               type="text"
               maxlength="80"
               value="${escapeHtml(name)}"
-              placeholder="Məs: 50 qr / 1 qaşıq"
+              placeholder="Məs: 5 qram"
             >
           </div>
+          <span class="ui-field__hint">Kassada admin bu adı görəcək.</span>
         </div>
 
         <div class="ui-field">
-          <label class="ui-field__label">Növ</label>
+          <label class="ui-field__label">Satış növü</label>
           <select class="ui-select" data-variant-field="variant_type">
             ${['unit', 'gram', 'tablet', 'portion', 'scoop', 'pack', 'custom']
               .map(option => `
@@ -3560,11 +3610,12 @@ function saleVariantEditorRowMarkup(variant = {}, index = 0) {
               `)
               .join('')}
           </select>
+          <span class="ui-field__hint">Bu seçim yalnız görünüş və izah üçündür.</span>
         </div>
 
         <div class="ui-field">
-          <label class="ui-field__label">Stokdan çıxacaq</label>
-          <div class="ui-input">
+          <label class="ui-field__label" data-stock-deduction-label>Stokdan çıxacaq (${escapeHtml(unit)})</label>
+          <div class="ui-input sale-variant-editor-row__quantity-input">
             <input
               class="ui-input__control"
               data-variant-field="stock_deduction"
@@ -3573,14 +3624,16 @@ function saleVariantEditorRowMarkup(variant = {}, index = 0) {
               min="0.001"
               step="0.001"
               value="${escapeHtml(String(deduction))}"
-              placeholder="50"
+              placeholder="5"
             >
+            <span class="sale-variant-editor-row__unit" data-stock-unit-suffix>${escapeHtml(unit)}</span>
           </div>
+          <span class="ui-field__hint">Məs: “5 qram” satılırsa burada 5 yaz.</span>
         </div>
 
         <div class="ui-field">
-          <label class="ui-field__label">Satış qiyməti</label>
-          <div class="ui-input">
+          <label class="ui-field__label">Müştəri qiyməti</label>
+          <div class="ui-input sale-variant-editor-row__quantity-input">
             <input
               class="ui-input__control"
               data-variant-field="price"
@@ -3589,16 +3642,18 @@ function saleVariantEditorRowMarkup(variant = {}, index = 0) {
               min="0"
               step="0.01"
               value="${escapeHtml(String(price))}"
-              placeholder="5.00"
+              placeholder="2.00"
             >
+            <span class="sale-variant-editor-row__unit">₼</span>
           </div>
+          <span class="ui-field__hint">Bu satış seçiminin yekun qiyməti.</span>
         </div>
       </div>
 
       <div class="sale-variant-editor-row__footer">
         <label class="ui-check">
           <input data-variant-field="is_quick_sale" type="checkbox" ${quick ? 'checked' : ''}>
-          <span>Tez satışda göstər</span>
+          <span>⚡ Tez satışda göstər</span>
         </label>
 
         <input data-variant-field="sort_order" type="hidden" value="${escapeHtml(String(sortOrder))}">
@@ -3814,7 +3869,7 @@ function openProductEditor(
           class="ui-field__label"
           for="admin-product-sale-mode"
         >
-          Satış forması
+          Əsas satış qaydası
         </label>
 
         <select
@@ -3830,7 +3885,7 @@ function openProductEditor(
                 : ''
             }
           >
-            Ədəd / vahid
+            Adi satış — 1 ədəd / 1 vahid
           </option>
 
           <option
@@ -3842,7 +3897,7 @@ function openProductEditor(
                 : ''
             }
           >
-            Porsiya
+            Köhnə porsiya sistemi
           </option>
         </select>
 
@@ -3857,22 +3912,15 @@ function openProductEditor(
           Stok vahidi
         </label>
 
-        <div class="ui-input">
-
-          <input
-            id="admin-product-stock-unit"
-            class="ui-input__control"
-            type="text"
-            maxlength="30"
-            value="${escapeHtml(
-              product
-                ?.stock_unit ||
-              'ədəd'
-            )}"
-            placeholder="ədəd / kq / litr"
-          >
-
-        </div>
+        <select
+          id="admin-product-stock-unit"
+          class="ui-select"
+        >
+          ${stockUnitOptionMarkup(product?.stock_unit || 'ədəd')}
+        </select>
+        <span class="ui-field__hint">
+          Əsas qayda: qramla satılan toz məhsulun stoku da qramla saxlanmalıdır.
+        </span>
 
       </div>
 
@@ -3886,7 +3934,7 @@ function openProductEditor(
           class="ui-field__label"
           for="admin-product-retail-price"
         >
-          Pərakəndə qiymət
+          Bütöv məhsulun satış qiyməti
         </label>
 
         <div class="ui-input">
@@ -3910,6 +3958,10 @@ function openProductEditor(
           >
 
         </div>
+
+        <span class="ui-field__hint">
+          Qram/tablet seçimləri aşağıda ayrıca qiymətləndirilir. Variant yoxdursa POS bu qiyməti istifadə edir.
+        </span>
 
         <span
           id="admin-product-price-error"
@@ -3969,7 +4021,7 @@ function openProductEditor(
           class="ui-field__label"
           for="admin-product-cost-price"
         >
-          Maya qiyməti
+          1 stok vahidinin maya dəyəri
         </label>
 
         <div class="ui-input">
@@ -4128,10 +4180,10 @@ function openProductEditor(
     <section class="sale-variant-editor">
       <div class="sale-variant-editor__header">
         <div>
-          <span class="section-eyebrow">Satış ölçüləri</span>
-          <strong>Qram · tablet · qaşıq · qab</strong>
+          <span class="section-eyebrow">3. Satış seçimləri</span>
+          <strong>Qram · tablet · qaşıq · bütöv qab</strong>
           <small>
-            Məhsulun əsas stoku dəyişmir. Hər seçim satış zamanı stokdan neçə vahid çıxacağını və qiyməti müəyyən edir.
+            Burada kassada görünəcək hazır seçimləri yaradırsan. “Stokdan çıxacaq” dəyəri yuxarıda seçdiyin stok vahidi ilə eyni olmalıdır.
           </small>
         </div>
 
@@ -4148,7 +4200,7 @@ function openProductEditor(
         ${
           productSaleVariants(product).length
             ? productSaleVariants(product).map((variant, index) =>
-                saleVariantEditorRowMarkup(variant, index)
+                saleVariantEditorRowMarkup(variant, index, product?.stock_unit || 'ədəd')
               ).join('')
             : ''
         }
@@ -4157,14 +4209,16 @@ function openProductEditor(
       <div class="ui-info-card">
         <span class="ui-info-card__icon">i</span>
         <span>
-          <strong>Nümunə</strong>
+          <strong>Sadə qayda</strong>
           <small>
-            Whey: “50 qr / 1 qaşıq” → stokdan 50 qr çıxır. Creatine: “5 qr” → 5 qr çıxır.
-            Tablet: “10 tablet” → 10 ədəd çıxır. “Sərbəst miqdar” növündə stokdan çıxacaq dəyəri 1 yazıb qiyməti 1 qr/ədəd üçün təyin edə bilərsən.
+            Stok vahidi “qram”dırsa: 5 qram → 5, 50 qram → 50. Stok vahidi “tablet”dirsə: 10 tablet → 10.
+            0.005 və ya 0.01 yalnız stok vahidin “kq” olduqda məntiqlidir. Qram stokunda belə onluqlar yazma.
           </small>
         </span>
       </div>
     </section>
+
+    <div id="admin-product-unit-warning" class="product-unit-warning is-hidden" role="status"></div>
 
     <label class="ui-upload">
 
@@ -4226,6 +4280,8 @@ function openProductEditor(
     content,
 
     trigger,
+
+    className: 'app-modal--product-editor',
 
     onOpen:
       () => {
@@ -4331,6 +4387,9 @@ function bindProductForm(
   const addVariantButton =
     $('#admin-product-add-variant', form);
 
+  const unitWarning =
+    $('#admin-product-unit-warning', form);
+
   const nameError =
     $(
       '#admin-product-name-error',
@@ -4383,6 +4442,53 @@ function bindProductForm(
         );
   }
 
+  function syncStockGuidance() {
+    const unit = stockUnitLabel(unitInput?.value);
+    const variantRows = $$('[data-sale-variant-row]', form);
+    const issues = [];
+
+    variantRows.forEach(row => {
+      setText($('[data-stock-deduction-label]', row), `Stokdan çıxacaq (${unit})`);
+      setText($('[data-stock-unit-suffix]', row), unit);
+
+      const type = normalizeString($('[data-variant-field="variant_type"]', row)?.value);
+      const name = normalizeString($('[data-variant-field="name"]', row)?.value);
+      const deduction = number($('[data-variant-field="stock_deduction"]', row)?.value);
+
+      if ((type === 'gram' || type === 'scoop') && unit !== 'qram') {
+        issues.push('Qram/qaşıq satışı üçün “Stok vahidi”ni Qram seç.');
+      }
+
+      if (type === 'tablet' && !['tablet', 'ədəd'].includes(unit)) {
+        issues.push('Tablet satışı üçün stok vahidi Tablet / kapsul olmalıdır.');
+      }
+
+      if (type === 'gram' && unit === 'qram') {
+        const match = name.match(/(\d+(?:[.,]\d+)?)\s*(?:qr|qram|g)\b/i);
+        const namedGrams = match ? number(match[1].replace(',', '.')) : 0;
+        if (namedGrams > 0 && deduction > 0 && Math.abs(namedGrams - deduction) > 0.0001) {
+          issues.push(`“${name}” üçün stokdan ${deduction} qram çıxılır. Adına görə burada ${namedGrams} yazılmalıdır.`);
+        }
+      }
+    });
+
+    if (!unitWarning) return issues;
+
+    if (!issues.length) {
+      hideElement(unitWarning);
+      unitWarning.innerHTML = '';
+      return issues;
+    }
+
+    unitWarning.innerHTML = `
+      <strong>Stok vahidini yoxla</strong>
+      <span>${escapeHtml(Array.from(new Set(issues)).join(' '))}</span>
+      <small>Vahidi dəyişmək mövcud stok rəqəmini avtomatik çevirmir. Yadda saxladıqdan sonra Stok → Düzəlt ilə real qalığı yaz.</small>
+    `;
+    showElement(unitWarning);
+    return issues;
+  }
+
   modeInput
     ?.addEventListener(
       'change',
@@ -4391,11 +4497,19 @@ function bindProductForm(
 
   syncSaleMode();
 
+  unitInput?.addEventListener('change', syncStockGuidance);
+  variantsRoot?.addEventListener('input', syncStockGuidance);
+  variantsRoot?.addEventListener('change', syncStockGuidance);
+
+  syncStockGuidance();
+
   addVariantButton?.addEventListener('click', () => {
     variantsRoot?.insertAdjacentHTML(
       'beforeend',
-      saleVariantEditorRowMarkup({}, $$('[data-sale-variant-row]', form).length)
+      saleVariantEditorRowMarkup({}, $$('[data-sale-variant-row]', form).length, unitInput?.value || 'ədəd')
     );
+
+    syncStockGuidance();
 
     const lastRow = $$('[data-sale-variant-row]', form).at(-1);
     $('[data-variant-field="name"]', lastRow)?.focus();
@@ -4405,6 +4519,7 @@ function bindProductForm(
     const removeButton = event.target.closest('[data-remove-sale-variant]');
     if (!removeButton) return;
     removeButton.closest('[data-sale-variant-row]')?.remove();
+    syncStockGuidance();
   });
 
   form.addEventListener(
@@ -4484,6 +4599,13 @@ function bindProductForm(
 
       const saleVariants = collectSaleVariantRows(form);
 
+      const unitIssues = syncStockGuidance();
+      if (unitIssues.length) {
+        notify.warning('Stok vahidi ilə satış seçimləri uyğun deyil. Sarı xəbərdarlığı düzəlt.');
+        unitWarning?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+
       const invalidVariant = saleVariants.find(
         variant =>
           !variant.name ||
@@ -4525,9 +4647,8 @@ function bindProductForm(
           mode,
 
         stock_unit:
-          normalizeString(
-            unitInput?.value,
-            'ədəd'
+          normalizedStockUnit(
+            unitInput?.value
           ),
 
         retail_price:
@@ -5419,6 +5540,9 @@ function openStockAddModal(
   product,
   trigger = null
 ) {
+  const stockUnit = stockUnitLabel(productStockUnit(product));
+  const packageCalculatorEnabled = ['qram', 'tablet'].includes(stockUnit);
+
   const content =
     createElement(
       'form',
@@ -5478,10 +5602,10 @@ function openStockAddModal(
         class="ui-field__label"
         for="stock-add-quantity"
       >
-        Əlavə ediləcək stok
+        Əlavə ediləcək miqdar (${escapeHtml(stockUnit)})
       </label>
 
-      <div class="ui-input">
+      <div class="ui-input sale-variant-editor-row__quantity-input">
 
         <input
           id="stock-add-quantity"
@@ -5492,8 +5616,10 @@ function openStockAddModal(
           step="0.001"
           placeholder="0"
         >
+        <span class="sale-variant-editor-row__unit">${escapeHtml(stockUnit)}</span>
 
       </div>
+      <span class="ui-field__hint">Stok bu vahidlə saxlanılır; satış da həmin vahiddən çıxacaq.</span>
 
       <span
         id="stock-add-quantity-error"
@@ -5501,6 +5627,31 @@ function openStockAddModal(
       ></span>
 
     </div>
+
+    ${packageCalculatorEnabled ? `
+      <div class="stock-package-calculator">
+        <div class="stock-package-calculator__header">
+          <strong>Qab/qutu ilə alırsansa</strong>
+          <small>İstəyə bağlı hesablayıcı — yekun miqdarı yuxarıdakı xanaya özü yazır.</small>
+        </div>
+        <div class="modal-form__grid">
+          <div class="ui-field">
+            <label class="ui-field__label" for="stock-add-package-count">Qab / qutu sayı</label>
+            <div class="ui-input">
+              <input id="stock-add-package-count" class="ui-input__control" type="number" inputmode="decimal" min="0" step="1" placeholder="Məs: 2">
+            </div>
+          </div>
+          <div class="ui-field">
+            <label class="ui-field__label" for="stock-add-package-size">1 qabda / qutuda neçə ${escapeHtml(stockUnit)}</label>
+            <div class="ui-input sale-variant-editor-row__quantity-input">
+              <input id="stock-add-package-size" class="ui-input__control" type="number" inputmode="decimal" min="0" step="0.001" placeholder="Məs: ${stockUnit === 'qram' ? '360' : '100'}">
+              <span class="sale-variant-editor-row__unit">${escapeHtml(stockUnit)}</span>
+            </div>
+          </div>
+        </div>
+        <div id="stock-add-package-result" class="stock-package-calculator__result">Yekun stok miqdarı hesablanacaq.</div>
+      </div>
+    ` : ''}
 
     <div class="ui-field">
 
@@ -5613,6 +5764,10 @@ function bindStockAddForm(
       form
     );
 
+  const packageCountInput = $('#stock-add-package-count', form);
+  const packageSizeInput = $('#stock-add-package-size', form);
+  const packageResult = $('#stock-add-package-result', form);
+
   const noteInput =
     $(
       '#stock-add-note',
@@ -5630,6 +5785,23 @@ function bindStockAddForm(
       '#stock-add-submit',
       form
     );
+
+  function syncPackageQuantity() {
+    if (!packageCountInput || !packageSizeInput) return;
+    const count = Math.max(0, number(packageCountInput.value));
+    const size = Math.max(0, number(packageSizeInput.value));
+    const total = count * size;
+
+    if (count > 0 && size > 0) {
+      quantityInput.value = String(Number(total.toFixed(3)));
+      setText(packageResult, `${count} × ${size} = ${Number(total.toFixed(3))} ${stockUnitLabel(productStockUnit(product))}`);
+    } else {
+      setText(packageResult, 'Yekun stok miqdarı hesablanacaq.');
+    }
+  }
+
+  packageCountInput?.addEventListener('input', syncPackageQuantity);
+  packageSizeInput?.addEventListener('input', syncPackageQuantity);
 
   form.addEventListener(
     'submit',
