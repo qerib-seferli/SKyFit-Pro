@@ -436,31 +436,6 @@ function visibleListItems(key, items = []) {
   return items.slice(0, limit);
 }
 
-) {
-  const paging = state.remotePaging?.[key];
-  if (!paging || paging.loading || (!paging.hasMore && options.append !== false)) return [];
-  const append = options.append !== false;
-  const pageSize = UI_CONFIG.lists?.pageSize || 50;
-  paging.loading = true;
-  try {
-    const offset = append ? paging.offset : 0;
-    const { data, error } = await supabase.rpc(RPC.getAdminFeedV1, { p_feed: paging.feed, p_offset: offset, p_limit: pageSize });
-    if (error) throw error;
-    const items = rows(data);
-    paging.offset = offset + items.length;
-    paging.hasMore = items.length === pageSize;
-    const stateKey = key === 'finance' ? 'ledger' : key === 'cash' ? 'cashRegisterEntries' : key;
-    state[stateKey] = append ? [...(state[stateKey] || []), ...items] : items;
-    return items;
-  } catch (error) {
-    console.error('[SKy Fit remote feed]', key, error);
-    return [];
-  } finally {
-    paging.loading = false;
-  }
-}
-
-
 
 function bindInfiniteList(root, key, render, total) {
   if (!root || root.dataset.infiniteBound === key) return;
@@ -756,32 +731,8 @@ async function loadActiveTab() {
 //   p_to,
 //   p_actor_id,
 //   p_limit
-// )
 
-) {
-  if (state.loading.history) return state.history;
-  state.loading.history = true;
-  try {
-    const filteredRequest = Boolean(options.from || options.to || options.actorId);
-    if (!filteredRequest) {
-      const append = options.append === true;
-      if (!append) { resetRemotePage('history'); resetListLimit('history'); }
-      return await loadRemotePage('history', { append });
-    }
-    const { data, error } = await supabase.rpc(RPC.getOperatorActivity, {
-      p_from: options.from || null, p_to: options.to || null, p_actor_id: options.actorId || null, p_limit: options.limit || 500,
-    });
-    if (error) throw error;
-    state.history = rows(data);
-    state.remotePaging.history.hasMore = false;
-    return state.history;
-  } catch (error) {
-    console.error('[SKy Fit Admin] Audit history:', error);
-    state.history = [];
-    notify.error(getErrorMessage(error, 'Əməliyyat tarixçəsi yüklənmədi.'));
-    return [];
-  } finally { state.loading.history = false; }
-}
+
 
 
 
