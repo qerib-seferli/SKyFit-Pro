@@ -1,7 +1,7 @@
 // SKy Fit Pro — Məhsul redaktoru / satış variantları
 import { supabase, APP_CONFIG, TABLES, RPC } from './config.js';
 import {
-  $, $$, createElement, showElement, hideElement, setText, normalizeString, escapeHtml, number,
+  $, $$, createElement, showElement, hideElement, setText, normalizeString, escapeHtml, number, rows,
   openModal, closeModal, confirmDialog, notify, getErrorMessage, setFieldError, setButtonLoading,
 } from './core.js';
 import { productSaleVariants, saleVariantType, saleVariantTypeLabel } from './admin-pos.js';
@@ -53,7 +53,7 @@ export function stockUnitOptionMarkup(currentValue) {
 
 export function createAdminProductEditor(ctx) {
   const {
-    state, loadProducts, loadHistory, renderAdminProducts, renderPosProducts, renderQuickSaleProducts,
+    state, loadProducts, loadHistory, loadStockMovements, renderAdminProducts, renderPosProducts, renderQuickSaleProducts, renderStock,
   } = ctx;
 
   function saleVariantEditorRowMarkup(variant = {}, index = 0, stockUnit = 'ədəd') {

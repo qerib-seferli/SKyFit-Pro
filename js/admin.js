@@ -277,7 +277,14 @@ const {
 function renderQuickSaleProducts() {}
 
 const productEditorController = createAdminProductEditor({
-  state, loadProducts, loadHistory, renderAdminProducts, renderPosProducts, renderQuickSaleProducts,
+  state,
+  loadProducts,
+  loadHistory,
+  loadStockMovements,
+  renderAdminProducts,
+  renderPosProducts,
+  renderQuickSaleProducts,
+  renderStock,
 });
 
 const posController = createAdminPosController({
