@@ -38,7 +38,7 @@ export function historyTableLabel(table) {
 export function historyActionLabel(action) {
   switch (normalizeString(action).toUpperCase()) {
     case 'INSERT': return 'Əlavə etdi';
-    case 'UPDATE': return 'Dəyişdi';
+    case 'UPDATE': return 'Dəyişiklik etdi';
     case 'DELETE': return 'Sildi';
     default: return normalizeString(action, 'Əməliyyat');
   }
@@ -54,7 +54,8 @@ export function historyActionClass(action) {
 }
 
 const HIDDEN_FIELDS = new Set([
-  'updated_at', 'operator_shift_id', 'updated_by', 'created_by',
+  'updated_at', 'operator_shift_id', 'updated_by', 'created_by', 'id', 'auth_user_id',
+  'staff_id', 'member_id', 'plan_id', 'product_id', 'sale_id', 'reference_id', 'sale_variant_id',
 ]);
 
 const FIELD_LABELS = {
@@ -72,6 +73,7 @@ const FIELD_LABELS = {
   bonus: 'Bonus', deduction: 'Tutulma', advance_offset: 'Avansdan tutulma', gross_pay: 'Hesablanan maaş',
   net_pay: 'Ödənən maaş', job_title: 'Vəzifə', reason: 'Səbəb', reversal_type: 'Qaytarma növü',
   role: 'Rol', email: 'E-poçt', address: 'Ünvan', stock_unit: 'Stok vahidi', sale_mode: 'Satış qaydası',
+  period_month: 'Maaş dövrü', hired_on: 'İşə başlama', is_manual: 'Müştəri profili',
 };
 
 const MONEY_FIELDS = new Set([

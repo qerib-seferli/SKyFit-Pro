@@ -1,7 +1,7 @@
 // SKy Fit Pro — Məhsul redaktoru / satış variantları
 import { supabase, APP_CONFIG, TABLES, RPC } from './config.js';
 import {
-  $, $$, createElement, showElement, hideElement, normalizeString, escapeHtml, number,
+  $, $$, createElement, showElement, hideElement, setText, normalizeString, escapeHtml, number,
   openModal, closeModal, confirmDialog, notify, getErrorMessage, setFieldError, setButtonLoading,
 } from './core.js';
 import { productSaleVariants, saleVariantType, saleVariantTypeLabel } from './admin-pos.js';

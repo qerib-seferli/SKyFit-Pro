@@ -642,8 +642,8 @@ export function createAdminDataService({ state, resetListLimit, renderDashboard 
     try {
       const { data, error } = await supabase
         .from(TABLES.saleItems)
-        .select('id,sale_id,product_id,product_name,quantity,sale_variant_name,line_total,created_at')
-        .order('created_at', { ascending: false })
+        .select('id,sale_id,product_id,product_name,quantity,stock_deduction,sale_variant_name,line_total,unit_cost,cost_total,gross_profit')
+        .order('id', { ascending: false })
         .limit(2000);
       if (error) throw error;
       state.saleItems = rows(data);

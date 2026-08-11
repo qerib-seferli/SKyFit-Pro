@@ -289,11 +289,31 @@ export function uniqueBy(array, keyGetter) {
   return Array.from(map.values());
 }
 
+const TECHNICAL_MESSAGE_LABELS = Object.freeze({
+  staff_payrolls: 'maaş tarixçəsi', staff_employment: 'işçi məlumatı', sale_reversals: 'satış qaytarması',
+  sale_items: 'satış məhsulları', product_sale_variants: 'satış seçimləri', cash_register_entries: 'KASSA hərəkətləri',
+  ledger_entries: 'maliyyə əməliyyatları', debt_transactions: 'borc əməliyyatları', debt_accounts: 'borc hesabları',
+  stock_movements: 'stok hərəkətləri', walk_in_entries: 'günlük girişlər', profiles: 'istifadəçilər', products: 'məhsullar',
+});
+
+function humanizeTechnicalMessage(value, fallback) {
+  let text = normalizeString(value);
+  if (!text) return fallback;
+  Object.entries(TECHNICAL_MESSAGE_LABELS).forEach(([technical, label]) => {
+    text = text.replaceAll(technical, label);
+  });
+  if (/column .* does not exist/i.test(text)) return 'Məlumat strukturu uyğun deyil. Səhifəni yenilə və yenidən yoxla.';
+  if (/function .* does not exist|could not find the function|schema cache/i.test(text)) return 'Sistem funksiyası yenilənməyib. Supabase SQL yeniləməsini tətbiq et və yenidən yoxla.';
+  if (/duplicate key|already exists/i.test(text)) return 'Bu məlumat artıq mövcuddur.';
+  if (/permission denied|row-level security|not authorized/i.test(text)) return 'Bu əməliyyat üçün icazən yoxdur.';
+  return text;
+}
+
 export function getErrorMessage(error, fallback = 'Əməliyyat zamanı xəta baş verdi.') {
   if (!error) return fallback;
-  if (typeof error === 'string') return normalizeString(error, fallback);
+  if (typeof error === 'string') return humanizeTechnicalMessage(error, fallback);
   for (const value of [error.message, error.error_description, error.details, error.hint]) {
-    const text = normalizeString(value);
+    const text = humanizeTechnicalMessage(value, '');
     if (text) return text;
   }
   return fallback;
@@ -982,7 +1002,7 @@ function ensureLoaderRoot() {
       className: 'app-loader',
       attrs: { role: 'status', 'aria-live': 'polite', 'aria-hidden': 'true' },
     });
-    loader.innerHTML = '<div class="app-loader__panel"><span class="app-loader__spinner" aria-hidden="true"></span><span class="app-loader__label">Yüklənir...</span></div>';
+    loader.innerHTML = '<div class="app-loader__panel"><span class="app-loader__spinner" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" opacity=".22" stroke="currentColor" stroke-width="2.4"/><path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></span><span class="app-loader__label">Yüklənir...</span></div>';
     root.append(loader);
   }
   return loader;
@@ -1146,6 +1166,9 @@ export function openModal(options = {}) {
   };
 
   closeButton?.addEventListener('click', requestModalClose, { capture: true });
+  modal.addEventListener('click', event => {
+    if (event.target.closest('[data-modal-close]')) requestModalClose(event);
+  });
   backdrop.addEventListener('click', event => {
     if (event.target === backdrop && activeModal?.closeOnBackdrop) closeModal();
   });

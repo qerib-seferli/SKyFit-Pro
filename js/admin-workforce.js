@@ -119,7 +119,7 @@ function renderPayrolls() {
   clearElement(root);
 
   const table = createElement('table', { className: 'admin-table payroll-table' });
-  table.innerHTML = `<thead><tr><th>Dövr</th><th>İşçi</th><th>Maaş</th><th>Bonus</th><th>Tutulma</th><th>Avansdan tutuldu</th><th>Ödənən</th><th>Tarix</th></tr></thead><tbody></tbody>`;
+  table.innerHTML = `<thead><tr><th>Dövr</th><th>İşçi</th><th>Maaş</th><th>Bonus</th><th>Tutulma</th><th>Avansdan tutuldu</th><th>Ödənən</th><th>Tarix</th><th>Əməliyyat</th></tr></thead><tbody></tbody>`;
   const tbody = $('tbody', table);
 
   state.payrolls.forEach(item => {
@@ -135,11 +135,18 @@ function renderPayrolls() {
       <td class="finance-amount finance-amount--expense">− ${escapeHtml(money(item.deduction))}</td>
       <td class="finance-amount finance-amount--expense">− ${escapeHtml(money(item.advance_offset))}</td>
       <td><strong>${escapeHtml(money(netPaid))}</strong><span class="admin-table__secondary">Ümumi xərc: ${escapeHtml(money(item.gross_pay))}</span></td>
-      <td>${formatDate(item.created_at)}</td>`;
+      <td>${formatDate(item.updated_at || item.created_at)}</td>
+      <td>${state.identity?.isAdmin && item.status === 'paid' ? `<button class="ui-button ui-button--glass ui-button--compact" type="button" data-payroll-edit="${item.id}">Düzəlt</button>` : '—'}</td>`;
     tbody.append(row);
   });
 
   root.append(table);
+  root.querySelectorAll('[data-payroll-edit]').forEach(button => {
+    button.addEventListener('click', () => {
+      const payroll = state.payrolls.find(item => String(item.id) === String(button.dataset.payrollEdit));
+      openPayrollModal(employeeById(payroll?.staff_id), button, payroll || null);
+    });
+  });
 }
 
 function openEmploymentModal(employee, trigger = null) {
@@ -192,122 +199,86 @@ function payrollPaymentMarkup() {
     </div>`;
 }
 
-function openPayrollModal(employee = null, trigger = null) {
-  if (!state.identity?.isAdmin) {
-    notify.warning('Maaş hesablaşmasını yalnız admin edə bilər.');
-    return;
-  }
+function openPayrollModal(employee = null, trigger = null, payroll = null) {
+  if (!state.identity?.isAdmin) { notify.warning('Maaş hesablaşmasını yalnız admin edə bilər.'); return; }
+  const editing = Boolean(payroll?.id);
   const defaultEmployee = employee || state.staff.find(item => item.is_active !== false);
   if (!defaultEmployee) return;
+  const periodValue = editing ? normalizeString(payroll.period_month).slice(0, 7) : currentMonthIso();
 
   const content = createElement('form', { className: 'modal-form payroll-form', attrs: { novalidate: '' } });
   content.innerHTML = `
-    <div class="ui-info-card"><span class="ui-info-card__icon">₼</span><span><strong>Maaş hesablaşması</strong><small>Avans əvvəl verildikdə xərc sayılmır. Maaş bağlananda avansdan tutulan hissə maaş xərcinə daxil olur, amma KASSA-dan ikinci dəfə çıxmır.</small></span></div>
+    <div class="ui-info-card"><span class="ui-info-card__icon">₼</span><span><strong>${editing ? 'Maaş düzəlişi' : 'Maaş hesablaşması'}</strong><small>${editing ? 'Səhv daxil edilmiş maaşı təhlükəsiz düzəlt. KASSA, xərc və avans balansı birlikdə yenilənəcək.' : 'Avans əvvəl verildikdə xərc sayılmır. Maaş bağlananda avansdan tutulan hissə maaş xərcinə daxil olur, amma KASSA-dan ikinci dəfə çıxmır.'}</small></span></div>
     <div class="modal-form__grid payroll-form__grid">
-      <div class="ui-field"><label class="ui-field__label">İşçi</label><select id="payroll-staff" class="ui-select">${state.staff.filter(x => x.is_active !== false).map(x => `<option value="${x.id}" ${x.id === defaultEmployee.id ? 'selected' : ''}>${escapeHtml(getProfileName(x))}</option>`).join('')}</select></div>
-      <div class="ui-field"><label class="ui-field__label">Ay</label><input id="payroll-month" class="ui-date-input" type="month" value="${currentMonthIso()}"></div>
-      <div class="ui-field"><label class="ui-field__label">Baza maaşı</label><div class="ui-input"><input id="payroll-base" class="ui-input__control" type="number" min="0" step="0.01"></div></div>
-      <div class="ui-field"><label class="ui-field__label">Bonus</label><div class="ui-input"><input id="payroll-bonus" class="ui-input__control" type="number" min="0" step="0.01" value="0"></div></div>
-      <div class="ui-field"><label class="ui-field__label">Digər tutulma</label><div class="ui-input"><input id="payroll-deduction" class="ui-input__control" type="number" min="0" step="0.01" value="0"></div></div>
-      <div class="ui-field"><label class="ui-field__label">Avansdan tutulacaq</label><div class="ui-input"><input id="payroll-advance" class="ui-input__control" type="number" min="0" step="0.01" value="0"></div><span id="payroll-advance-hint" class="ui-field__hint"></span></div>
+      <div class="ui-field"><label class="ui-field__label">İşçi</label><select id="payroll-staff" class="ui-select" ${editing ? 'disabled' : ''}>${state.staff.filter(x => x.is_active !== false).map(x => `<option value="${x.id}" ${x.id === defaultEmployee.id ? 'selected' : ''}>${escapeHtml(getProfileName(x))}</option>`).join('')}</select></div>
+      <div class="ui-field"><label class="ui-field__label">Ay</label><input id="payroll-month" class="ui-date-input" type="month" value="${escapeHtml(periodValue)}" ${editing ? 'disabled' : ''}></div>
+      <div class="ui-field"><label class="ui-field__label">Baza maaşı</label><div class="ui-input"><input id="payroll-base" class="ui-input__control" type="number" min="0" step="0.01" value="${editing ? number(payroll.base_salary).toFixed(2) : ''}"></div></div>
+      <div class="ui-field"><label class="ui-field__label">Bonus</label><div class="ui-input"><input id="payroll-bonus" class="ui-input__control" type="number" min="0" step="0.01" value="${editing ? number(payroll.bonus).toFixed(2) : '0'}"></div></div>
+      <div class="ui-field"><label class="ui-field__label">Digər tutulma</label><div class="ui-input"><input id="payroll-deduction" class="ui-input__control" type="number" min="0" step="0.01" value="${editing ? number(payroll.deduction).toFixed(2) : '0'}"></div></div>
+      <div class="ui-field"><label class="ui-field__label">Avansdan tutulacaq</label><div class="ui-input"><input id="payroll-advance" class="ui-input__control" type="number" min="0" step="0.01" value="${editing ? number(payroll.advance_offset).toFixed(2) : '0'}"></div><span id="payroll-advance-hint" class="ui-field__hint"></span></div>
     </div>
     <div class="payroll-preview" id="payroll-preview"></div>
     ${payrollPaymentMarkup()}
-    <div class="ui-field"><label class="ui-field__label">Qeyd</label><textarea id="payroll-note" class="ui-textarea" rows="3" placeholder="Məs: Avqust maaşı"></textarea></div>
-    <button id="payroll-submit" class="ui-button ui-button--primary ui-button--full" type="submit"><span class="ui-button__label">Maaşı bağla və ödə</span><span class="ui-button__spinner is-hidden"></span></button>`;
+    <div class="ui-field"><label class="ui-field__label">Qeyd</label><textarea id="payroll-note" class="ui-textarea" rows="3" placeholder="Məs: Avqust maaşı">${escapeHtml(payroll?.note || '')}</textarea></div>
+    <button id="payroll-submit" class="ui-button ui-button--primary ui-button--full" type="submit"><span class="ui-button__label">${editing ? 'Düzəlişi yadda saxla' : 'Maaşı bağla və ödə'}</span><span class="ui-button__spinner is-hidden"></span></button>`;
 
-  openModal({ eyebrow: 'Maaş', title: 'Aylıq hesablaşma', content, trigger, onOpen: () => {
-    const staffInput = $('#payroll-staff', content);
-    const baseInput = $('#payroll-base', content);
-    const bonusInput = $('#payroll-bonus', content);
-    const deductionInput = $('#payroll-deduction', content);
-    const advanceInput = $('#payroll-advance', content);
-    const methodInput = $('#payroll-payment-method', content);
-    const mixedFields = $('#payroll-mixed-fields', content);
-    const cashInput = $('#payroll-cash', content);
-    const cardInput = $('#payroll-card', content);
-    const preview = $('#payroll-preview', content);
-    const advanceHint = $('#payroll-advance-hint', content);
-    const submit = $('#payroll-submit', content);
+  openModal({ eyebrow: 'Maaş', title: editing ? 'Maaş hesablaşmasını düzəlt' : 'Aylıq hesablaşma', content, trigger, onOpen: () => {
+    const staffInput = $('#payroll-staff', content), baseInput = $('#payroll-base', content), bonusInput = $('#payroll-bonus', content), deductionInput = $('#payroll-deduction', content), advanceInput = $('#payroll-advance', content), methodInput = $('#payroll-payment-method', content), mixedFields = $('#payroll-mixed-fields', content), cashInput = $('#payroll-cash', content), cardInput = $('#payroll-card', content), preview = $('#payroll-preview', content), advanceHint = $('#payroll-advance-hint', content), submit = $('#payroll-submit', content);
 
-    const syncEmployee = () => {
-      const id = staffInput?.value;
-      const emp = employmentById(id);
-      const advance = number(advanceById(id)?.balance);
-      if (baseInput) baseInput.value = number(emp?.base_salary).toFixed(2);
-      if (advanceHint) advanceHint.textContent = `Açıq avans: ${money(advance)}`;
-      syncTotals();
-    };
-
-    const syncPayment = () => {
-      const mixed = methodInput?.value === 'mixed';
-      mixed ? showElement(mixedFields) : hideElement(mixedFields);
-      syncTotals();
-    };
+    if (editing) {
+      const cash = number(payroll.cash_amount), card = number(payroll.card_amount);
+      const method = cash > 0 && card > 0 ? 'mixed' : card > 0 ? 'card' : 'cash';
+      if (methodInput) methodInput.value = method;
+      if (cashInput) cashInput.value = cash.toFixed(2);
+      if (cardInput) cardInput.value = card.toFixed(2);
+    }
 
     const syncTotals = () => {
-      const base = Math.max(0, number(baseInput?.value));
-      const bonus = Math.max(0, number(bonusInput?.value));
-      const deduction = Math.max(0, number(deductionInput?.value));
-      const advance = Math.max(0, number(advanceInput?.value));
-      const gross = Math.max(0, base + bonus - deduction);
-      const net = Math.max(0, gross - advance);
+      const base = Math.max(0, number(baseInput?.value)), bonus = Math.max(0, number(bonusInput?.value)), deduction = Math.max(0, number(deductionInput?.value)), advance = Math.max(0, number(advanceInput?.value));
+      const gross = Math.max(0, base + bonus - deduction), net = Math.max(0, gross - advance);
       if (preview) preview.innerHTML = `<div><span>Hesablanan əmək haqqı</span><strong>${escapeHtml(money(gross))}</strong></div><div><span>Avansdan tutulur</span><strong>− ${escapeHtml(money(advance))}</strong></div><div class="is-total"><span>İndi ödənəcək</span><strong>${escapeHtml(money(net))}</strong></div>`;
       if (methodInput?.value === 'cash' && cashInput) cashInput.value = net.toFixed(2);
       if (methodInput?.value === 'card' && cardInput) cardInput.value = net.toFixed(2);
     };
-
+    const syncEmployee = () => {
+      const id = staffInput?.value || defaultEmployee.id, emp = employmentById(id);
+      const available = number(advanceById(id)?.balance) + (editing ? number(payroll.advance_offset) : 0);
+      if (!editing && baseInput) baseInput.value = number(emp?.base_salary).toFixed(2);
+      if (advanceHint) advanceHint.textContent = `Düzəliş üçün mövcud avans limiti: ${money(available)}`;
+      syncTotals();
+    };
+    const syncPayment = () => { (methodInput?.value === 'mixed') ? showElement(mixedFields) : hideElement(mixedFields); syncTotals(); };
     [baseInput, bonusInput, deductionInput, advanceInput, cashInput, cardInput].forEach(input => input?.addEventListener('input', syncTotals));
-    staffInput?.addEventListener('change', syncEmployee);
-    methodInput?.addEventListener('change', syncPayment);
-    syncEmployee();
-    syncPayment();
+    staffInput?.addEventListener('change', syncEmployee); methodInput?.addEventListener('change', syncPayment);
+    syncEmployee(); syncPayment();
 
     content.addEventListener('submit', async event => {
       event.preventDefault();
-      const staffId = normalizeString(staffInput?.value);
-      const month = normalizeString($('#payroll-month', content)?.value);
-      const base = Math.max(0, number(baseInput?.value));
-      const bonus = Math.max(0, number(bonusInput?.value));
-      const deduction = Math.max(0, number(deductionInput?.value));
-      const advance = Math.max(0, number(advanceInput?.value));
-      const gross = Math.max(0, base + bonus - deduction);
-      const net = Math.max(0, gross - advance);
-      const openAdvance = number(advanceById(staffId)?.balance);
-      if (!staffId || !month || advance > openAdvance + 0.005 || advance > gross + 0.005) {
-        notify.warning('İşçi, ay və avans tutulmasını düzgün yoxla.');
-        return;
-      }
-      let cash = 0, card = 0;
-      const method = methodInput?.value || 'cash';
-      if (method === 'cash') cash = net;
-      else if (method === 'card') card = net;
-      else { cash = Math.max(0, number(cashInput?.value)); card = Math.max(0, number(cardInput?.value)); }
-      if (Math.abs((cash + card) - net) > 0.005) {
-        notify.warning(`Nağd + Kart cəmi ${money(net)} olmalıdır.`);
-        return;
-      }
-      setButtonLoading(submit, true, { loadingText: 'Hesablaşır...' });
+      const staffId = normalizeString(staffInput?.value || defaultEmployee.id), month = normalizeString($('#payroll-month', content)?.value || periodValue);
+      const base = Math.max(0, number(baseInput?.value)), bonus = Math.max(0, number(bonusInput?.value)), deduction = Math.max(0, number(deductionInput?.value)), advance = Math.max(0, number(advanceInput?.value));
+      const gross = Math.max(0, base + bonus - deduction), net = Math.max(0, gross - advance);
+      const availableAdvance = number(advanceById(staffId)?.balance) + (editing ? number(payroll.advance_offset) : 0);
+      if (!staffId || !month || advance > availableAdvance + 0.005 || advance > gross + 0.005) { notify.warning('İşçi, ay və avans tutulmasını düzgün yoxla.'); return; }
+      let cash = 0, card = 0; const method = methodInput?.value || 'cash';
+      if (method === 'cash') cash = net; else if (method === 'card') card = net; else { cash = Math.max(0, number(cashInput?.value)); card = Math.max(0, number(cardInput?.value)); }
+      if (Math.abs((cash + card) - net) > 0.005) { notify.warning(`Nağd + Kart cəmi ${money(net)} olmalıdır.`); return; }
+      setButtonLoading(submit, true, { loadingText: editing ? 'Düzəldilir...' : 'Hesablaşır...' });
       try {
-        const { error } = await supabase.rpc(RPC.settleStaffPayrollV1, {
-          p_staff_id: staffId,
-          p_period_month: `${month}-01`,
-          p_base_salary: base,
-          p_bonus: bonus,
-          p_deduction: deduction,
-          p_advance_offset: advance,
-          p_cash_amount: cash,
-          p_card_amount: card,
+        const rpc = editing ? RPC.correctStaffPayrollV1 : RPC.settleStaffPayrollV1;
+        const params = editing ? {
+          p_payroll_id: payroll.id, p_base_salary: base, p_bonus: bonus, p_deduction: deduction,
+          p_advance_offset: advance, p_cash_amount: cash, p_card_amount: card,
           p_note: normalizeString($('#payroll-note', content)?.value) || null,
-        });
-        if (error) throw error;
-        closeModal();
-        notify.success('Maaş hesablaşması bağlandı.');
-        await loadAndRenderWorkforce();
-        window.dispatchEvent(new CustomEvent('skyfit:admin-operation', { detail: { type: 'payroll' } }));
-      } catch (error) {
-        notify.error(getErrorMessage(error, 'Maaş hesablaşması tamamlanmadı.'));
-      } finally { setButtonLoading(submit, false); }
+        } : {
+          p_staff_id: staffId, p_period_month: `${month}-01`, p_base_salary: base, p_bonus: bonus,
+          p_deduction: deduction, p_advance_offset: advance, p_cash_amount: cash, p_card_amount: card,
+          p_note: normalizeString($('#payroll-note', content)?.value) || null,
+        };
+        const { error } = await supabase.rpc(rpc, params); if (error) throw error;
+        closeModal(); notify.success(editing ? 'Maaş hesablaşması düzəldildi.' : 'Maaş hesablaşması bağlandı.');
+        await loadAndRenderWorkforce(); window.dispatchEvent(new CustomEvent('skyfit:admin-operation', { detail: { type: 'payroll' } }));
+      } catch (error) { notify.error(getErrorMessage(error, editing ? 'Maaş düzəlişi tamamlanmadı.' : 'Maaş hesablaşması tamamlanmadı.')); }
+      finally { setButtonLoading(submit, false); }
     });
   }});
 }

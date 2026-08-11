@@ -124,7 +124,6 @@ import {
 import { createAdminProductEditor, stockUnitLabel } from './admin-product-editor.js';
 import { createAdminDataService } from './admin-data.js';
 import { createAdminRouter } from './admin-router.js';
-import { createAdminQuickSale } from './admin-quick-sale.js';
 import { bindAdminRuntimeEvents } from './admin-events.js';
 
 const ADMIN_OPERATION_EVENT = 'skyfit:admin-operation';
@@ -275,11 +274,7 @@ const {
   loadDashboard,
 } = dataService;
 
-let quickSaleController = null;
-
-function renderQuickSaleProducts() {
-  return quickSaleController?.render?.();
-}
+function renderQuickSaleProducts() {}
 
 const productEditorController = createAdminProductEditor({
   state, loadProducts, loadHistory, renderAdminProducts, renderPosProducts, renderQuickSaleProducts,
@@ -363,13 +358,6 @@ const financeActionsController = createAdminFinanceActions({
 const adminRouter = createAdminRouter({ state, loadActiveTab });
 const { setActiveTab, bindTabEvents, resolveInitialAdminTab } = adminRouter;
 
-quickSaleController = createAdminQuickSale({
-  state,
-  loadProducts,
-  productSaleVariants,
-  productStockText,
-  openPosSaleModal,
-});
 
 async function requireAdminStaff() {
   const identity =
@@ -1111,13 +1099,7 @@ function renderDashboardMemberships() {
         );
 
       item.innerHTML = `
-        <span class="compact-list-item__icon">
-          ${escapeHtml(
-            getProfileInitials(
-              member
-            )
-          )}
-        </span>
+        ${memberAvatarMarkup(member, 'compact-list-item__icon dashboard-debt-avatar')}
 
         <span class="compact-list-item__content">
 
@@ -1229,13 +1211,7 @@ function renderDashboardDebts() {
         );
 
       item.innerHTML = `
-        <span class="compact-list-item__icon">
-          ${escapeHtml(
-            getProfileInitials(
-              member
-            )
-          )}
-        </span>
+        ${memberAvatarMarkup(member, 'compact-list-item__icon dashboard-debt-avatar')}
 
         <span class="compact-list-item__content">
 
@@ -1423,6 +1399,24 @@ function auditActionLabel(
     staff_cash_transactions:
       'İşçi avansı',
 
+    staff_employment:
+      'İşçi məlumatı',
+
+    staff_payrolls:
+      'Maaş',
+
+    sale_reversals:
+      'Satış qaytarması',
+
+    sale_items:
+      'Satış məhsulu',
+
+    debt_accounts:
+      'Borc hesabı',
+
+    walk_in_entries:
+      'Günlük giriş',
+
     cash_register_entries:
       'KASSA',
 
@@ -1564,18 +1558,7 @@ function memberOptionsMarkup(
               : ''
           }
         >
-          ${escapeHtml(
-            getProfileName(
-              member
-            )
-          )}
-          ${
-            member.phone
-              ? ` — ${escapeHtml(
-                  member.phone
-                )}`
-              : ''
-          }
+          ${escapeHtml(getProfileName(member))}${member.is_manual ? ' — Müştəri' : ''}${member.phone ? ` — ${escapeHtml(member.phone)}` : ''}
         </option>
       `
     )
@@ -2401,7 +2384,6 @@ function bindAdminEvents() {
 
   bindStockEvents();
 
-  quickSaleController.bind();
 
   bindMemberEvents();
 

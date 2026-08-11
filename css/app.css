@@ -9923,3 +9923,86 @@ body[data-page="admin"] .app-footer {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* ============================================================
+   SKy Fit Pro 1.5.1 — canlı production UX düzəlişləri
+   ============================================================ */
+.brand-mark__icon{position:relative;overflow:hidden;display:grid;place-items:center}
+.brand-mark__icon img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit;z-index:2}
+.brand-mark__icon>span{position:relative;z-index:1}
+.app-loader__spinner{display:grid!important;place-items:center;width:30px!important;height:30px!important;border:0!important;background:transparent!important;animation:none!important;color:var(--accent,#ffde00)}
+.app-loader__spinner svg{width:30px;height:30px;animation:skyfit-loader-spin .8s linear infinite}
+@keyframes skyfit-loader-spin{to{transform:rotate(360deg)}}
+.app-modal__close{z-index:50!important;pointer-events:auto!important;cursor:pointer!important;touch-action:manipulation}
+
+/* Admin desktop: sol panel həmişə ekranda qalır. */
+@media (min-width:981px){
+  body[data-page="admin"]{padding-bottom:0!important}
+  body[data-page="admin"] .admin-shell{grid-template-columns:210px minmax(0,1fr)!important;align-items:start}
+  body[data-page="admin"] .admin-sidebar{position:fixed!important;top:100px!important;left:max(7px,calc((100vw - 1540px)/2))!important;width:210px!important;height:calc(100dvh - 112px)!important;max-height:none!important;overflow-y:auto!important;z-index:40}
+  body[data-page="admin"] .admin-content{grid-column:2!important;min-width:0}
+  body[data-page="admin"] .app-footer{margin-top:8px!important;margin-bottom:calc(var(--bottom-nav-height,68px) + 10px)!important}
+  body[data-page="admin"] .admin-page{min-height:0!important;padding-bottom:0!important}
+}
+
+/* Dashboard borclar: avatar, məbləğ və tarix ayrılıqda. */
+.dashboard-debt-avatar{width:42px!important;height:42px!important;border-radius:12px!important;overflow:hidden!important;padding:0!important;display:grid!important;place-items:center!important}
+.dashboard-debt-avatar img{width:100%;height:100%;object-fit:cover;display:block}
+#dashboard-open-debts .compact-list-item{grid-template-columns:42px minmax(0,1fr) auto!important;column-gap:12px!important;min-height:62px}
+#dashboard-open-debts .compact-list-item__side{display:grid!important;justify-items:end!important;gap:3px!important;min-width:105px}
+#dashboard-open-debts .dashboard-debt-amount{font-size:15px!important;line-height:1.15!important;font-weight:900!important;white-space:nowrap}
+#dashboard-open-debts .dashboard-debt-date{font-size:11px!important;line-height:1.2!important;color:var(--text-muted)!important;white-space:nowrap}
+
+/* Cədvəllər: məlumatlar bir-birinə yapışmasın. */
+.membership-table,.debt-table,.finance-table,.cash-register-table,.payroll-table{table-layout:auto!important;width:100%!important;min-width:920px}
+.admin-table th,.admin-table td{padding:12px 14px!important;vertical-align:middle!important;line-height:1.35!important}
+.admin-table td>strong+.admin-table__secondary,.admin-table td>.ui-badge+.admin-table__secondary{display:block!important;margin-top:4px!important}
+.debt-history__item{grid-template-columns:42px minmax(220px,1fr) minmax(145px,auto)!important;gap:12px!important;align-items:center!important}
+.debt-history__item .debt-history__amount{font-size:15px!important;font-weight:900!important;white-space:nowrap}
+.debt-history__item time,.debt-history__item .debt-history__date{font-size:12px!important;white-space:nowrap;color:var(--text-muted)!important}
+#debt-accounts-list,#debt-transactions-list,#finance-ledger-list,#cash-register-list,#memberships-list,#staff-payroll-list{overflow:auto!important;scrollbar-gutter:stable}
+
+/* Borclar səhifəsi boşluğu səmərəli istifadə etsin. */
+#admin-panel-debts .admin-kpi-grid{grid-template-columns:repeat(2,minmax(220px,360px))!important;justify-content:start!important}
+#admin-panel-debts .admin-section-card{max-width:none!important}
+
+/* Maaş modalı: tam simmetrik 2 sütun. */
+.payroll-form__grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:14px!important;align-items:start!important}
+.payroll-form__grid>.ui-field{min-width:0;margin:0!important}
+.payroll-form__grid .ui-select,.payroll-form__grid .ui-date-input,.payroll-form__grid .ui-input,.payroll-form__grid .ui-input__control{width:100%!important;min-height:48px!important}
+.payroll-form .payment-split-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:14px!important}
+
+/* Borc üçün yeni müştəri formu. */
+.debt-customer-picker{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:stretch}
+.debt-customer-create{margin-top:10px;padding:12px;border:1px solid var(--border);border-radius:14px;background:rgba(255,255,255,.02);display:grid;gap:10px}
+.debt-customer-create.is-hidden{display:none!important}
+
+/* Audit: köhnə dəyər sakit, real yeni dəyişiklik yaşıl. */
+.audit-change-list{display:grid;gap:10px}
+.audit-change{overflow:hidden}
+.audit-change__values{display:grid!important;grid-template-columns:minmax(0,1fr) 24px minmax(0,1fr)!important;gap:10px!important;align-items:stretch!important}
+.audit-change__value{min-width:0!important;overflow:hidden!important}
+.audit-change__value strong{display:block!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:break-word!important;line-height:1.35!important}
+.audit-change__value--old{opacity:.68;background:rgba(255,255,255,.025)!important}
+.audit-change__value--old strong{color:var(--text-muted)!important}
+.audit-change__value--new{border-color:rgba(45,211,111,.32)!important;background:rgba(45,211,111,.07)!important}
+.audit-change__value--new strong,.audit-change__value--new span{color:#3ee887!important}
+.audit-timeline-summary__record strong,.audit-detail__summary strong{overflow-wrap:anywhere}
+
+/* Tez satış seçimləri */
+.quick-variant-grid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))!important}
+.quick-variant-choice{min-height:68px!important;text-align:left!important}
+
+@media (max-width:760px){
+  .payroll-form__grid,.payroll-form .payment-split-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}
+  .debt-customer-picker{grid-template-columns:1fr!important}
+  .audit-change__values{grid-template-columns:1fr!important}
+  .audit-change__arrow{transform:rotate(90deg);justify-self:center}
+  #admin-panel-debts .admin-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media (max-width:430px){
+  .payroll-form__grid,.payroll-form .payment-split-grid{grid-template-columns:1fr!important}
+}
+.quick-service-card__icon svg,.quick-sale-card__media--service svg{width:34px;height:34px;display:block}
+.admin-quick-sale-fab__icon svg{width:20px;height:20px;display:block}

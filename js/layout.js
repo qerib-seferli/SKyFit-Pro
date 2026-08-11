@@ -341,7 +341,7 @@ function brandMarkup(compact = false) {
       class="brand-mark${compact ? ' brand-mark--compact' : ''}"
       aria-label="SKy Fit ana səhifə"
     >
-      <span class="brand-mark__icon" aria-hidden="true">SK</span>
+      <span class="brand-mark__icon" aria-hidden="true"><img src="./assets/icons/favicon.png" alt="" loading="eager" decoding="async"><span>SK</span></span>
       <span class="brand-mark__text">
         <strong>${escapeHtml(APP_CONFIG.shortName)}</strong>
         <small>PRO</small>
@@ -445,14 +445,6 @@ function renderHeader(identity = shellIdentity()) {
         </div>
 
         <div class="app-header__side app-header__side--end">
-          <a
-            href="${APP_CONFIG.routes.favorites}"
-            class="app-header__action"
-            aria-label="Sevimlilər"
-          >
-            ${ICONS.heart}
-          </a>
-
           ${current.authenticated ? `
             <a
               href="${APP_CONFIG.routes.profile}"
@@ -1019,7 +1011,7 @@ export async function refreshLayout(options = {}) {
 export async function initLayout() {
   renderImmediateShellFromCache();
   const identity = await hydrateIdentity();
-  if (identity?.isStaff && document.body.dataset.page !== 'admin') {
+  if (identity?.isStaff) {
     import('./quick-sale.js')
       .then(module => module.initGlobalQuickSale())
       .catch(error => console.error('[SKy Fit Layout] Global quick sale:', error));
@@ -1224,7 +1216,7 @@ function bootstrapLayout() {
   hydrateIdentity()
     .then(identity => {
       lastIdentityRefresh = Date.now();
-      if (identity?.isStaff && document.body.dataset.page !== 'admin') {
+      if (identity?.isStaff) {
         import('./quick-sale.js')
           .then(module => module.initGlobalQuickSale())
           .catch(error => console.error('[SKy Fit Layout] Global quick sale:', error));

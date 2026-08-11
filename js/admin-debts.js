@@ -54,7 +54,7 @@ export function createAdminDebtsController(ctx) {
     const accounts = filteredDebts();
     renderTotals(state.debts);
     const table = createElement('table', { className: 'admin-table' });
-    table.innerHTML = `<thead><tr><th>Üzv</th><th>Borc</th><th>Son dəyişiklik</th><th>Status</th><th>Əməliyyat</th></tr></thead><tbody></tbody>`;
+    table.innerHTML = `<thead><tr><th>Şəxs</th><th>Borc</th><th>Son dəyişiklik</th><th>Status</th><th>Əməliyyat</th></tr></thead><tbody></tbody>`;
     const tbody = $('tbody', table);
     accounts.forEach(account => {
       const balance = debtBalance(account); const row = createElement('tr');

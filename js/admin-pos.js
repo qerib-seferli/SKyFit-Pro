@@ -1,5 +1,5 @@
 // SKy Fit Pro — Admin POS controller
-import { supabase, RPC, UI_CONFIG } from './config.js';
+import { supabase, TABLES, RPC, UI_CONFIG } from './config.js';
 import {
   $, $$, byId, clearElement, createElement, showElement, hideElement, setText,
   normalizeString, normalizeSearch, escapeHtml, number, money, debounce, rows,
@@ -84,6 +84,13 @@ export function productDisplayUnit(product) {
   return variants.length === 1
     ? saleVariantName(variants[0])
     : `${variants.length} satış seçimi`;
+}
+
+const WHOLE_SALE_UNITS = new Set(['ədəd','eded','vahid','qutu','qab','paket','butulka','şüşə','suse','tablet','kapsul','box','pack']);
+export function productCanSellBaseWhole(product) {
+  return productSaleMode(product) === 'unit' &&
+    WHOLE_SALE_UNITS.has(normalizeString(product?.stock_unit).toLocaleLowerCase('az-AZ')) &&
+    productPrice(product) >= 0;
 }
 
 export function productDisplayPriceLabel(product) {
@@ -401,6 +408,8 @@ export function createAdminPosController(ctx) {
     const variants = productSaleVariants(product, {
       quickOnly: Boolean(options.quickOnly),
     });
+    const allowBaseSale = variants.length > 0 && productCanSellBaseWhole(product);
+    const initialVariant = allowBaseSale ? null : (variants[0] || null);
 
     const stock = productStock(product);
     const image = productImage(product);
@@ -419,21 +428,21 @@ export function createAdminPosController(ctx) {
         <div class="ui-field">
           <span class="ui-field__label">Satış ölçüsü</span>
           <div class="sale-variant-picker" id="pos-sale-variant-picker">
+            ${allowBaseSale ? `
+              <button type="button" class="sale-variant-chip is-active" data-sale-variant-id="" aria-pressed="true">
+                <strong>Bütöv məhsul</strong><span>${escapeHtml(money(productPrice(product)))}</span>
+              </button>` : ''}
             ${variants.map((variant, index) => `
-              <button
-                type="button"
-                class="sale-variant-chip${index === 0 ? ' is-active' : ''}"
-                data-sale-variant-id="${escapeHtml(variant.id)}"
-                aria-pressed="${index === 0 ? 'true' : 'false'}"
-              >
-                <strong>${escapeHtml(saleVariantName(variant))}</strong>
-                <span>${escapeHtml(money(saleVariantPrice(variant)))}</span>
+              <button type="button" class="sale-variant-chip${!allowBaseSale && index === 0 ? ' is-active' : ''}" data-sale-variant-id="${escapeHtml(variant.id)}" aria-pressed="${!allowBaseSale && index === 0 ? 'true' : 'false'}">
+                <strong>${escapeHtml(saleVariantName(variant))}</strong><span>${escapeHtml(money(saleVariantPrice(variant)))}</span>
               </button>
             `).join('')}
           </div>
+          ${!allowBaseSale && productStockUnit(product).toLocaleLowerCase('az-AZ') === 'qram' ? '<span class="ui-field__hint">Bütöv qab satışı üçün məhsula “Bütöv qab / paket” satış seçimi əlavə et.</span>' : ''}
         </div>
       `
       : '';
+
 
     content.innerHTML = `
       <div class="pos-confirm__product">
@@ -448,7 +457,7 @@ export function createAdminPosController(ctx) {
         <div class="pos-confirm__identity">
           <strong class="pos-confirm__name">${escapeHtml(productName(product))}</strong>
           <span id="pos-sale-current-price" class="pos-confirm__price">
-            ${escapeHtml(money(variants.length ? saleVariantPrice(variants[0]) : productPrice(product)))}
+            ${escapeHtml(money(initialVariant ? saleVariantPrice(initialVariant) : productPrice(product)))}
           </span>
           <span class="pos-confirm__stock">
             Stok: ${escapeHtml(stockNumber(stock, productStockUnit(product)))} ${escapeHtml(productStockUnit(product))}
@@ -462,7 +471,7 @@ export function createAdminPosController(ctx) {
         <div class="ui-field">
           <label class="ui-field__label" for="pos-sale-quantity" id="pos-sale-quantity-label">
             ${variants.length
-              ? (saleVariantIsCustom(variants[0]) ? `Miqdar (${escapeHtml(productStockUnit(product))})` : 'Say')
+              ? (initialVariant && saleVariantIsCustom(initialVariant) ? `Miqdar (${escapeHtml(productStockUnit(product))})` : 'Say')
               : (legacyMode === 'portion' ? 'Porsiya sayı' : 'Miqdar')}
           </label>
 
@@ -472,8 +481,8 @@ export function createAdminPosController(ctx) {
               class="ui-input__control"
               type="number"
               inputmode="decimal"
-              min="${variants.length && saleVariantIsCustom(variants[0]) ? '0.001' : '1'}"
-              step="${variants.length && saleVariantIsCustom(variants[0]) ? '0.001' : '1'}"
+              min="${initialVariant && saleVariantIsCustom(initialVariant) ? '0.001' : '1'}"
+              step="${initialVariant && saleVariantIsCustom(initialVariant) ? '0.001' : '1'}"
               value="1"
             >
           </div>
@@ -500,19 +509,27 @@ export function createAdminPosController(ctx) {
       </div>
 
       <div id="pos-sale-member-field" class="ui-field is-hidden">
-        <label class="ui-field__label" for="pos-sale-member">Borc yazılacaq üzv</label>
-        <select id="pos-sale-member" class="ui-select">
-          <option value="">Üzv seç</option>
-          ${memberOptionsMarkup()}
-        </select>
-        <span class="ui-field__hint">Borc satışı üçün üzv seçilməsi məcburidir.</span>
+        <label class="ui-field__label" for="pos-sale-member">Borc yazılacaq şəxs</label>
+        <div class="debt-customer-picker">
+          <select id="pos-sale-member" class="ui-select"><option value="">Şəxs seç</option>${memberOptionsMarkup()}</select>
+          <button id="pos-new-customer-toggle" class="ui-button ui-button--glass ui-button--compact" type="button">+ Yeni müştəri</button>
+        </div>
+        <span class="ui-field__hint">Üzv olmayan müştərini də burada yaradıb borcu onun adına yaza bilərsən.</span>
+        <div id="pos-new-customer-form" class="debt-customer-create is-hidden">
+          <div class="modal-form__grid">
+            <label class="ui-field"><span class="ui-field__label">Ad və soyad *</span><input id="pos-new-customer-name" class="ui-input__control" autocomplete="off"></label>
+            <label class="ui-field"><span class="ui-field__label">Telefon</span><input id="pos-new-customer-phone" class="ui-input__control" inputmode="tel" autocomplete="off"></label>
+          </div>
+          <label class="ui-field"><span class="ui-field__label">Ünvan / qeyd</span><input id="pos-new-customer-address" class="ui-input__control" autocomplete="off"></label>
+          <button id="pos-new-customer-save" class="ui-button ui-button--primary ui-button--compact" type="button">Müştərini yarat və seç</button>
+        </div>
       </div>
 
       <div class="pos-confirm__summary">
         <div class="pos-confirm__row">
           <span>Satış seçimi</span>
           <strong id="pos-sale-summary-variant">
-            ${escapeHtml(variants.length ? saleVariantName(variants[0]) : productUnitLabel(product))}
+            ${escapeHtml(initialVariant ? saleVariantName(initialVariant) : productUnitLabel(product))}
           </strong>
         </div>
 
@@ -525,8 +542,8 @@ export function createAdminPosController(ctx) {
           <span>Stokdan çıxacaq</span>
           <strong id="pos-sale-stock-deduction">
             ${escapeHtml(String(
-              variants.length
-                ? saleVariantDeduction(variants[0])
+              initialVariant
+                ? saleVariantDeduction(initialVariant)
                 : (legacyMode === 'portion' ? number(product.portion_size) : 1)
             ))}
             ${escapeHtml(productStockUnit(product))}
@@ -536,7 +553,7 @@ export function createAdminPosController(ctx) {
         <div class="pos-confirm__row pos-confirm__row--total">
           <span>Cəmi</span>
           <strong id="pos-sale-total">
-            ${escapeHtml(money(variants.length ? saleVariantPrice(variants[0]) : productPrice(product)))}
+            ${escapeHtml(money(initialVariant ? saleVariantPrice(initialVariant) : productPrice(product)))}
           </strong>
         </div>
       </div>
@@ -576,13 +593,16 @@ export function createAdminPosController(ctx) {
     const paymentStatusInput = $('#pos-sale-payment-status', form);
     const memberField = $('#pos-sale-member-field', form);
     const memberInput = $('#pos-sale-member', form);
+    const newCustomerToggle = $('#pos-new-customer-toggle', form);
+    const newCustomerForm = $('#pos-new-customer-form', form);
+    const newCustomerSave = $('#pos-new-customer-save', form);
     const quantityError = $('#pos-sale-quantity-error', form);
     const submit = $('#pos-sale-submit', form);
     const cancel = $('#pos-sale-cancel', form);
     const picker = $('#pos-sale-variant-picker', form);
     const paymentMixedFields = $('#pos-sale-mixed-fields', form);
 
-    let selectedVariant = variants[0] || null;
+    let selectedVariant = productCanSellBaseWhole(product) && variants.length ? null : (variants[0] || null);
 
     function currentPrice() {
       return selectedVariant
@@ -652,6 +672,34 @@ export function createAdminPosController(ctx) {
         showElement(paymentMixedFields);
       }
     }
+
+    newCustomerToggle?.addEventListener('click', () => {
+      newCustomerForm?.classList.toggle('is-hidden');
+    });
+
+    newCustomerSave?.addEventListener('click', async () => {
+      const fullName = normalizeString($('#pos-new-customer-name', form)?.value);
+      if (!fullName) { notify.warning('Müştərinin ad və soyadını yaz.'); return; }
+      setButtonLoading(newCustomerSave, true, { loadingText: 'Yaradılır...' });
+      try {
+        const { data, error } = await supabase.from(TABLES.profiles).insert({
+          role: 'member', full_name: fullName,
+          phone: normalizeString($('#pos-new-customer-phone', form)?.value) || null,
+          address: normalizeString($('#pos-new-customer-address', form)?.value) || null,
+          is_manual: true, is_active: true,
+        }).select('id').single();
+        if (error) throw error;
+        await loadMembers();
+        if (memberInput) {
+          memberInput.innerHTML = `<option value="">Şəxs seç</option>${memberOptionsMarkup(data.id)}`;
+          memberInput.value = data.id;
+        }
+        newCustomerForm?.classList.add('is-hidden');
+        notify.success(`${fullName} müştəri kimi əlavə edildi.`);
+      } catch (error) {
+        notify.error(getErrorMessage(error, 'Müştəri əlavə edilmədi.'));
+      } finally { setButtonLoading(newCustomerSave, false); }
+    });
 
     picker?.addEventListener('click', event => {
       const button = event.target.closest('[data-sale-variant-id]');
