@@ -369,17 +369,15 @@ export function createAdminProductEditor(ctx) {
                   : ''
               }
             >
-              Adi satış — 1 ədəd / 1 vahid
+              Bütöv məhsul / qab / qutu
             </option>
 
-            ${editing || mode === 'portion' ? `
-              <option
-                value="portion"
-                ${mode === 'portion' ? 'selected' : ''}
-              >
-                Porsiya / qaşıq
-              </option>
-            ` : ''}
+            <option
+              value="portion"
+              ${mode === 'portion' ? 'selected' : ''}
+            >
+              Porsiya / qaşıq — əsas satış
+            </option>
           </select>
 
         </div>
@@ -531,19 +529,15 @@ export function createAdminProductEditor(ctx) {
 
         <div
           id="admin-product-portion-size-field"
-          class="ui-field ${
-            mode ===
-              'portion'
-              ? ''
-              : 'is-hidden'
-          }"
+          class="ui-field"
         >
 
           <label
+            id="admin-product-portion-size-label"
             class="ui-field__label"
             for="admin-product-portion-size"
           >
-            1 porsiyanın stok miqdarı
+            ${mode === 'portion' ? '1 porsiyanın stok miqdarı' : '1 bütöv məhsul stokdan çıxacaq'}
           </label>
 
           <div class="ui-input">
@@ -559,14 +553,23 @@ export function createAdminProductEditor(ctx) {
                 product
                   ? number(
                       product
-                        .portion_size
+                        .portion_size,
+                      1
                     )
-                  : ''
+                  : 1
               }"
-              placeholder="0.250"
+              placeholder="1"
             >
 
           </div>
+
+          <span id="admin-product-portion-size-hint" class="ui-field__hint">
+            ${
+              mode === 'portion'
+                ? 'Məs: 1 qaşıq 6 qramdırsa 6 yaz.'
+                : 'Ədəd stokunda 1 yaz. Qram stokunda bütöv qab 500 qramdırsa 500 yaz.'
+            }
+          </span>
 
         </div>
 
@@ -945,37 +948,29 @@ export function createAdminProductEditor(ctx) {
 
 
     function syncSaleMode() {
-      const portion =
-        modeInput?.value ===
-        'portion';
+      const portion = modeInput?.value === 'portion';
 
-      const priceField =
-        $(
-          '#admin-product-portion-price-field',
-          form
-        );
+      const priceField = $('#admin-product-portion-price-field', form);
+      const sizeLabel = $('#admin-product-portion-size-label', form);
+      const sizeHint = $('#admin-product-portion-size-hint', form);
 
-      const sizeField =
-        $(
-          '#admin-product-portion-size-field',
-          form
-        );
+      portion ? showElement(priceField) : hideElement(priceField);
 
-      portion
-        ? showElement(
-            priceField
-          )
-        : hideElement(
-            priceField
-          );
+      setText(
+        sizeLabel,
+        portion
+          ? '1 porsiyanın stok miqdarı'
+          : '1 bütöv məhsul stokdan çıxacaq'
+      );
 
-      portion
-        ? showElement(
-            sizeField
-          )
-        : hideElement(
-            sizeField
-          );
+      setText(
+        sizeHint,
+        portion
+          ? 'Məs: 1 qaşıq 6 qramdırsa 6 yaz. Porsiya satıldıqca stokdan bu qədər çıxacaq.'
+          : 'Ədəd stokunda 1 yaz. Qram stokunda 1 qab 500 qramdırsa 500 yaz; 2 qab satılanda 1000 qram çıxacaq.'
+      );
+
+      syncStockGuidance();
     }
 
     function syncStockGuidance() {
@@ -1008,6 +1003,21 @@ export function createAdminProductEditor(ctx) {
         }
       });
 
+      const currentMode = normalizeString(modeInput?.value, 'unit');
+      const currentRetailPrice = number(retailPriceInput?.value);
+      const currentBaseDeduction = number(portionSizeInput?.value);
+
+      if (
+        currentMode === 'unit' &&
+        unit === 'qram' &&
+        currentRetailPrice > 0 &&
+        currentBaseDeduction <= 1
+      ) {
+        issues.push(
+          'Bütöv qab satışı üçün “1 bütöv məhsul stokdan çıxacaq” sahəsinə qabın real qramını yaz. Məs: 500 qramlıq qab üçün 500.'
+        );
+      }
+
       if (!unitWarning) return issues;
 
       if (!issues.length) {
@@ -1034,6 +1044,8 @@ export function createAdminProductEditor(ctx) {
     syncSaleMode();
 
     unitInput?.addEventListener('change', syncStockGuidance);
+    retailPriceInput?.addEventListener('input', syncStockGuidance);
+    portionSizeInput?.addEventListener('input', syncStockGuidance);
     variantsRoot?.addEventListener('input', syncStockGuidance);
     variantsRoot?.addEventListener('change', syncStockGuidance);
 
@@ -1118,16 +1130,22 @@ export function createAdminProductEditor(ctx) {
           return;
         }
 
+        if (portionSize <= 0) {
+          notify.warning(
+            mode === 'portion'
+              ? '1 porsiyanın stok miqdarı sıfırdan böyük olmalıdır.'
+              : '1 bütöv məhsulun stokdan çıxacaq miqdarı sıfırdan böyük olmalıdır.'
+          );
+          portionSizeInput?.focus();
+          return;
+        }
+
         if (
-          mode ===
-            'portion' &&
-          (
-            portionPrice <= 0 ||
-            portionSize <= 0
-          )
+          mode === 'portion' &&
+          portionPrice <= 0
         ) {
           notify.warning(
-            'Porsiya məhsulu üçün porsiya qiyməti və porsiya ölçüsü daxil edilməlidir.'
+            'Porsiya məhsulu üçün porsiya qiyməti daxil edilməlidir.'
           );
 
           return;
@@ -1203,9 +1221,7 @@ export function createAdminProductEditor(ctx) {
             ),
 
         portion_size:
-          mode === 'portion'
-            ? portionSize
-            : 1,
+          portionSize,
 
           low_stock_threshold:
             Math.max(

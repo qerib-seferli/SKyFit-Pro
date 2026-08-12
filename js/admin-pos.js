@@ -4,7 +4,7 @@ import {
   $, $$, byId, clearElement, createElement, showElement, hideElement, setText,
   normalizeString, normalizeSearch, escapeHtml, number, money, debounce, rows,
   productName, productPrice, productStock, productStockUnit, productUnitLabel,
-  productImage, productStockState, productSaleMode, openModal, closeModal, notify,
+  productPortionSize, productImage, productStockState, productSaleMode, openModal, closeModal, notify,
   getErrorMessage, setFieldError, setButtonLoading,
 } from './core.js';
 
@@ -63,8 +63,33 @@ export function saleVariantTypeLabel(type) {
   }
 }
 
+export function productBaseStockDeduction(product) {
+  return Math.max(0.001, productPortionSize(product));
+}
+
+export function productCanSellBaseWhole(product) {
+  if (productSaleMode(product) !== 'unit' || productPrice(product) <= 0) {
+    return false;
+  }
+
+  const stockUnit = normalizeString(productStockUnit(product)).toLocaleLowerCase('az-AZ');
+  const deduction = productBaseStockDeduction(product);
+
+  // Qram stokunda 1 qramı səhvən “bütöv qab” kimi satmağın qarşısını alırıq.
+  if (['qram', 'qr', 'gram', 'g'].includes(stockUnit)) {
+    return deduction > 1;
+  }
+
+  return deduction > 0;
+}
+
 export function productDisplayPrice(product) {
   const variants = productSaleVariants(product);
+
+  if (productCanSellBaseWhole(product)) {
+    return productPrice(product);
+  }
+
   if (!variants.length) {
     return productPrice(product);
   }
@@ -77,8 +102,14 @@ export function productDisplayPrice(product) {
 
 export function productDisplayUnit(product) {
   const variants = productSaleVariants(product);
+  const baseWhole = productCanSellBaseWhole(product);
+
   if (!variants.length) {
-    return productUnitLabel(product);
+    return baseWhole ? 'Bütöv məhsul' : productUnitLabel(product);
+  }
+
+  if (baseWhole) {
+    return `Bütöv + ${variants.length} satış seçimi`;
   }
 
   return variants.length === 1
@@ -86,15 +117,13 @@ export function productDisplayUnit(product) {
     : `${variants.length} satış seçimi`;
 }
 
-const WHOLE_SALE_UNITS = new Set(['ədəd','eded','vahid','qutu','qab','paket','butulka','şüşə','suse','tablet','kapsul','box','pack']);
-export function productCanSellBaseWhole(product) {
-  return productSaleMode(product) === 'unit' &&
-    WHOLE_SALE_UNITS.has(normalizeString(product?.stock_unit).toLocaleLowerCase('az-AZ')) &&
-    productPrice(product) >= 0;
-}
-
 export function productDisplayPriceLabel(product) {
   const variants = productSaleVariants(product);
+
+  if (productCanSellBaseWhole(product)) {
+    return money(productPrice(product));
+  }
+
   const price = money(productDisplayPrice(product));
   return variants.length > 1 ? `${price}-dan` : price;
 }
@@ -408,7 +437,7 @@ export function createAdminPosController(ctx) {
     const variants = productSaleVariants(product, {
       quickOnly: Boolean(options.quickOnly),
     });
-    const allowBaseSale = variants.length > 0 && productCanSellBaseWhole(product);
+    const allowBaseSale = productCanSellBaseWhole(product);
     const initialVariant = allowBaseSale ? null : (variants[0] || null);
 
     const stock = productStock(product);
@@ -423,14 +452,15 @@ export function createAdminPosController(ctx) {
       },
     });
 
-    const variantMarkup = variants.length
+    const saleChoiceMarkup = (variants.length || allowBaseSale)
       ? `
         <div class="ui-field">
           <span class="ui-field__label">Satış ölçüsü</span>
           <div class="sale-variant-picker" id="pos-sale-variant-picker">
             ${allowBaseSale ? `
               <button type="button" class="sale-variant-chip is-active" data-sale-variant-id="" aria-pressed="true">
-                <strong>Bütöv məhsul</strong><span>${escapeHtml(money(productPrice(product)))}</span>
+                <strong>Bütöv məhsul</strong>
+                <span>${escapeHtml(money(productPrice(product)))} · stokdan ${escapeHtml(String(productBaseStockDeduction(product)))} ${escapeHtml(productStockUnit(product))}</span>
               </button>` : ''}
             ${variants.map((variant, index) => `
               <button type="button" class="sale-variant-chip${!allowBaseSale && index === 0 ? ' is-active' : ''}" data-sale-variant-id="${escapeHtml(variant.id)}" aria-pressed="${!allowBaseSale && index === 0 ? 'true' : 'false'}">
@@ -438,7 +468,9 @@ export function createAdminPosController(ctx) {
               </button>
             `).join('')}
           </div>
-          ${!allowBaseSale && productStockUnit(product).toLocaleLowerCase('az-AZ') === 'qram' ? '<span class="ui-field__hint">Bütöv qab satışı üçün məhsula “Bütöv qab / paket” satış seçimi əlavə et.</span>' : ''}
+          ${!allowBaseSale && productSaleMode(product) === 'unit' && productStockUnit(product).toLocaleLowerCase('az-AZ') === 'qram'
+            ? '<span class="ui-field__hint">Bütöv qab satışı üçün Məhsullar → Düzəlt bölməsində “1 bütöv məhsul stokdan çıxacaq” sahəsinə qabın real qramını yaz.</span>'
+            : ''}
         </div>
       `
       : '';
@@ -465,14 +497,14 @@ export function createAdminPosController(ctx) {
         </div>
       </div>
 
-      ${variantMarkup}
+      ${saleChoiceMarkup}
 
       <div class="modal-form__grid">
         <div class="ui-field">
           <label class="ui-field__label" for="pos-sale-quantity" id="pos-sale-quantity-label">
-            ${variants.length
-              ? (initialVariant && saleVariantIsCustom(initialVariant) ? `Miqdar (${escapeHtml(productStockUnit(product))})` : 'Say')
-              : (legacyMode === 'portion' ? 'Porsiya sayı' : 'Miqdar')}
+            ${initialVariant && saleVariantIsCustom(initialVariant)
+              ? `Miqdar (${escapeHtml(productStockUnit(product))})`
+              : (initialVariant ? 'Say' : (legacyMode === 'portion' ? 'Porsiya sayı' : 'Say'))}
           </label>
 
           <div class="ui-input">
@@ -508,13 +540,13 @@ export function createAdminPosController(ctx) {
         </select>
       </div>
 
-      <div id="pos-sale-member-field" class="ui-field is-hidden">
-        <label class="ui-field__label" for="pos-sale-member">Borc yazılacaq şəxs</label>
+      <div id="pos-sale-member-field" class="ui-field">
+        <label id="pos-sale-member-label" class="ui-field__label" for="pos-sale-member">Müştəri (istəyə bağlı)</label>
         <div class="debt-customer-picker">
           <select id="pos-sale-member" class="ui-select"><option value="">Şəxs seç</option>${memberOptionsMarkup()}</select>
           <button id="pos-new-customer-toggle" class="ui-button ui-button--glass ui-button--compact" type="button">+ Yeni müştəri</button>
         </div>
-        <span class="ui-field__hint">Üzv olmayan müştərini də burada yaradıb borcu onun adına yaza bilərsən.</span>
+        <span id="pos-sale-member-hint" class="ui-field__hint">Nağd və kart satışında müştəri seçmək istəyə bağlıdır. Borc satışında şəxs seçilməlidir.</span>
         <div id="pos-new-customer-form" class="debt-customer-create is-hidden">
           <div class="modal-form__grid">
             <label class="ui-field"><span class="ui-field__label">Ad və soyad *</span><input id="pos-new-customer-name" class="ui-input__control" autocomplete="off"></label>
@@ -544,7 +576,7 @@ export function createAdminPosController(ctx) {
             ${escapeHtml(String(
               initialVariant
                 ? saleVariantDeduction(initialVariant)
-                : (legacyMode === 'portion' ? number(product.portion_size) : 1)
+                : productBaseStockDeduction(product)
             ))}
             ${escapeHtml(productStockUnit(product))}
           </strong>
@@ -592,6 +624,8 @@ export function createAdminPosController(ctx) {
     const paymentMethodInput = $('#pos-sale-payment-method', form);
     const paymentStatusInput = $('#pos-sale-payment-status', form);
     const memberField = $('#pos-sale-member-field', form);
+    const memberLabel = $('#pos-sale-member-label', form);
+    const memberHint = $('#pos-sale-member-hint', form);
     const memberInput = $('#pos-sale-member', form);
     const newCustomerToggle = $('#pos-new-customer-toggle', form);
     const newCustomerForm = $('#pos-new-customer-form', form);
@@ -602,7 +636,7 @@ export function createAdminPosController(ctx) {
     const picker = $('#pos-sale-variant-picker', form);
     const paymentMixedFields = $('#pos-sale-mixed-fields', form);
 
-    let selectedVariant = productCanSellBaseWhole(product) && variants.length ? null : (variants[0] || null);
+    let selectedVariant = productCanSellBaseWhole(product) ? null : (variants[0] || null);
 
     function currentPrice() {
       return selectedVariant
@@ -615,9 +649,7 @@ export function createAdminPosController(ctx) {
         return saleVariantDeduction(selectedVariant);
       }
 
-      return productSaleMode(product) === 'portion'
-        ? number(product.portion_size, 1)
-        : 1;
+      return productBaseStockDeduction(product);
     }
 
     function syncQuantityMode() {
@@ -636,7 +668,7 @@ export function createAdminPosController(ctx) {
         quantityLabel,
         custom
           ? `Miqdar (${productStockUnit(product)})`
-          : (selectedVariant ? 'Say' : (productSaleMode(product) === 'portion' ? 'Porsiya sayı' : 'Miqdar'))
+          : (selectedVariant ? 'Say' : (productSaleMode(product) === 'portion' ? 'Porsiya sayı' : 'Say'))
       );
     }
 
@@ -653,14 +685,24 @@ export function createAdminPosController(ctx) {
       );
       setText(
         $('#pos-sale-summary-variant', form),
-        selectedVariant ? saleVariantName(selectedVariant) : productUnitLabel(product)
+        selectedVariant
+          ? saleVariantName(selectedVariant)
+          : (productSaleMode(product) === 'portion' ? productUnitLabel(product) : 'Bütöv məhsul')
       );
       setText($('#pos-sale-current-price', form), money(currentPrice()));
     }
 
     function syncPaymentStatus() {
       const debt = paymentStatusInput?.value === 'debt';
-      debt ? showElement(memberField) : hideElement(memberField);
+
+      showElement(memberField);
+      setText(memberLabel, debt ? 'Borc yazılacaq şəxs *' : 'Müştəri (istəyə bağlı)');
+      setText(
+        memberHint,
+        debt
+          ? 'Borc satışı üçün mövcud şəxsi seç və ya “+ Yeni müştəri” ilə tətbiq hesabı olmayan şəxsi yarat.'
+          : 'Nağd və kart satışında istəsən müştərini seçə və ya yeni müştəri yarada bilərsən; satış onun tarixçəsinə bağlanacaq.'
+      );
 
       if (paymentMethodInput) {
         paymentMethodInput.disabled = debt;
@@ -709,7 +751,7 @@ export function createAdminPosController(ctx) {
         }
 
         newCustomerForm?.classList.add('is-hidden');
-        notify.success(`${fullName} müştəri kimi seçildi. Borc bu şəxsin adına yazıla bilər.`);
+        notify.success(`${fullName} müştəri kimi yaradıldı və satış üçün seçildi.`);
       } catch (error) {
         console.error('[SKy Fit POS] Manual customer:', error);
         notify.error(getErrorMessage(error, 'Müştəri əlavə edilmədi.'));
@@ -797,7 +839,7 @@ export function createAdminPosController(ctx) {
       }
 
       if (paymentStatus === 'debt' && !memberId) {
-        notify.warning('Borc satışı üçün üzv seçilməlidir.');
+        notify.warning('Borc satışı üçün şəxs seçilməlidir.');
         memberInput?.focus();
         return;
       }
@@ -809,7 +851,7 @@ export function createAdminPosController(ctx) {
         cashAmount: payment.cashAmount,
         cardAmount: payment.cardAmount,
         paymentStatus,
-        memberId: paymentStatus === 'debt' ? memberId : null,
+        memberId: memberId || null,
         button: submit,
       });
     });

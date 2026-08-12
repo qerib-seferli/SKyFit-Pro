@@ -4,7 +4,7 @@ import {
   $, clearElement, createElement, escapeHtml, getCurrentIdentity,
   money, normalizeString, number, openModal, closeModal, notify,
   getErrorMessage, productImage, productName, productStock, productStockUnit,
-  setButtonLoading,
+  productPortionSize, setButtonLoading,
 } from './core.js';
 
 let products = [];
@@ -20,23 +20,36 @@ function variantName(item) { return normalizeString(item?.name, 'Satış seçimi
 function variantPrice(item) { return number(item?.price); }
 function variantDeduction(item) { return number(item?.stock_deduction, 1); }
 
-const WHOLE_UNITS = new Set(['ədəd','eded','vahid','qutu','qab','paket','butulka','şüşə','suse','tablet','kapsul','box','pack']);
+function baseDeduction(product) {
+  return Math.max(0.001, productPortionSize(product));
+}
+
 function canSellBaseWhole(product) {
-  return normalizeString(product?.sale_mode, 'unit') === 'unit' &&
-    WHOLE_UNITS.has(normalizeString(product?.stock_unit).toLocaleLowerCase('az-AZ')) &&
-    number(product?.retail_price) >= 0;
+  if (normalizeString(product?.sale_mode, 'unit') !== 'unit' || number(product?.retail_price) <= 0) {
+    return false;
+  }
+
+  const unit = normalizeString(product?.stock_unit).toLocaleLowerCase('az-AZ');
+  const deduction = baseDeduction(product);
+
+  if (['qram', 'qr', 'gram', 'g'].includes(unit)) {
+    return deduction > 1;
+  }
+
+  return deduction > 0;
 }
 function saleChoices(product) {
   const list = productVariants(product.id).map(variant => ({ kind: 'variant', variant }));
   if (canSellBaseWhole(product)) list.unshift({ kind: 'base', variant: null });
-  if (!list.length) list.push({ kind: 'base', variant: null });
   return list;
 }
 function choiceName(choice, product) {
-  return choice?.kind === 'base' ? `Bütöv məhsul · 1 ${normalizeString(product?.stock_unit, 'vahid')}` : variantName(choice?.variant);
+  return choice?.kind === 'base'
+    ? `Bütöv məhsul · stokdan ${baseDeduction(product)} ${normalizeString(product?.stock_unit, 'vahid')}`
+    : variantName(choice?.variant);
 }
 function choicePrice(choice, product) { return choice?.kind === 'base' ? number(product?.retail_price) : variantPrice(choice?.variant); }
-function choiceDeduction(choice, product) { return choice?.kind === 'base' ? 1 : variantDeduction(choice?.variant); }
+function choiceDeduction(choice, product) { return choice?.kind === 'base' ? baseDeduction(product) : variantDeduction(choice?.variant); }
 
 async function loadQuickData() {
   const [productsResult, variantsResult] = await Promise.all([
@@ -95,6 +108,14 @@ function bindPayment(root, total) {
 
 async function openProductSale(product, trigger) {
   const choices = saleChoices(product);
+
+  if (!choices.length) {
+    notify.warning(
+      'Bu məhsul üçün satış seçimi hazır deyil. Məhsullar → Düzəlt bölməsində bütöv məhsulun stokdan çıxacaq miqdarını və ya satış variantını qeyd et.'
+    );
+    return;
+  }
+
   const selected = { choice: choices[0] };
   const content = createElement('form', { className: 'global-quick-sale-form' });
 
@@ -210,7 +231,9 @@ async function openGlobalQuickSale(trigger) {
   daily.innerHTML = `<span class="quick-sale-card__media quick-sale-card__media--service">${QUICK_ICONS.ticket}</span><span class="quick-sale-card__body"><strong>Günlük giriş</strong><span>3 ₼ planı</span><small>Profil tələb olunmur</small></span>`;
   daily.addEventListener('click', () => openWalkInSale(daily));
   grid.append(daily);
-  products.filter(p => productStock(p) > 0).forEach(product => {
+  products
+    .filter(product => productStock(product) > 0 && saleChoices(product).length > 0)
+    .forEach(product => {
     const card = createElement('button', { className: 'quick-sale-card', attrs: { type: 'button' } });
     const image = productImage(product);
     card.innerHTML = `<span class="quick-sale-card__media">${image ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(productName(product))}">` : '<span class="product-card__image-fallback">SK</span>'}</span><span class="quick-sale-card__body"><strong>${escapeHtml(productName(product))}</strong><span>${saleChoices(product).length} seçim</span><small>${productStock(product)} ${escapeHtml(productStockUnit(product))}</small></span>`;

@@ -713,6 +713,15 @@ export function ledgerAmount(entry) {
   return number(entry?.amount);
 }
 
+export function ledgerIsSaleRefund(entry) {
+  return normalizeString(entry?.reference_type) === 'sale_reversal';
+}
+
+export function ledgerBusinessType(entry) {
+  if (ledgerIsSaleRefund(entry)) return 'refund';
+  return ledgerType(entry);
+}
+
 export function ledgerDate(entry) {
   return entry?.created_at || entry?.entry_date || null;
 }

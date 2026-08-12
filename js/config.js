@@ -26,7 +26,7 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 export const APP_CONFIG = Object.freeze({
   name: 'SKy Fit Pro',
   shortName: 'SKy Fit',
-  version: '1.5.2',
+  version: '1.5.3',
   developer: 'Qərib Səfərli',
   developerTitle: 'Senior Full Stack Developer',
   locale: 'az-AZ',

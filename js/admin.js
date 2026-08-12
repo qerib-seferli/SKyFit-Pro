@@ -62,6 +62,7 @@ import {
 
   ledgerType,
   ledgerAmount,
+  ledgerBusinessType,
 
   debtBalance,
 
@@ -757,47 +758,22 @@ function renderDashboard() {
   const todayLedger =
     todayLedgerEntries();
 
-  const income =
+  const grossIncome =
     todayLedger
-      .filter(
-        entry =>
-          ledgerType(
-            entry
-          ) ===
-          'income'
-      )
-      .reduce(
-        (
-          total,
-          entry
-        ) =>
-          total +
-          ledgerAmount(
-            entry
-          ),
-        0
-      );
+      .filter(entry => ledgerBusinessType(entry) === 'income')
+      .reduce((total, entry) => total + ledgerAmount(entry), 0);
+
+  const refunds =
+    todayLedger
+      .filter(entry => ledgerBusinessType(entry) === 'refund')
+      .reduce((total, entry) => total + ledgerAmount(entry), 0);
+
+  const income = grossIncome - refunds;
 
   const expense =
     todayLedger
-      .filter(
-        entry =>
-          ledgerType(
-            entry
-          ) ===
-          'expense'
-      )
-      .reduce(
-        (
-          total,
-          entry
-        ) =>
-          total +
-          ledgerAmount(
-            entry
-          ),
-        0
-      );
+      .filter(entry => ledgerBusinessType(entry) === 'expense')
+      .reduce((total, entry) => total + ledgerAmount(entry), 0);
 
   // KPI values
 
@@ -814,7 +790,7 @@ function renderDashboard() {
     byId(
       'dashboard-sales-count'
     ),
-    `${todaySales.length} satış`
+    `${paidSales.length} satış`
   );
 
   setText(
@@ -1484,7 +1460,10 @@ function bindDashboardEvents() {
   )?.addEventListener(
     'click',
     async () => {
-      await loadDashboard();
+      await Promise.all([
+        loadDashboard(),
+        loadDashboardOverviewV2(),
+      ]);
 
       notify.success(
         'Dashboard yeniləndi.'
@@ -1812,12 +1791,7 @@ function filteredLedger() {
           return true;
         }
 
-        return (
-          ledgerType(
-            entry
-          ) ===
-          type
-        );
+        return ledgerBusinessType(entry) === type;
       }
     )
     .filter(
@@ -1890,6 +1864,8 @@ function financeReferenceLabel(value) {
       return 'Əlavə mədaxil';
     case 'manual_expense':
       return 'Zal xərci';
+    case 'sale_reversal':
+      return 'Satış qaytarılması';
     case 'staff_cash_advance':
       return 'İşçi avansı';
     case 'staff_cash_repayment':
