@@ -14,7 +14,12 @@ export function createAdminMembersController(ctx) {
     return state.members.filter(member => {
       if (!search) return true;
       return [member.full_name, member.email, member.phone, member.address].filter(Boolean).join(' ').toLocaleLowerCase('az-AZ').includes(search);
-    }).filter(member => role === 'all' || member.role === role)
+    }).filter(member => {
+        if (role === 'all') return true;
+        if (role === 'customer') return member.role === 'member' && member.is_manual === true;
+        if (role === 'member') return member.role === 'member' && member.is_manual !== true;
+        return member.role === role;
+      })
       .filter(member => status === 'all' || (status === 'active' ? member.is_active !== false : member.is_active === false));
   }
   function statusMeta(member) {
@@ -29,7 +34,7 @@ export function createAdminMembersController(ctx) {
     visibleListItems('members', members).forEach(member => {
       const status = statusMeta(member); const row = createElement('tr');
       row.innerHTML = `<td><div class="admin-user-cell">${memberAvatarMarkup(member)}<span class="admin-user-cell__identity"><strong class="admin-table__primary">${escapeHtml(getProfileName(member))}</strong><span class="admin-table__secondary">${escapeHtml(member.email || 'E-poçt yoxdur')}</span></span></div></td>
-        <td>${escapeHtml(member.phone || '—')}</td><td><span class="${member.role === 'admin' ? 'ui-badge ui-badge--danger' : member.role === 'staff' ? 'ui-badge ui-badge--warning' : 'ui-badge ui-badge--neutral'}">${escapeHtml(roleLabel(member.role))}</span></td>
+        <td>${escapeHtml(member.phone || '—')}</td><td><span class="${member.role === 'admin' ? 'ui-badge ui-badge--danger' : member.role === 'staff' ? 'ui-badge ui-badge--warning' : 'ui-badge ui-badge--neutral'}">${escapeHtml(member.is_manual ? 'Müştəri' : roleLabel(member.role))}</span></td>
         <td><span class="${status.className}">${escapeHtml(status.label)}</span></td><td>${formatDate(member.created_at)}</td>`;
       row.classList.add('admin-table__clickable-row'); row.tabIndex = 0; row.setAttribute('role','button'); row.setAttribute('aria-label', `${getProfileName(member)} məlumatlarını aç`);
       row.addEventListener('click', () => void openMemberPreview(member, row));

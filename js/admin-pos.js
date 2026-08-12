@@ -518,7 +518,7 @@ export function createAdminPosController(ctx) {
         <div id="pos-new-customer-form" class="debt-customer-create is-hidden">
           <div class="modal-form__grid">
             <label class="ui-field"><span class="ui-field__label">Ad və soyad *</span><input id="pos-new-customer-name" class="ui-input__control" autocomplete="off"></label>
-            <label class="ui-field"><span class="ui-field__label">Telefon</span><input id="pos-new-customer-phone" class="ui-input__control" inputmode="tel" autocomplete="off"></label>
+            <label class="ui-field"><span class="ui-field__label">Telefon *</span><input id="pos-new-customer-phone" class="ui-input__control" inputmode="tel" autocomplete="off"></label>
           </div>
           <label class="ui-field"><span class="ui-field__label">Ünvan / qeyd</span><input id="pos-new-customer-address" class="ui-input__control" autocomplete="off"></label>
           <button id="pos-new-customer-save" class="ui-button ui-button--primary ui-button--compact" type="button">Müştərini yarat və seç</button>
@@ -679,26 +679,43 @@ export function createAdminPosController(ctx) {
 
     newCustomerSave?.addEventListener('click', async () => {
       const fullName = normalizeString($('#pos-new-customer-name', form)?.value);
-      if (!fullName) { notify.warning('Müştərinin ad və soyadını yaz.'); return; }
+      const phone = normalizeString($('#pos-new-customer-phone', form)?.value);
+      const address = normalizeString($('#pos-new-customer-address', form)?.value);
+
+      if (!fullName || !phone) {
+        notify.warning('Müştərinin ad, soyad və telefonunu yaz.');
+        return;
+      }
+
       setButtonLoading(newCustomerSave, true, { loadingText: 'Yaradılır...' });
+
       try {
-        const { data, error } = await supabase.from(TABLES.profiles).insert({
-          role: 'member', full_name: fullName,
-          phone: normalizeString($('#pos-new-customer-phone', form)?.value) || null,
-          address: normalizeString($('#pos-new-customer-address', form)?.value) || null,
-          is_manual: true, is_active: true,
-        }).select('id').single();
+        const { data, error } = await supabase.rpc(RPC.createManualCustomerV1, {
+          p_full_name: fullName,
+          p_phone: phone,
+          p_address: address || null,
+        });
+
         if (error) throw error;
+
+        const customerId = normalizeString(data);
+        if (!customerId) throw new Error('Müştəri ID-si alınmadı.');
+
         await loadMembers();
+
         if (memberInput) {
-          memberInput.innerHTML = `<option value="">Şəxs seç</option>${memberOptionsMarkup(data.id)}`;
-          memberInput.value = data.id;
+          memberInput.innerHTML = `<option value="">Şəxs seç</option>${memberOptionsMarkup(customerId)}`;
+          memberInput.value = customerId;
         }
+
         newCustomerForm?.classList.add('is-hidden');
-        notify.success(`${fullName} müştəri kimi əlavə edildi.`);
+        notify.success(`${fullName} müştəri kimi seçildi. Borc bu şəxsin adına yazıla bilər.`);
       } catch (error) {
+        console.error('[SKy Fit POS] Manual customer:', error);
         notify.error(getErrorMessage(error, 'Müştəri əlavə edilmədi.'));
-      } finally { setButtonLoading(newCustomerSave, false); }
+      } finally {
+        setButtonLoading(newCustomerSave, false);
+      }
     });
 
     picker?.addEventListener('click', event => {

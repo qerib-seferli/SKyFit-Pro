@@ -524,7 +524,7 @@ async function openMemberPreview(member, trigger = null) {
       </div>
       <div class="member-preview__identity">
         <strong>${escapeHtml(getProfileName(member))}</strong>
-        <span>${escapeHtml(roleLabel(member.role))} · ${member.is_active === false ? 'Deaktiv' : 'Aktiv'}</span>
+        <span>${escapeHtml(member.is_manual ? 'Müştəri' : roleLabel(member.role))} · ${member.is_active === false ? 'Deaktiv' : 'Aktiv'}</span>
       </div>
     </div>
     <div class="member-preview__grid">
@@ -535,7 +535,7 @@ async function openMemberPreview(member, trigger = null) {
       <div><span>Aktiv üzvlük</span><strong>${membership ? escapeHtml(membership.membership_plan?.name || 'Aktiv') : 'Yoxdur'}</strong></div>
       <div><span>Açıq borc</span><strong class="${debtBalance(debt) > 0 ? 'finance-amount finance-amount--expense' : ''}">${escapeHtml(money(debtBalance(debt)))}</strong></div>
     </div>`;
-  openModal({ eyebrow: 'Üzv məlumatı', title: getProfileName(member), content, trigger, className: 'app-modal--member-preview' });
+  openModal({ eyebrow: member.is_manual ? 'Müştəri məlumatı' : 'Üzv məlumatı', title: getProfileName(member), content, trigger, className: 'app-modal--member-preview' });
 }
 
 function saleDescriptionForLedger(entry) {
