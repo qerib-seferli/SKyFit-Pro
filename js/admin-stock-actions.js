@@ -109,6 +109,11 @@ export function createAdminStockActions(ctx) {
             </div>
           </div>
           <div id="stock-add-package-result" class="stock-package-calculator__result">Yekun stok miqdarı hesablanacaq.</div>
+          <label class="ui-field stock-package-calculator__price">
+            <span class="ui-field__label">1 qabın alış qiyməti</span>
+            <div class="ui-input"><input id="stock-add-package-price" class="ui-input__control" type="number" inputmode="decimal" min="0" step="0.01" placeholder="Məs: 60"></div>
+            <span class="ui-field__hint">Qab sayı yazılıbsa ümumi maya avtomatik hesablanacaq.</span>
+          </label>
         </div>
       ` : ''}
 
@@ -239,6 +244,7 @@ export function createAdminStockActions(ctx) {
     const packageCountInput = $('#stock-add-package-count', form);
     const packageSizeInput = $('#stock-add-package-size', form);
     const packageResult = $('#stock-add-package-result', form);
+    const packagePriceInput = $('#stock-add-package-price', form);
 
     const noteInput =
       $(
@@ -268,14 +274,20 @@ export function createAdminStockActions(ctx) {
 
       if (count > 0 && size > 0) {
         quantityInput.value = String(Number(total.toFixed(3)));
-        setText(packageResult, `${count} × ${size} = ${Number(total.toFixed(3))} ${stockUnitLabel(productStockUnit(product))}`);
+        setText(packageResult, `${count} qab × ${size} ${stockUnitLabel(productStockUnit(product))} = ${Number(total.toFixed(3))} ${stockUnitLabel(productStockUnit(product))}`);
       } else {
         setText(packageResult, 'Yekun stok miqdarı hesablanacaq.');
+      }
+
+      const packagePrice = Math.max(0, number(packagePriceInput?.value));
+      if (costInput && count > 0 && packagePrice > 0) {
+        costInput.value = (count * packagePrice).toFixed(2);
       }
     }
 
     packageCountInput?.addEventListener('input', syncPackageQuantity);
     packageSizeInput?.addEventListener('input', syncPackageQuantity);
+    packagePriceInput?.addEventListener('input', syncPackageQuantity);
 
     form.addEventListener(
       'submit',

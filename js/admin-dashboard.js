@@ -104,6 +104,11 @@ function render(data = {}) {
   setText('dashboard-profit-today', money(data.gross_profit_today));
   setText('dashboard-walkin-today', String(number(data.walk_in_today)));
 
+  // Dashboard-un yuxarıdakı Mədaxil/Məxaric kartları da eyni server hesablamasını göstərsin.
+  setText('dashboard-income-today', money(data.income_today));
+  setText('dashboard-expense-today', money(data.expense_today));
+  setText('dashboard-balance-today', money(number(data.income_today) - number(data.expense_today)));
+
   renderTrend(data.trend);
 }
 

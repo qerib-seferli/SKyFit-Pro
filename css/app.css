@@ -10006,3 +10006,178 @@ body[data-page="admin"] .app-footer {
 }
 .quick-service-card__icon svg,.quick-sale-card__media--service svg{width:34px;height:34px;display:block}
 .admin-quick-sale-fab__icon svg{width:20px;height:20px;display:block}
+
+
+/* ============================================================
+   SKy Fit Pro v1.5.4 — Sales / Inventory / Storefront UX polish
+   ============================================================ */
+
+/* Public shop: price is the customer-facing signal; internal stock/unit labels stay in admin. */
+.product-card__stock-badge,
+.product-card__unit,
+.product-card__stock-line,
+.product-modal__unit { display:none !important; }
+.product-card__meta--price-only { display:flex; align-items:center; justify-content:flex-start; margin-top:auto; }
+.product-card__price {
+  min-height:34px;
+  padding:0 12px;
+  border-color:rgba(255,223,0,.34);
+  background:linear-gradient(135deg,rgba(255,223,0,.14),rgba(255,223,0,.045));
+  box-shadow:inset 0 0 0 1px rgba(255,223,0,.025),0 8px 24px rgba(0,0,0,.16);
+  font-size:17px;
+}
+.product-modal__purchase { box-shadow:0 14px 38px rgba(0,0,0,.22),0 0 28px rgba(255,223,0,.06); }
+.product-modal__price { font-size:30px; }
+
+/* Trainer cards: 1–3 cards remain centered instead of sticking to the left edge. */
+.trainers-grid {
+  grid-template-columns:repeat(auto-fit,minmax(220px,280px));
+  justify-content:center;
+  align-items:start;
+  gap:16px;
+}
+.trainer-card {
+  width:100%;
+  border-radius:18px;
+  background:linear-gradient(180deg,var(--surface-2),var(--surface));
+  box-shadow:0 18px 42px rgba(0,0,0,.18);
+}
+.trainer-card:hover { transform:translateY(-3px); box-shadow:0 22px 50px rgba(0,0,0,.26),0 0 24px rgba(255,223,0,.04); }
+.trainer-card__media { aspect-ratio:4/5; }
+.trainer-card__content { padding:16px 15px; }
+.trainer-card__name { font-size:17px; }
+
+/* Dashboard low-stock: strong but controlled warning hierarchy. */
+#dashboard-low-stock { gap:8px; }
+#dashboard-low-stock .dashboard-low-stock-item {
+  position:relative;
+  display:grid;
+  grid-template-columns:38px minmax(0,1fr) auto;
+  gap:11px;
+  min-height:62px;
+  padding:10px 12px;
+  overflow:hidden;
+  border-radius:14px;
+}
+#dashboard-low-stock .dashboard-low-stock-item::before {
+  content:"";
+  position:absolute;
+  inset:0 auto 0 0;
+  width:3px;
+  background:var(--warning,#ffb020);
+  box-shadow:0 0 16px rgba(255,176,32,.55);
+}
+#dashboard-low-stock .dashboard-low-stock-item--out::before { background:var(--danger); box-shadow:0 0 18px rgba(255,84,102,.65); }
+#dashboard-low-stock .compact-list-item__icon {
+  width:36px;height:36px;border-radius:50%;
+  color:#ffcf40;background:rgba(255,176,32,.11);
+  border:1px solid rgba(255,176,32,.30);
+  box-shadow:0 0 18px rgba(255,176,32,.12);
+}
+#dashboard-low-stock .dashboard-low-stock-item--out .compact-list-item__icon {
+  color:var(--danger);background:rgba(255,84,102,.09);border-color:rgba(255,84,102,.34);box-shadow:0 0 20px rgba(255,84,102,.14);
+}
+#dashboard-low-stock .compact-list-item__title { font-size:12px; line-height:1.35; }
+#dashboard-low-stock .compact-list-item__meta { margin-top:3px; font-size:10px; color:var(--text-muted); }
+#dashboard-low-stock .compact-list-item__side { display:grid; justify-items:end; gap:5px; min-width:105px; }
+#dashboard-low-stock .dashboard-low-stock-item__amount { font-size:13px; line-height:1.1; white-space:nowrap; }
+
+/* POS customer lookup and debt mode. */
+.debt-customer-search { margin-bottom:8px; }
+.debt-customer-search__control { width:100%; }
+.debt-customer-picker { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; align-items:stretch; }
+.debt-customer-picker .ui-button { min-width:132px; }
+.debt-customer-create {
+  display:grid;
+  gap:12px;
+  margin-top:10px;
+  padding:14px;
+  border:1px solid var(--border);
+  border-radius:14px;
+  background:linear-gradient(145deg,var(--surface-2),var(--surface));
+}
+.debt-customer-create__header { display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding-bottom:9px; border-bottom:1px solid var(--border-soft); }
+.debt-customer-create__header strong { font-size:13px; }
+.debt-customer-create__header span { color:var(--text-muted); font-size:10px; }
+.debt-customer-create__grid { align-items:start; }
+.debt-customer-create .ui-field { gap:6px; }
+.debt-customer-create .ui-input__control { min-height:44px; }
+.debt-customer-create #pos-new-customer-save { width:100%; min-height:44px; }
+.pos-sale-payment-grid { align-items:end; }
+
+/* Quick-sale quantity: explicit +/- buttons work consistently on desktop and phones. */
+.quick-qty-stepper {
+  display:grid;
+  grid-template-columns:44px minmax(0,1fr) 44px;
+  min-height:46px;
+  overflow:hidden;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:var(--surface);
+}
+.quick-qty-stepper button {
+  border:0;
+  color:var(--text);
+  background:var(--surface-2);
+  font-size:22px;
+  font-weight:800;
+  cursor:pointer;
+}
+.quick-qty-stepper button:hover { color:var(--accent); background:var(--accent-soft); }
+.quick-qty-stepper .ui-input__control {
+  min-width:0;
+  min-height:44px;
+  border:0!important;
+  border-left:1px solid var(--border)!important;
+  border-right:1px solid var(--border)!important;
+  border-radius:0!important;
+  text-align:center;
+  font-weight:900;
+  appearance:auto;
+}
+
+/* Stock purchase calculator: package price visibly participates in total cost. */
+.stock-package-calculator__price { margin-top:8px; padding-top:8px; border-top:1px solid var(--border-soft); }
+
+/* Product editor: compact, aligned two-column form. */
+.app-modal--product-editor { width:min(94vw,1040px); }
+.app-modal--product-editor .modal-form { gap:12px; }
+.app-modal--product-editor .modal-form__grid { grid-template-columns:repeat(2,minmax(0,1fr)); align-items:start; gap:12px; }
+.app-modal--product-editor .ui-field { align-content:start; gap:6px; min-width:0; }
+.app-modal--product-editor .ui-field__label { min-height:18px; display:flex; align-items:flex-end; line-height:1.25; }
+.app-modal--product-editor .ui-input__control,
+.app-modal--product-editor .ui-select { min-height:44px; }
+.app-modal--product-editor .ui-field__hint { margin-top:0; line-height:1.45; }
+.app-modal--product-editor .ui-textarea { min-height:88px; }
+.sale-variant-editor { padding:12px; border-radius:14px; }
+.sale-variant-editor-row { padding:10px; border-radius:12px; }
+
+/* Admin product cards: balanced image/body/actions. */
+body[data-page="admin"] .admin-product-card { border-radius:14px; background:linear-gradient(180deg,var(--surface-2),var(--surface)); }
+body[data-page="admin"] .admin-product-card__main { width:100%; text-align:left; }
+body[data-page="admin"] .admin-product-card__media { aspect-ratio:1/1; padding:5px; background:#fff; }
+body[data-page="admin"] .admin-product-card__media img { object-fit:contain; border-radius:8px; }
+body[data-page="admin"] .admin-product-card__body { gap:7px; padding:10px; }
+body[data-page="admin"] .admin-product-card__name { min-height:34px; font-size:11px; line-height:1.35; }
+body[data-page="admin"] .admin-product-card__meta { font-size:9px; }
+body[data-page="admin"] .admin-product-card__price { font-size:16px; }
+body[data-page="admin"] .admin-product-card__stock { font-size:10px; white-space:nowrap; }
+body[data-page="admin"] .admin-product-card__actions { display:grid; grid-template-columns:1fr 1fr; gap:6px; padding:0 8px 8px; margin:0; }
+body[data-page="admin"] .admin-product-card__actions .ui-button { width:100%; min-height:38px; }
+
+/* Only the layout/global quick-sale FAB should survive if the legacy controller is ever loaded. */
+body[data-page="admin"] #admin-quick-sale-fab:not(.global-quick-sale-fab) { display:none!important; }
+
+@media (max-width:700px) {
+  .trainers-grid { grid-template-columns:minmax(0,320px); gap:12px; }
+  .trainer-card__name { font-size:15px; }
+  .debt-customer-picker { grid-template-columns:1fr; }
+  .debt-customer-picker .ui-button { width:100%; }
+  .debt-customer-create__header { display:grid; gap:3px; }
+  .app-modal--product-editor .modal-form__grid { grid-template-columns:1fr; gap:10px; }
+  .app-modal--product-editor .ui-field__label { min-height:0; }
+  .quick-qty-stepper { grid-template-columns:48px minmax(0,1fr) 48px; min-height:50px; }
+  .quick-qty-stepper button { font-size:24px; }
+  #dashboard-low-stock .dashboard-low-stock-item { grid-template-columns:36px minmax(0,1fr); }
+  #dashboard-low-stock .compact-list-item__side { grid-column:2; grid-row:2; display:flex; justify-content:flex-start; align-items:center; min-width:0; }
+}

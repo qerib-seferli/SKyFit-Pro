@@ -86,7 +86,7 @@ function renderSales() {
       <td><strong>${escapeHtml(saleSummary(sale.id))}</strong></td>
       <td><span class="ui-badge ui-badge--neutral">${escapeHtml(paymentLabel(sale.payment_method))}</span>${sale.payment_method === 'mixed' ? `<span class="admin-table__secondary">Nağd ${escapeHtml(money(sale.cash_amount))} · Kart ${escapeHtml(money(sale.card_amount))}</span>` : ''}</td>
       <td><strong>${escapeHtml(money(sale.total_amount))}</strong></td>
-      <td><span class="admin-table__secondary">Maya ${escapeHtml(money(sale.cost_total || 0))}</span><strong class="finance-amount finance-amount--income">${escapeHtml(money(sale.gross_profit || 0))}</strong></td>
+      <td><span class="admin-table__secondary">Maya · ${escapeHtml(money(sale.cost_total || 0))}</span><strong class="finance-amount finance-amount--income" title="Satış məbləği − maya dəyəri">Brüt qazanc · ${escapeHtml(money(sale.gross_profit || 0))}</strong></td>
       <td>${formatDateTime(sale.created_at)}</td>
       <td>${reversible ? `<button class="ui-button ui-button--danger ui-button--compact" type="button" data-sale-reverse="${sale.id}">${sale.payment_status === 'paid' ? 'Qaytar' : 'Ləğv et'}</button>` : `<span class="admin-table__secondary">${reversal ? escapeHtml(reversal.reason) : 'Bağlıdır'}</span>`}</td>`;
     tbody.append(row);

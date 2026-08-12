@@ -16,6 +16,13 @@ const QUICK_ICONS = Object.freeze({
   bolt: '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m13 2-8 12h7l-1 8 8-12h-7l1-8Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
 });
 
+
+function compactStock(value) {
+  const current = number(value);
+  if (!Number.isFinite(current)) return '0';
+  return current.toFixed(3).replace(/\.0+$/, '').replace(/(\.\d*?[1-9])0+$/, '$1');
+}
+
 function variantName(item) { return normalizeString(item?.name, 'Satış seçimi'); }
 function variantPrice(item) { return number(item?.price); }
 function variantDeduction(item) { return number(item?.stock_deduction, 1); }
@@ -125,11 +132,11 @@ async function openProductSale(product, trigger) {
     content.innerHTML = `
       <div class="quick-sale-product-summary">
         ${productImage(product) ? `<img src="${escapeHtml(productImage(product))}" alt="${escapeHtml(productName(product))}">` : '<span class="product-card__image-fallback">SK</span>'}
-        <div><strong>${escapeHtml(productName(product))}</strong><span>Stok: ${escapeHtml(String(productStock(product)))} ${escapeHtml(productStockUnit(product))}</span></div>
+        <div><strong>${escapeHtml(productName(product))}</strong><span>Stok: ${escapeHtml(compactStock(productStock(product)))} ${escapeHtml(productStockUnit(product))}</span></div>
       </div>
       ${choices.length > 1 ? `<div class="quick-variant-grid">${choices.map((choice, index) => `<button type="button" class="quick-variant-choice${choice === selected.choice ? ' is-active' : ''}" data-choice-index="${index}"><strong>${escapeHtml(choiceName(choice, product))}</strong><span>${escapeHtml(money(choicePrice(choice, product)))}</span></button>`).join('')}</div>` : ''}
       <div class="modal-form__grid">
-        <label class="ui-field"><span class="ui-field__label">Say</span><input class="ui-input__control" data-qty type="number" min="1" step="1" value="1"></label>
+        <div class="ui-field"><span class="ui-field__label">Say</span><div class="quick-qty-stepper"><button type="button" data-qty-minus aria-label="Sayı azalt">−</button><input class="ui-input__control" data-qty type="number" inputmode="numeric" min="1" step="1" value="1"><button type="button" data-qty-plus aria-label="Sayı artır">+</button></div></div>
         <div class="ui-field"><span class="ui-field__label">Stokdan çıxacaq</span><strong class="quick-static-value" data-deduction>${deduction} ${escapeHtml(productStockUnit(product))}</strong></div>
       </div>
       <div class="quick-total-row"><span>Cəmi</span><strong data-total>${escapeHtml(money(unitPrice))}</strong></div>
@@ -145,11 +152,15 @@ async function openProductSale(product, trigger) {
     const totalEl = content.querySelector('[data-total]');
     const deductionEl = content.querySelector('[data-deduction]');
     bindPayment(content, unitPrice);
-    qty?.addEventListener('input', () => {
-      const q = Math.max(1, number(qty.value, 1));
+    const syncQty = () => {
+      const q = Math.max(1, Math.trunc(number(qty?.value, 1)));
+      if (qty) qty.value = String(q);
       totalEl.textContent = money(q * unitPrice);
-      deductionEl.textContent = `${q * deduction} ${productStockUnit(product)}`;
-    });
+      deductionEl.textContent = `${compactStock(q * deduction)} ${productStockUnit(product)}`;
+    };
+    qty?.addEventListener('input', syncQty);
+    content.querySelector('[data-qty-minus]')?.addEventListener('click', () => { if (qty) qty.value = String(Math.max(1, number(qty.value, 1) - 1)); syncQty(); });
+    content.querySelector('[data-qty-plus]')?.addEventListener('click', () => { if (qty) qty.value = String(Math.max(1, number(qty.value, 1) + 1)); syncQty(); });
 
     content.onsubmit = async event => {
       event.preventDefault();

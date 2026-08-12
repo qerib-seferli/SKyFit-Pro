@@ -1340,10 +1340,8 @@ function bindCardKeyboard(card) {
 export function createProductCard(product, options = {}) {
   const name = productName(product);
   const price = productPrice(product);
-  const stock = productStock(product);
   const image = productImage(product);
   const favoriteActive = isFavorite(product?.id);
-  const stockState = productStockState(product);
 
   const card = createElement('article', {
     className: 'product-card',
@@ -1361,15 +1359,12 @@ export function createProductCard(product, options = {}) {
             <svg viewBox="0 0 24 24" fill="${favoriteActive ? 'currentColor' : 'none'}" aria-hidden="true"><path d="M12 20.2 4.9 13.6C1 10 3.3 4.5 7.7 4.5c1.8 0 3.3 1 4.3 2.3 1-1.3 2.5-2.3 4.3-2.3 4.4 0 6.7 5.5 2.8 9.1L12 20.2Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
           </button>`
         : ''}
-      <span class="product-card__stock-badge ${stockState.className}">${escapeHtml(stockState.label)}</span>
     </div>
     <div class="product-card__body">
       <strong class="product-card__name">${escapeHtml(name)}</strong>
-      <div class="product-card__meta">
+      <div class="product-card__meta product-card__meta--price-only">
         <span class="product-card__price">${escapeHtml(money(price))}</span>
-        <span class="product-card__unit">${escapeHtml(productUnitLabel(product))}</span>
       </div>
-      <div class="product-card__stock-line"><span>Stok: ${escapeHtml(String(stock))}</span></div>
     </div>
   `;
 
@@ -1437,7 +1432,6 @@ export function openProductModal(product, options = {}) {
   const image = productImage(product);
   const description = productDescription(product);
   const price = productPrice(product);
-  const unit = productUnitLabel(product);
 
   const content = createElement('div', {
     className: 'product-modal',
@@ -1481,15 +1475,7 @@ export function openProductModal(product, options = {}) {
           ${escapeHtml(money(price))}
         </strong>
 
-        ${
-          unit
-            ? `
-              <span class="product-modal__unit">
-                / ${escapeHtml(unit)}
-              </span>
-            `
-            : ''
-        }
+
       </div>
     </div>
   `;

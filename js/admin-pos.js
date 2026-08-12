@@ -499,7 +499,7 @@ export function createAdminPosController(ctx) {
 
       ${saleChoiceMarkup}
 
-      <div class="modal-form__grid">
+      <div class="modal-form__grid pos-sale-payment-grid">
         <div class="ui-field">
           <label class="ui-field__label" for="pos-sale-quantity" id="pos-sale-quantity-label">
             ${initialVariant && saleVariantIsCustom(initialVariant)
@@ -522,7 +522,7 @@ export function createAdminPosController(ctx) {
           <span id="pos-sale-quantity-error" class="ui-field__error is-hidden"></span>
         </div>
 
-        <div class="ui-field">
+        <div id="pos-sale-payment-method-field" class="ui-field">
           <label class="ui-field__label" for="pos-sale-payment-method">Ödəniş üsulu</label>
           <select id="pos-sale-payment-method" class="ui-select">
             ${paymentMethodOptionsMarkup()}
@@ -542,13 +542,20 @@ export function createAdminPosController(ctx) {
 
       <div id="pos-sale-member-field" class="ui-field">
         <label id="pos-sale-member-label" class="ui-field__label" for="pos-sale-member">Müştəri (istəyə bağlı)</label>
+        <div class="debt-customer-search">
+          <label class="search-control debt-customer-search__control">
+            <span class="search-control__icon" aria-hidden="true">⌕</span>
+            <input id="pos-sale-member-search" class="search-control__input" type="search" autocomplete="off" placeholder="Ad, soyad və ya telefonla axtar..." aria-label="Müştəri axtar">
+          </label>
+        </div>
         <div class="debt-customer-picker">
           <select id="pos-sale-member" class="ui-select"><option value="">Şəxs seç</option>${memberOptionsMarkup()}</select>
           <button id="pos-new-customer-toggle" class="ui-button ui-button--glass ui-button--compact" type="button">+ Yeni müştəri</button>
         </div>
         <span id="pos-sale-member-hint" class="ui-field__hint">Nağd və kart satışında müştəri seçmək istəyə bağlıdır. Borc satışında şəxs seçilməlidir.</span>
         <div id="pos-new-customer-form" class="debt-customer-create is-hidden">
-          <div class="modal-form__grid">
+          <div class="debt-customer-create__header"><strong>Yeni müştəri</strong><span>Tətbiq hesabı tələb olunmur.</span></div>
+          <div class="modal-form__grid debt-customer-create__grid">
             <label class="ui-field"><span class="ui-field__label">Ad və soyad *</span><input id="pos-new-customer-name" class="ui-input__control" autocomplete="off"></label>
             <label class="ui-field"><span class="ui-field__label">Telefon *</span><input id="pos-new-customer-phone" class="ui-input__control" inputmode="tel" autocomplete="off"></label>
           </div>
@@ -622,11 +629,13 @@ export function createAdminPosController(ctx) {
     const quantityInput = $('#pos-sale-quantity', form);
     const quantityLabel = $('#pos-sale-quantity-label', form);
     const paymentMethodInput = $('#pos-sale-payment-method', form);
+    const paymentMethodField = $('#pos-sale-payment-method-field', form);
     const paymentStatusInput = $('#pos-sale-payment-status', form);
     const memberField = $('#pos-sale-member-field', form);
     const memberLabel = $('#pos-sale-member-label', form);
     const memberHint = $('#pos-sale-member-hint', form);
     const memberInput = $('#pos-sale-member', form);
+    const memberSearch = $('#pos-sale-member-search', form);
     const newCustomerToggle = $('#pos-new-customer-toggle', form);
     const newCustomerForm = $('#pos-new-customer-form', form);
     const newCustomerSave = $('#pos-new-customer-save', form);
@@ -692,6 +701,30 @@ export function createAdminPosController(ctx) {
       setText($('#pos-sale-current-price', form), money(currentPrice()));
     }
 
+    function filterMemberOptions() {
+      if (!memberInput) return;
+      const selected = memberInput.value;
+      const query = normalizeSearch(memberSearch?.value);
+      const matches = (state.members || []).filter(member => {
+        if (!query) return true;
+        const haystack = normalizeSearch([
+          member.full_name,
+          member.email,
+          member.phone,
+          member.address,
+        ].filter(Boolean).join(' '));
+        return haystack.includes(query);
+      });
+
+      memberInput.innerHTML = `<option value="">${matches.length ? 'Şəxs seç' : 'Uyğun şəxs tapılmadı'}</option>` + matches.map(member => {
+        const label = normalizeString(member.full_name, member.email || member.phone || 'Müştəri');
+        const type = member.is_manual ? ' — Müştəri' : '';
+        const phone = member.phone ? ` — ${member.phone}` : '';
+        return `<option value="${escapeHtml(member.id)}">${escapeHtml(label + type + phone)}</option>`;
+      }).join('');
+      if (matches.some(member => String(member.id) === String(selected))) memberInput.value = selected;
+    }
+
     function syncPaymentStatus() {
       const debt = paymentStatusInput?.value === 'debt';
 
@@ -704,9 +737,8 @@ export function createAdminPosController(ctx) {
           : 'Nağd və kart satışında istəsən müştərini seçə və ya yeni müştəri yarada bilərsən; satış onun tarixçəsinə bağlanacaq.'
       );
 
-      if (paymentMethodInput) {
-        paymentMethodInput.disabled = debt;
-      }
+      if (paymentMethodInput) paymentMethodInput.disabled = debt;
+      paymentMethodField?.classList.toggle('is-hidden', debt);
 
       if (debt) {
         hideElement(paymentMixedFields);
@@ -714,6 +746,8 @@ export function createAdminPosController(ctx) {
         showElement(paymentMixedFields);
       }
     }
+
+    memberSearch?.addEventListener('input', filterMemberOptions);
 
     newCustomerToggle?.addEventListener('click', () => {
       newCustomerForm?.classList.toggle('is-hidden');
@@ -746,6 +780,7 @@ export function createAdminPosController(ctx) {
         await loadMembers();
 
         if (memberInput) {
+          if (memberSearch) memberSearch.value = '';
           memberInput.innerHTML = `<option value="">Şəxs seç</option>${memberOptionsMarkup(customerId)}`;
           memberInput.value = customerId;
         }

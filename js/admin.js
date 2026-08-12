@@ -929,7 +929,7 @@ function renderDashboardLowStock() {
           'article',
           {
             className:
-              'compact-list-item',
+              `compact-list-item dashboard-low-stock-item dashboard-low-stock-item--${meta.key}`,
           }
         );
 
@@ -949,25 +949,15 @@ function renderDashboardLowStock() {
           </strong>
 
           <span class="compact-list-item__meta">
-            ${escapeHtml(
-              productStockUnit(
-                product
-              )
-            )}
+            Stok xəbərdarlığı · ${escapeHtml(meta.label)}
           </span>
 
         </span>
 
         <span class="compact-list-item__side">
 
-          <strong>
-            ${escapeHtml(
-              String(
-                productStock(
-                  product
-                )
-              )
-            )}
+          <strong class="dashboard-low-stock-item__amount">
+            ${escapeHtml(productStockText(product))}
           </strong>
 
           <span class="${meta.className}">
@@ -1583,14 +1573,9 @@ function paymentMethodLabel(
 
 function stockNumber(value, unit) {
   const current = number(value);
-  const normalized = normalizeString(unit).toLocaleLowerCase('az-AZ');
+  if (!Number.isFinite(current)) return '0';
 
-  if (['qram', 'qr', 'gram', 'kg', 'kq'].includes(normalized)) {
-    return current.toFixed(3);
-  }
-
-  if (Number.isInteger(current)) return String(current);
-  return current.toFixed(3);
+  return current.toFixed(3).replace(/\.0+$/, '').replace(/(\.\d*?[1-9])0+$/, '$1');
 }
 
 function productStockText(product) {

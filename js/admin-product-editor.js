@@ -500,7 +500,7 @@ export function createAdminProductEditor(ctx) {
             class="ui-field__label"
             for="admin-product-cost-price"
           >
-            1 stok vahidinin maya dəyəri
+            1 stok vahidinin maya dəyəri (qram/ədəd)
           </label>
 
           <div class="ui-input">
@@ -511,7 +511,7 @@ export function createAdminProductEditor(ctx) {
               type="number"
               inputmode="decimal"
               min="0"
-              step="0.01"
+              step="0.000001"
               value="${
                 product
                   ? number(
@@ -524,6 +524,10 @@ export function createAdminProductEditor(ctx) {
             >
 
           </div>
+
+          <span class="ui-field__hint">
+            Maya stok vahidinə görədir: stok qramdırsa 1 qramın maya dəyərini yaz. Məs: 500 qramlıq qab 60 ₼-dırsa 60 / 500 = 0.12 ₼.
+          </span>
 
         </div>
 

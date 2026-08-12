@@ -62,7 +62,7 @@ function renderTopProducts(items = []) {
   const tbody = $('tbody', table);
   items.forEach(item => {
     const row = createElement('tr');
-    row.innerHTML = `<td><strong>${escapeHtml(item.product_name || 'Məhsul')}</strong></td><td>${escapeHtml(String(number(item.quantity).toFixed(3)))}</td><td>${escapeHtml(money(item.revenue))}</td><td>${escapeHtml(money(item.cost))}</td><td><strong class="finance-amount finance-amount--income">${escapeHtml(money(item.gross_profit))}</strong></td>`;
+    row.innerHTML = `<td><strong>${escapeHtml(item.product_name || 'Məhsul')}</strong></td><td>${escapeHtml(String(Number(number(item.quantity).toFixed(3))))}</td><td>${escapeHtml(money(item.revenue))}</td><td>${escapeHtml(money(item.cost))}</td><td><strong class="finance-amount finance-amount--income">${escapeHtml(money(item.gross_profit))}</strong></td>`;
     tbody.append(row);
   });
   root.append(table);

@@ -23,7 +23,7 @@
 // Frontenddə böyük dəyişiklik etdikdə yalnız APP_VERSION-u
 // artırmaq kifayətdir:
 //
-const APP_VERSION = 'skyfit-pro-v1.5.3-sales-refund';
+const APP_VERSION = 'skyfit-pro-v1.5.4-ui-finance-polish';
 
 
 const STATIC_CACHE =
