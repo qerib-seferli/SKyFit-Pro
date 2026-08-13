@@ -10468,19 +10468,19 @@ body[data-page="home"] .trainers-grid {
 }
 
 /* ============================================================
-   SKy Fit Pro — Mobile admin footer / bottom-nav spacing
+   SKy Fit Pro — Mobile admin footer spacing correction
    2026-08-14
-   Footer ilə aşağı naviqasiya arasındakı artıq boşluğu yığır.
+   v1.5.8 panel hizalanmasını qoruyur, ikiqat alt rezervi aradan qaldırır.
    ============================================================ */
 @media (max-width: 980px) {
-  body[data-page="admin"] .app-footer {
-    margin-top: 8px !important;
-    margin-bottom: 8px !important;
-    padding-top: 9px;
-    padding-bottom: 6px;
+  body[data-page="admin"] {
+    padding-bottom: 0 !important;
   }
 
-  body[data-page="admin"] .admin-page {
-    padding-bottom: calc(var(--bottom-nav-height, 68px) + var(--safe-bottom) + 10px) !important;
+  body[data-page="admin"] .app-footer {
+    margin-top: 8px !important;
+    margin-bottom: calc(var(--bottom-nav-height, 68px) + var(--safe-bottom) + 4px) !important;
+    padding-top: 9px;
+    padding-bottom: 6px;
   }
 }
