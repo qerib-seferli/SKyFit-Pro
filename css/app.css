@@ -10774,3 +10774,58 @@ body[data-page="admin"] .debt-customer-create > .ui-field {
     min-width: 0 !important;
   }
 }
+
+/* ============================================================
+   SKy Fit Pro — Mobile KASSA center + low-stock readability v1.5.13
+   2026-08-14 — yalnız mobil CSS.
+   ============================================================ */
+@media (max-width: 760px) {
+  /* KASSA: Fiziki KASSA kartının məzmunu tam mərkəzdə. */
+  body[data-page="admin"] #admin-panel-finance .finance-summary-card--cash {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+  }
+  body[data-page="admin"] #admin-panel-finance .finance-summary-card--cash > span,
+  body[data-page="admin"] #admin-panel-finance .finance-summary-card--cash > strong,
+  body[data-page="admin"] #admin-panel-finance .finance-summary-card--cash > small {
+    width: 100% !important;
+    text-align: center !important;
+  }
+
+  /* Dashboard: azalan stokda məbləğ və status tam görünsün. */
+  body[data-page="admin"] #dashboard-low-stock .dashboard-low-stock-item {
+    grid-template-columns: 42px minmax(0, 1fr) !important;
+    grid-template-rows: auto auto !important;
+    overflow: hidden !important;
+  }
+  body[data-page="admin"] #dashboard-low-stock .compact-list-item__side {
+    grid-column: 2 !important;
+    grid-row: 2 !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, auto) minmax(0, auto) !important;
+    justify-content: start !important;
+    justify-items: start !important;
+    align-items: center !important;
+    gap: 8px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+  }
+  body[data-page="admin"] #dashboard-low-stock .dashboard-low-stock-item__amount {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    font-size: 12.5px !important;
+    white-space: nowrap !important;
+  }
+  body[data-page="admin"] #dashboard-low-stock .compact-list-item__side > span {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+  }
+}
