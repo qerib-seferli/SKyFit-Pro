@@ -256,6 +256,17 @@ async function openGlobalQuickSale(trigger) {
 
 export async function initGlobalQuickSale() {
   if (initialized) return;
+
+  const isAdminPage =
+    document.body?.dataset?.page === 'admin';
+
+  if (isAdminPage) {
+    document.querySelectorAll(
+      '#admin-quick-sale-fab, #global-quick-sale-fab, .admin-quick-sale-fab'
+    ).forEach(node => node.remove());
+    return;
+  }
+
   const identity = await getCurrentIdentity();
   if (!identity?.isStaff) return;
 

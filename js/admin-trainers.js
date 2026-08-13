@@ -1053,31 +1053,27 @@ export function createAdminTrainersController(ctx) {
       ) &&
       oldPath !== path
     ) {
-      supabase
-        .storage
-        .from(
-          APP_CONFIG
-            .storage
-            .trainerImages
-        )
-        .remove([
-          oldPath,
-        ])
-        .then(
-          ({
-            error:
-              cleanupError,
-          }) => {
-            if (
-              cleanupError
-            ) {
-              console.warn(
-                '[SKy Fit] Old trainer image cleanup:',
-                cleanupError
-              );
-            }
-          }
+      const { error: cleanupError } =
+        await supabase
+          .storage
+          .from(
+            APP_CONFIG
+              .storage
+              .trainerImages
+          )
+          .remove([
+            oldPath,
+          ]);
+
+      if (cleanupError) {
+        console.warn(
+          '[SKy Fit] Old trainer image cleanup:',
+          cleanupError
         );
+        notify.warning(
+          'Yeni məşqçi şəkli saxlanıldı, köhnə şəkil Storage-dan silinə bilmədi.'
+        );
+      }
     }
 
     return data;

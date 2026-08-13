@@ -1582,31 +1582,27 @@ export function createAdminProductEditor(ctx) {
       ) &&
       oldPath !== path
     ) {
-      supabase
-        .storage
-        .from(
-          APP_CONFIG
-            .storage
-            .productImages
-        )
-        .remove([
-          oldPath,
-        ])
-        .then(
-          ({
-            error:
-              removeError,
-          }) => {
-            if (
-              removeError
-            ) {
-              console.warn(
-                '[SKy Fit] Old product image cleanup:',
-                removeError
-              );
-            }
-          }
+      const { error: removeError } =
+        await supabase
+          .storage
+          .from(
+            APP_CONFIG
+              .storage
+              .productImages
+          )
+          .remove([
+            oldPath,
+          ]);
+
+      if (removeError) {
+        console.warn(
+          '[SKy Fit] Old product image cleanup:',
+          removeError
         );
+        notify.warning(
+          'Yeni məhsul şəkli saxlanıldı, köhnə şəkil Storage-dan silinə bilmədi.'
+        );
+      }
     }
 
     return data;

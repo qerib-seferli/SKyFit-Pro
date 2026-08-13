@@ -1015,14 +1015,17 @@ async function uploadAvatar(file) {
       ) &&
       oldPath !== newPath
     ) {
-      removeAvatarObject(oldPath).catch(
-        cleanupError => {
-          console.warn(
-            '[SKy Fit Profile] Old avatar cleanup:',
-            cleanupError
-          );
-        }
-      );
+      try {
+        await removeAvatarObject(oldPath);
+      } catch (cleanupError) {
+        console.warn(
+          '[SKy Fit Profile] Old avatar cleanup:',
+          cleanupError
+        );
+        notify.warning(
+          'Yeni profil şəkli saxlanıldı, köhnə şəkil Storage-dan silinə bilmədi.'
+        );
+      }
     }
 
     notify.success(
