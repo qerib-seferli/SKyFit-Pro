@@ -10181,3 +10181,160 @@ body[data-page="admin"] #admin-quick-sale-fab:not(.global-quick-sale-fab) { disp
   #dashboard-low-stock .dashboard-low-stock-item { grid-template-columns:36px minmax(0,1fr); }
   #dashboard-low-stock .compact-list-item__side { grid-column:2; grid-row:2; display:flex; justify-content:flex-start; align-items:center; min-width:0; }
 }
+
+/* ============================================================
+   SKy Fit Pro v1.5.5 — Final checklist: stable dashboard, loader,
+   modal geometry and single global quick sale
+   ============================================================ */
+
+/* Startup loader: index.html-də JS başlamazdan əvvəl də görünür. */
+.app-loader--startup .app-loader__panel {
+  min-width: 176px;
+  display:grid;
+  grid-template-columns:36px 30px minmax(0,1fr);
+  align-items:center;
+  gap:10px;
+  padding:13px 15px;
+  border-color:rgba(255,222,0,.22);
+  background:linear-gradient(145deg,rgba(20,24,31,.98),rgba(12,15,20,.98));
+  box-shadow:0 24px 70px rgba(0,0,0,.42),0 0 30px rgba(255,222,0,.06);
+}
+.app-loader__brand {
+  width:36px;height:36px;display:grid;place-items:center;
+  border-radius:10px;background:var(--accent);color:#080808;
+  font-size:11px;font-weight:1000;letter-spacing:-.03em;
+  box-shadow:0 0 22px rgba(255,222,0,.18);
+}
+.app-loader--startup .app-loader__label { font-size:11px; color:var(--text); }
+
+/* Yalnız layout.js tərəfindən yaradılan global FAB qalır. */
+#admin-quick-sale-fab { display:none !important; }
+#global-quick-sale-fab.global-quick-sale-fab { display:flex !important; }
+
+/* Modal: footer content-in üstünə düşməsin, son sahə tam görünə bilsin. */
+.app-modal { max-height:min(92dvh,820px); }
+.app-modal__header { flex:0 0 auto; }
+.app-modal__body {
+  flex:1 1 auto;
+  min-height:0;
+  overflow:auto;
+  overscroll-behavior:contain;
+  scrollbar-gutter:stable;
+  padding-bottom:18px;
+}
+.app-modal__footer {
+  position:relative;
+  flex:0 0 auto;
+  z-index:4;
+  background:var(--surface);
+  box-shadow:0 -10px 24px rgba(0,0,0,.08);
+}
+.modal-form__actions {
+  position:static !important;
+  inset:auto !important;
+  background:transparent !important;
+}
+
+/* Admin form sistemi: eyni hündürlük, eyni label ritmi. */
+body[data-page="admin"] .ui-field { min-width:0; align-content:start; }
+body[data-page="admin"] .ui-field__label {
+  min-height:18px;
+  display:flex;
+  align-items:flex-end;
+  margin:0;
+  font-size:11.5px;
+  line-height:1.25;
+}
+body[data-page="admin"] .ui-input,
+body[data-page="admin"] .ui-select,
+body[data-page="admin"] .ui-date-input,
+body[data-page="admin"] .search-control {
+  min-width:0;
+}
+body[data-page="admin"] .ui-input__control,
+body[data-page="admin"] .ui-select,
+body[data-page="admin"] .ui-date-input,
+body[data-page="admin"] .search-control__input {
+  min-height:44px;
+  height:44px;
+  line-height:1.2;
+}
+body[data-page="admin"] textarea.ui-input__control,
+body[data-page="admin"] .ui-textarea { height:auto; min-height:88px; }
+body[data-page="admin"] .ui-field__hint {
+  min-height:0;
+  margin-top:4px;
+  font-size:10px;
+  line-height:1.45;
+}
+
+/* Product editor: desktop simmetrik, mobil tək sütun; footer heç nəyi örtmür. */
+.app-modal--product-editor { width:min(96vw,1100px); max-height:92dvh; }
+.app-modal--product-editor .app-modal__body { padding-bottom:22px; }
+.app-modal--product-editor .modal-form__grid {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px 14px;
+  align-items:start;
+}
+.app-modal--product-editor .modal-form__grid > * { min-width:0; }
+.app-modal--product-editor .sale-variant-editor { margin-top:2px; }
+.app-modal--product-editor .sale-variant-editor-row__main { align-items:start; }
+
+/* Desktop admin shell: sidebar viewport-da sabit, content onun altına girmir. */
+@media (min-width:981px) {
+  body[data-page="admin"] .admin-shell {
+    grid-template-columns:210px minmax(0,1fr) !important;
+    gap:12px;
+    align-items:start;
+  }
+  body[data-page="admin"] .admin-sidebar {
+    position:sticky !important;
+    top:100px !important;
+    left:auto !important;
+    width:auto !important;
+    height:calc(100dvh - 112px) !important;
+    overflow-y:auto !important;
+    overscroll-behavior:contain;
+  }
+  body[data-page="admin"] .admin-content { grid-column:auto !important; }
+}
+
+/* Bottom nav və FAB content/modalları örtməsin. */
+body[data-page="admin"] .admin-page,
+body[data-page="admin"] .admin-content { padding-bottom:calc(var(--bottom-nav-height,68px) + 18px); }
+body.is-scroll-locked #global-quick-sale-fab { opacity:0; pointer-events:none; }
+
+/* Public storefront: daxili stok məlumatları heç bir breakpoint-də geri görünməsin. */
+body[data-page="home"] .product-card__stock-badge,
+body[data-page="home"] .product-card__unit,
+body[data-page="home"] .product-card__stock-line,
+body[data-page="home"] .product-modal__unit { display:none !important; }
+body[data-page="home"] .product-card__price { white-space:nowrap; }
+
+/* 1-3 məşqçi də mərkəzdə qalır. */
+body[data-page="home"] .trainers-grid {
+  grid-template-columns:repeat(auto-fit,minmax(220px,280px));
+  justify-content:center;
+  justify-items:stretch;
+}
+
+@media (max-width:760px) {
+  .app-modal-backdrop { padding:8px; }
+  .app-modal { width:100%; max-height:calc(100dvh - 16px); border-radius:14px; }
+  .app-modal__body { padding:11px; padding-bottom:18px; }
+  .app-modal__footer { padding:9px 11px; }
+  .app-modal--product-editor .modal-form__grid { grid-template-columns:1fr !important; }
+  body[data-page="admin"] .modal-form__grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  body[data-page="admin"] .modal-form__grid > .ui-field--full,
+  body[data-page="admin"] .modal-form__grid > .ui-info-card,
+  body[data-page="admin"] .modal-form__grid > .ui-button--full { grid-column:1/-1; }
+}
+
+@media (max-width:430px) {
+  body[data-page="admin"] .modal-form__grid { grid-template-columns:1fr; }
+  .app-loader--startup .app-loader__panel {
+    grid-template-columns:34px 26px minmax(0,1fr);
+    min-width:min(88vw,220px);
+  }
+}

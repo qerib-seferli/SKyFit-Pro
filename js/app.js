@@ -22,6 +22,8 @@ import {
   notify,
   getErrorMessage,
   asyncHandler,
+  showLoader,
+  hideLoader,
 } from './core.js';
 
 import { initLayout } from './layout.js';
@@ -354,6 +356,13 @@ async function loadInitialData() {
 }
 
 async function init() {
+  showLoader('SKy Fit hazırlanır...');
+
+  // Şəbəkə uzun çəksə belə loader sonsuz qalmasın.
+  const failSafe = window.setTimeout(() => {
+    void hideLoader({ force: true });
+  }, 12000);
+
   try {
     await initLayout();
 
@@ -373,6 +382,9 @@ async function init() {
         'Ana səhifə başladılmadı.'
       )
     );
+  } finally {
+    window.clearTimeout(failSafe);
+    await hideLoader({ force: true, minimumDuration: 360 });
   }
 }
 

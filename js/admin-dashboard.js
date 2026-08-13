@@ -15,6 +15,7 @@ import {
 const state = {
   loaded: false,
   data: null,
+  requestId: 0,
 };
 
 const shortDateFormatter = new Intl.DateTimeFormat('az-AZ', {
@@ -112,35 +113,44 @@ function render(data = {}) {
   renderTrend(data.trend);
 }
 
+async function fetchOverview() {
+  const { data, error } = await supabase.rpc(RPC.getDashboardOverviewV2);
+  if (error) throw error;
+  return data && typeof data === 'object' ? data : {};
+}
+
 export async function loadDashboardOverviewV2() {
+  const requestId = ++state.requestId;
+
   try {
-    const { data, error } = await supabase.rpc(
-      RPC.getDashboardOverviewV2
-    );
+    let data;
+    try {
+      data = await fetchOverview();
+    } catch (firstError) {
+      // Keçici şəbəkə/CORS uğursuzluğunda bir dəfə qısa retry.
+      await new Promise(resolve => setTimeout(resolve, 220));
+      data = await fetchOverview();
+    }
 
-    if (error) throw error;
+    if (requestId !== state.requestId) return state.data;
 
-    state.data = data && typeof data === 'object'
-      ? data
-      : {};
-
+    state.data = data;
     state.loaded = true;
     render(state.data);
-
     return state.data;
   } catch (error) {
-    console.error(
-      '[SKy Fit Dashboard v2]',
-      error
-    );
+    console.error('[SKy Fit Dashboard v2]', error);
 
-    notify.error(
-      getErrorMessage(
-        error,
-        'Dashboard maliyyə göstəriciləri yüklənmədi.'
-      )
-    );
+    // Əvvəl uğurla yüklənmiş rəqəmləri şəbəkə xətasına görə 0-a çevirmə.
+    if (!state.loaded) {
+      notify.error(
+        getErrorMessage(
+          error,
+          'Dashboard maliyyə göstəriciləri yüklənmədi.'
+        )
+      );
+    }
 
-    return null;
+    return state.data;
   }
 }

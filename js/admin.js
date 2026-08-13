@@ -558,7 +558,8 @@ async function loadActiveTab() {
     state.activeTab
   ) {
     case 'dashboard':
-      await Promise.all([loadDashboard(), loadDashboardOverviewV2()]);
+      await loadDashboard();
+      await loadDashboardOverviewV2();
       break;
 
     case 'pos':
@@ -676,17 +677,6 @@ function isToday(
   );
 }
 
-function todayLedgerEntries() {
-  const today =
-    todayIso();
-
-  return state.ledger.filter(
-    entry =>
-      entry.entry_date ===
-      today
-  );
-}
-
 function renderDashboard() {
   const todaySales =
     state.sales.filter(
@@ -755,26 +745,6 @@ function renderDashboard() {
       0
     );
 
-  const todayLedger =
-    todayLedgerEntries();
-
-  const grossIncome =
-    todayLedger
-      .filter(entry => ledgerBusinessType(entry) === 'income')
-      .reduce((total, entry) => total + ledgerAmount(entry), 0);
-
-  const refunds =
-    todayLedger
-      .filter(entry => ledgerBusinessType(entry) === 'refund')
-      .reduce((total, entry) => total + ledgerAmount(entry), 0);
-
-  const income = grossIncome - refunds;
-
-  const expense =
-    todayLedger
-      .filter(entry => ledgerBusinessType(entry) === 'expense')
-      .reduce((total, entry) => total + ledgerAmount(entry), 0);
-
   // KPI values
 
   setText(
@@ -823,33 +793,7 @@ function renderDashboard() {
     `${openDebts.length} açıq hesab`
   );
 
-  setText(
-    byId(
-      'dashboard-income-today'
-    ),
-    money(
-      income
-    )
-  );
-
-  setText(
-    byId(
-      'dashboard-expense-today'
-    ),
-    money(
-      expense
-    )
-  );
-
-  setText(
-    byId(
-      'dashboard-balance-today'
-    ),
-    money(
-      income -
-      expense
-    )
-  );
+  // Mədaxil/Məxaric/Nəticə yalnız admin-dashboard.js server xülasəsindən render olunur.
 
   renderDashboardLowStock();
 
@@ -1450,10 +1394,8 @@ function bindDashboardEvents() {
   )?.addEventListener(
     'click',
     async () => {
-      await Promise.all([
-        loadDashboard(),
-        loadDashboardOverviewV2(),
-      ]);
+      await loadDashboard();
+      await loadDashboardOverviewV2();
 
       notify.success(
         'Dashboard yeniləndi.'

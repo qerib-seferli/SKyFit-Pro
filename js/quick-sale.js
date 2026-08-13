@@ -258,9 +258,20 @@ export async function initGlobalQuickSale() {
   if (initialized) return;
   const identity = await getCurrentIdentity();
   if (!identity?.isStaff) return;
+
+  // Köhnə admin quick-sale FAB DOM-da/cache-dən qalıbsa tam sil.
+  document.querySelectorAll('#admin-quick-sale-fab, .admin-quick-sale-fab:not(.global-quick-sale-fab)')
+    .forEach(node => node.remove());
+
   initialized = true;
-  const button = createElement('button', { className: 'admin-quick-sale-fab global-quick-sale-fab', attrs: { type: 'button', 'aria-label': 'Tez satış aç', title: 'Tez satış' } });
-  button.innerHTML = `<span class="admin-quick-sale-fab__icon" aria-hidden="true">${QUICK_ICONS.bolt}</span><span class="admin-quick-sale-fab__label">Tez satış</span>`;
-  button.addEventListener('click', () => void openGlobalQuickSale(button));
-  document.body.append(button);
+  let button = document.getElementById('global-quick-sale-fab');
+  if (!button) {
+    button = createElement('button', {
+      className: 'admin-quick-sale-fab global-quick-sale-fab',
+      attrs: { id: 'global-quick-sale-fab', type: 'button', 'aria-label': 'Tez satış aç', title: 'Tez satış' },
+    });
+    button.innerHTML = `<span class="admin-quick-sale-fab__icon" aria-hidden="true">${QUICK_ICONS.bolt}</span><span class="admin-quick-sale-fab__label">Tez satış</span>`;
+    button.addEventListener('click', () => void openGlobalQuickSale(button));
+    document.body.append(button);
+  }
 }
