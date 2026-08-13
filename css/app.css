@@ -10734,3 +10734,43 @@ body[data-page="home"] .trainers-grid {
     font-size: 11px !important;
   }
 }
+
+/* ============================================================
+   SKy Fit Pro — POS desktop customer fields + mobile KASSA v1.5.12
+   2026-08-14 — yalnız CSS, biznes məntiqinə toxunmur.
+   ============================================================ */
+/* POS satış təsdiqi: yeni müştəri inputları wrapper-siz render olunur.
+   Desktopda da normal input çərçivəsi və hündürlüyü verilir. */
+body[data-page="admin"] .debt-customer-create .ui-input__control {
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  padding: 0 12px !important;
+  color: var(--text) !important;
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-sm) !important;
+  box-sizing: border-box !important;
+}
+body[data-page="admin"] .debt-customer-create__grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px !important;
+}
+body[data-page="admin"] .debt-customer-create > .ui-field {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+/* Telefonda KASSA actionları həqiqi 2x2: köhnə :last-child full-row qaydasını ləğv et. */
+@media (max-width: 760px) {
+  body[data-page="admin"] #admin-panel-finance .kassa-actions > .ui-button,
+  body[data-page="admin"] #admin-panel-finance .kassa-actions > .ui-button:last-child,
+  body[data-page="admin"] #income-create-button,
+  body[data-page="admin"] #expense-create-button {
+    grid-column: auto !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+}
