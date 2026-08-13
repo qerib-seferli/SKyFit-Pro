@@ -10338,3 +10338,45 @@ body[data-page="home"] .trainers-grid {
     min-width:min(88vw,220px);
   }
 }
+
+/* ============================================================
+   SKy Fit Pro — Desktop admin vertical alignment polish
+   2026-08-14
+   Sol menyu və aktiv panel aşağı xəttdə eyni bitsin.
+   ============================================================ */
+@media (min-width: 981px) {
+  body[data-page="admin"] .admin-page,
+  body[data-page="admin"] .admin-content {
+    padding-bottom: 0 !important;
+  }
+
+  body[data-page="admin"] .admin-shell {
+    align-items: stretch !important;
+  }
+
+  body[data-page="admin"] .admin-sidebar {
+    align-self: start !important;
+  }
+
+  body[data-page="admin"] .admin-content {
+    min-height: calc(100dvh - 112px);
+    display: flex;
+    flex-direction: column;
+  }
+
+  body[data-page="admin"] .admin-panels {
+    flex: 1 1 auto;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  body[data-page="admin"] .admin-panel:not([hidden]) {
+    flex: 1 1 auto;
+    min-height: 100%;
+  }
+
+  body[data-page="admin"] .app-footer {
+    margin-top: 8px !important;
+  }
+}
