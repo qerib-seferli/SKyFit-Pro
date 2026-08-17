@@ -239,11 +239,19 @@ async function openGlobalQuickSale(trigger) {
   content.innerHTML = `<div class="quick-sale-products-grid" data-grid></div>`;
   const grid = content.querySelector('[data-grid]');
   const daily = createElement('button', { className: 'quick-sale-card quick-sale-card--service', attrs: { type: 'button' } });
-  daily.innerHTML = `<span class="quick-sale-card__media quick-sale-card__media--service">${QUICK_ICONS.ticket}</span><span class="quick-sale-card__body"><strong>Günlük giriş</strong><span>3 ₼ planı</span><small>Profil tələb olunmur</small></span>`;
+  daily.innerHTML = `<span class="quick-sale-card__media quick-sale-card__media--service"><img src="./assets/foto/gunluk_giris_3azn.png" alt="Günlük giriş 3 ₼"><span class="quick-sale-card__service-price">3 ₼</span></span><span class="quick-sale-card__body"><strong>Günlük giriş</strong><span>3 ₼ planı</span><small>Profil tələb olunmur</small></span>`;
   daily.addEventListener('click', () => openWalkInSale(daily));
   grid.append(daily);
   products
     .filter(product => productStock(product) > 0 && saleChoices(product).length > 0)
+    .sort((a, b) => {
+      const aName = normalizeString(productName(a)).toLocaleLowerCase('az-AZ');
+      const bName = normalizeString(productName(b)).toLocaleLowerCase('az-AZ');
+      const aIsWater = aName === 'su' || aName.startsWith('su ');
+      const bIsWater = bName === 'su' || bName.startsWith('su ');
+      if (aIsWater !== bIsWater) return aIsWater ? -1 : 1;
+      return aName.localeCompare(bName, 'az');
+    })
     .forEach(product => {
     const card = createElement('button', { className: 'quick-sale-card', attrs: { type: 'button' } });
     const image = productImage(product);
