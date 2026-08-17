@@ -74,6 +74,9 @@ const FIELD_LABELS = {
   net_pay: 'Ödənən maaş', job_title: 'Vəzifə', reason: 'Səbəb', reversal_type: 'Qaytarma növü',
   role: 'Rol', email: 'E-poçt', address: 'Ünvan', stock_unit: 'Stok vahidi', sale_mode: 'Satış qaydası',
   period_month: 'Maaş dövrü', hired_on: 'İşə başlama', is_manual: 'Müştəri profili',
+  subtotal: 'Ara cəm', total_amount: 'Ümumi məbləğ', discount_amount: 'Endirim məbləği',
+  receipt_no: 'Qəbz nömrəsi', created_at: 'Yaradılma vaxtı', payment_status: 'Ödəniş vəziyyəti',
+  payment_method: 'Ödəniş üsulu', cash_amount: 'Nağd məbləğ', card_amount: 'Kart məbləği',
 };
 
 const MONEY_FIELDS = new Set([
@@ -100,6 +103,22 @@ function formatAuditValue(key, value) {
   if (typeof value === 'boolean') return value ? 'Bəli' : 'Xeyr';
   if (MONEY_FIELDS.has(key)) return money(value);
   if (['start_date','end_date','entry_date','period_start','period_end'].includes(key)) return formatDate(value);
+  if (['created_at','updated_at','paid_at','refunded_at'].includes(key)) return formatDateTime(value);
+
+  const normalized = normalizeString(value).toLowerCase();
+  const valueLabels = {
+    cash: 'Nağd',
+    card: 'Kart',
+    mixed: 'Nağd + Kart',
+    paid: 'Ödənilib',
+    debt: 'Borc',
+    pending: 'Gözləmədə',
+    active: 'Aktiv',
+    inactive: 'Passiv',
+    reversed: 'Qaytarılıb',
+    refunded: 'Geri qaytarılıb',
+  };
+  if (valueLabels[normalized]) return valueLabels[normalized];
   if (typeof value === 'object') return JSON.stringify(value);
   return String(value);
 }

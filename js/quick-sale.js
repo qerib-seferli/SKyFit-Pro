@@ -81,6 +81,19 @@ function productVariants(productId) {
   return quick.length ? quick : all;
 }
 
+
+function showQuickSaleSuccess() {
+  document.querySelector('.quick-sale-success-overlay')?.remove();
+  const overlay = createElement('div', { className: 'quick-sale-success-overlay', attrs: { 'aria-hidden': 'true' } });
+  overlay.innerHTML = '<div class="quick-sale-success-overlay__card"><img src="./assets/foto/onaylandi_512.gif" alt=""></div>';
+  document.body.append(overlay);
+  requestAnimationFrame(() => overlay.classList.add('is-visible'));
+  window.setTimeout(() => {
+    overlay.classList.remove('is-visible');
+    window.setTimeout(() => overlay.remove(), 220);
+  }, 1250);
+}
+
 function paymentFieldsMarkup(total) {
   return `
     <div class="quick-payment-grid">
@@ -187,6 +200,7 @@ async function openProductSale(product, trigger) {
         });
         if (error) throw error;
         closeModal();
+        showQuickSaleSuccess();
         notify.success(`${productName(product)} satıldı.`, 'Satış tamamlandı');
         await loadQuickData();
       } catch (error) {
@@ -226,6 +240,7 @@ async function openWalkInSale(trigger) {
       const { error: rpcError } = await supabase.rpc(RPC.recordWalkInEntryV1, { p_cash_amount: cash, p_card_amount: card });
       if (rpcError) throw rpcError;
       closeModal();
+      showQuickSaleSuccess();
       notify.success(`Günlük giriş ${money(price)} satıldı.`, 'Giriş tamamlandı');
     } catch (rpcError) { notify.error(getErrorMessage(rpcError, 'Günlük giriş tamamlanmadı.')); }
     finally { setButtonLoading(submit, false); }

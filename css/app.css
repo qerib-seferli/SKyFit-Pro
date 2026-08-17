@@ -11198,3 +11198,190 @@ body:not([data-page="admin"]) .product-card__price {
     white-space: nowrap !important;
   }
 }
+
+
+/* ============================================================
+   SKy Fit Pro v1.5.16 — scoped UI polish
+   Yalnız tələb olunan məhsul, audit, auth, trainer və tez satış hissələri.
+   ============================================================ */
+
+/* Ana səhifədə qiymət həmişə kartın mərkəzində. */
+body[data-page="home"] .product-card__meta--price-only {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  text-align: center !important;
+}
+body[data-page="home"] .product-card__price {
+  width: auto !important;
+  min-width: 0 !important;
+  margin-inline: auto !important;
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+/* Sevimlilər modalında şəkil ağ çərçivə yaratmadan premium görünür. */
+body[data-page="favorites"] .product-modal__media {
+  padding: 0 !important;
+  overflow: hidden !important;
+  background: #0d1015 !important;
+  border-color: rgba(255,255,255,.09) !important;
+}
+body[data-page="favorites"] .product-modal__media img {
+  width: 100% !important;
+  height: 100% !important;
+  padding: 0 !important;
+  object-fit: cover !important;
+  background: #0d1015 !important;
+}
+body[data-page="favorites"] .product-modal__purchase {
+  display: flex !important;
+  justify-content: center !important;
+}
+body[data-page="favorites"] .product-modal__price {
+  margin-inline: auto !important;
+  text-align: center !important;
+}
+
+/* Admin məhsul kartında ağ media fonunu çıxarırıq. */
+body[data-page="admin"] .admin-product-card__media {
+  padding: 0 !important;
+  overflow: hidden !important;
+  background: #0d1015 !important;
+}
+body[data-page="admin"] .admin-product-card__media img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  border-radius: 0 !important;
+  background: #0d1015 !important;
+}
+
+/* Audit modalı: "Əməliyyat / Bölmə" və dəyərlər qarışmır. */
+body[data-page="admin"] .audit-detail__summary {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0,1fr)) !important;
+  gap: 10px !important;
+}
+body[data-page="admin"] .audit-detail__summary > div {
+  min-width: 0 !important;
+  display: grid !important;
+  gap: 5px !important;
+  padding: 10px 12px !important;
+  border: 1px solid var(--border-soft) !important;
+  border-radius: 10px !important;
+  background: var(--surface) !important;
+}
+body[data-page="admin"] .audit-detail__summary span {
+  color: var(--text-faint) !important;
+  font-size: 10px !important;
+}
+body[data-page="admin"] .audit-detail__summary strong {
+  color: var(--text) !important;
+  font-size: 13px !important;
+  line-height: 1.35 !important;
+}
+body[data-page="admin"] .audit-change__field {
+  font-size: 12px !important;
+  line-height: 1.35 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+/* Auth desktopda eyni şəkil iki dəfə təkrarlanmasın: şəkil yalnız vizual tərəfdədir. */
+@media (min-width: 701px) {
+  body[data-page="login"] .auth-panel,
+  body[data-page="register"] .auth-panel,
+  body[data-page="reset-password"] .auth-panel,
+  body[data-page="update-password"] .auth-panel {
+    background-image: none !important;
+    background: #080a0e !important;
+  }
+}
+/* Mobil authda vizual blok gizləndiyi üçün tək fon şəkli paneldə qalır. */
+@media (max-width: 700px) {
+  body[data-page="login"] .auth-panel {
+    background-image: linear-gradient(145deg, rgba(5,7,10,.82), rgba(5,7,10,.95)), url('../assets/foto/gym-section-1.png') !important;
+    background-size: cover !important;
+    background-position: center !important;
+  }
+  body[data-page="register"] .auth-panel {
+    background-image: linear-gradient(145deg, rgba(5,7,10,.82), rgba(5,7,10,.95)), url('../assets/foto/gym-section-2.png') !important;
+    background-size: cover !important;
+    background-position: center !important;
+  }
+  body[data-page="reset-password"] .auth-panel,
+  body[data-page="update-password"] .auth-panel {
+    background-image: linear-gradient(145deg, rgba(5,7,10,.83), rgba(5,7,10,.96)), url('../assets/foto/gym-section-3.png') !important;
+    background-size: cover !important;
+    background-position: center !important;
+  }
+}
+
+/* Tez satış uğur animasiyası ekranın mərkəzində, kompakt ölçüdə. */
+.quick-sale-success-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 14000;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  opacity: 0;
+  background: rgba(0,0,0,.20);
+  transition: opacity .18s ease;
+}
+.quick-sale-success-overlay.is-visible { opacity: 1; }
+.quick-sale-success-overlay__card {
+  width: clamp(112px, 16vw, 168px);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 28px;
+  background: rgba(12,16,20,.94);
+  border: 1px solid rgba(255,222,0,.25);
+  box-shadow: 0 20px 70px rgba(0,0,0,.46), 0 0 28px rgba(255,222,0,.12);
+  transform: scale(.92);
+  transition: transform .18s ease;
+}
+.quick-sale-success-overlay.is-visible .quick-sale-success-overlay__card { transform: scale(1); }
+.quick-sale-success-overlay__card img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
+
+/* Məşqçi modalında WhatsApp düyməsi zəng düyməsinin yanında kompakt görünür. */
+.trainer-modal__links { align-items: center; }
+.trainer-whatsapp-button {
+  gap: 7px !important;
+  border-color: rgba(45,211,111,.28) !important;
+  color: #42e889 !important;
+}
+.trainer-whatsapp-button svg {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 17px;
+}
+
+/* Məhsul açıqlaması uzun mətn üçün rahat redaktə olunsun. */
+.app-modal--product-editor #admin-product-description {
+  min-height: 132px !important;
+  resize: vertical !important;
+}
+
+@media (max-width: 720px) {
+  body[data-page="admin"] .audit-detail__summary {
+    grid-template-columns: 1fr !important;
+  }
+  .trainer-modal__links {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0,1fr)) !important;
+    gap: 8px !important;
+  }
+  .trainer-modal__links .ui-button {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+}

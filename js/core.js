@@ -1499,6 +1499,7 @@ export function openTrainerModal(trainer, options = {}) {
   const image = trainerImage(trainer);
   const phone = trainerPhone(trainer);
   const instagram = trainerInstagram(trainer);
+  const whatsappPhone = normalizeString(phone).replace(/\D/g, '');
   const content = createElement('div', { className: 'trainer-modal' });
 
   content.innerHTML = `
@@ -1510,6 +1511,7 @@ export function openTrainerModal(trainer, options = {}) {
       ${phone || instagram
         ? `<div class="trainer-modal__links">
             ${phone ? `<a href="tel:${escapeHtml(phone)}" class="ui-button ui-button--glass"><span class="ui-button__label">Zəng et</span></a>` : ''}
+            ${whatsappPhone ? `<a href="https://wa.me/${escapeHtml(whatsappPhone)}" target="_blank" rel="noopener noreferrer" class="ui-button ui-button--glass trainer-whatsapp-button" aria-label="WhatsApp ilə yaz"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a9.7 9.7 0 0 0-8.3 14.7L2.3 22l5.4-1.4A9.8 9.8 0 1 0 12 2Zm0 17.6a7.5 7.5 0 0 1-3.8-1l-.3-.2-3.2.8.9-3.1-.2-.3A7.5 7.5 0 1 1 12 19.6Zm4.1-5.6c-.2-.1-1.3-.7-1.5-.7-.2-.1-.4-.1-.5.1l-.7.8c-.1.2-.3.2-.5.1a6 6 0 0 1-1.8-1.1 6.7 6.7 0 0 1-1.2-1.5c-.1-.2 0-.4.1-.5l.4-.5.2-.4c.1-.2 0-.3 0-.4l-.7-1.7c-.2-.4-.4-.4-.5-.4h-.5c-.2 0-.5.1-.7.3-.2.2-.9.9-.9 2.2s.9 2.5 1 2.7c.1.2 1.8 2.8 4.5 3.9.6.3 1.1.4 1.5.5.6.2 1.2.2 1.7.1.5-.1 1.3-.5 1.5-1.1.2-.6.2-1.1.1-1.2-.1-.1-.3-.2-.5-.3Z"/></svg><span class="ui-button__label">WhatsApp</span></a>` : ''}
             ${instagram ? `<a href="${escapeHtml(instagram)}" target="_blank" rel="noopener noreferrer" class="ui-button ui-button--glass"><span class="ui-button__label">Instagram</span></a>` : ''}
           </div>`
         : ''}

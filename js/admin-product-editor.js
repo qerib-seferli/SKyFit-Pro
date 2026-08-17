@@ -335,8 +335,8 @@ export function createAdminProductEditor(ctx) {
         <textarea
           id="admin-product-description"
           class="ui-textarea"
-          maxlength="1000"
-          rows="3"
+          maxlength="5000"
+          rows="5"
           placeholder="Məhsul haqqında qısa məlumat"
         >${escapeHtml(
           product?.description ||
