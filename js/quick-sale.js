@@ -1,4 +1,4 @@
-// SKy Fit Pro — Global Tez satış
+// SKy Fit Pro — Global Tez satış 
 import { supabase, TABLES, RPC } from './config.js';
 import {
   $, clearElement, createElement, escapeHtml, getCurrentIdentity,
