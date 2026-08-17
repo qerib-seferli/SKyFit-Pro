@@ -11126,3 +11126,93 @@ body[data-page="update-password"] .auth-brand__mark {
     font-size: 8px !important;
   }
 }
+
+
+/* ============================================================
+   SKy Fit Pro — Public UX follow-up v1.5.15
+   2026-08-17 — yalnız Sevimlilər, public məhsul qiyməti və startup loader.
+   Admin panel selectorlarına toxunmur.
+   ============================================================ */
+
+/* Startup loader: loqonun yanında əlavə "SK" nişanı olmasın. */
+.app-loader--startup .app-loader__panel {
+  grid-template-columns: 30px minmax(0, 1fr) !important;
+}
+.app-loader--startup .app-loader__brand {
+  display: none !important;
+}
+@media (max-width: 430px) {
+  .app-loader--startup .app-loader__panel {
+    grid-template-columns: 26px minmax(0, 1fr) !important;
+  }
+}
+
+/* Public məhsul kartlarında qiymət həmişə mərkəzdə və balanslı görünsün. */
+body:not([data-page="admin"]) .product-card__meta--price-only {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+}
+body:not([data-page="admin"]) .product-card__price {
+  justify-content: center !important;
+  text-align: center !important;
+  margin-inline: auto !important;
+}
+
+/* Sevimlilər: Ana səhifədəki təmiz premium məhsul kartı görünüşü ilə eyni xətt. */
+body[data-page="favorites"] #favorites-grid {
+  align-items: stretch;
+}
+body[data-page="favorites"] .product-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+body[data-page="favorites"] .product-card__media {
+  aspect-ratio: 1 / 1;
+  padding: 0 !important;
+  background: #0d1015 !important;
+  border-bottom-color: rgba(255,255,255,.08) !important;
+}
+body[data-page="favorites"] .product-card__image {
+  width: 100% !important;
+  height: 100% !important;
+  padding: 0 !important;
+  object-fit: cover !important;
+  background: #0d1015 !important;
+}
+body[data-page="favorites"] .product-card__body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+body[data-page="favorites"] .product-card__meta--price-only {
+  margin-top: auto !important;
+}
+
+@media (max-width: 700px) {
+  body[data-page="favorites"] #favorites-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+  body[data-page="favorites"] .product-card {
+    min-width: 0 !important;
+    border-radius: 13px !important;
+  }
+  body[data-page="favorites"] .product-card__body {
+    padding: 9px !important;
+    gap: 6px !important;
+  }
+  body[data-page="favorites"] .product-card__name {
+    min-height: 34px !important;
+    font-size: 11px !important;
+    line-height: 1.35 !important;
+  }
+  body[data-page="favorites"] .product-card__price {
+    min-height: 34px !important;
+    padding: 0 8px !important;
+    border-radius: 8px !important;
+    font-size: clamp(13px, 4vw, 17px) !important;
+  }
+}

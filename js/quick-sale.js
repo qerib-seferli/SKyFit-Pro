@@ -61,7 +61,7 @@ function choiceDeduction(choice, product) { return choice?.kind === 'base' ? bas
 async function loadQuickData() {
   const [productsResult, variantsResult] = await Promise.all([
     supabase.from(TABLES.products)
-      .select('id,name,image_url,stock_quantity,stock_unit,retail_price,portion_price,portion_size,sale_mode,is_active,show_public')
+      .select('id,name,image_url,category,stock_quantity,stock_unit,retail_price,portion_price,portion_size,sale_mode,is_active,show_public')
       .eq('is_active', true)
       .order('name', { ascending: true }),
     supabase.from(TABLES.productSaleVariants)
@@ -245,11 +245,22 @@ async function openGlobalQuickSale(trigger) {
   products
     .filter(product => productStock(product) > 0 && saleChoices(product).length > 0)
     .sort((a, b) => {
+      const rank = product => {
+        const name = normalizeString(productName(product)).toLocaleLowerCase('az-AZ');
+        const category = normalizeString(product?.category).toLocaleLowerCase('az-AZ');
+        const text = `${name} ${category}`;
+
+        if (name === 'su' || name.startsWith('su ')) return 0;
+        if (text.includes('creatin') || text.includes('kreatin')) return 1;
+        if (text.includes('protein') || text.includes('whey')) return 2;
+        return 3;
+      };
+
+      const rankDiff = rank(a) - rank(b);
+      if (rankDiff !== 0) return rankDiff;
+
       const aName = normalizeString(productName(a)).toLocaleLowerCase('az-AZ');
       const bName = normalizeString(productName(b)).toLocaleLowerCase('az-AZ');
-      const aIsWater = aName === 'su' || aName.startsWith('su ');
-      const bIsWater = bName === 'su' || bName.startsWith('su ');
-      if (aIsWater !== bIsWater) return aIsWater ? -1 : 1;
       return aName.localeCompare(bName, 'az');
     })
     .forEach(product => {
