@@ -1,4 +1,4 @@
-// SKy Fit Pro — Global Tez satış 
+// SKy Fit Pro — Global Tez satış
 import { supabase, TABLES, RPC } from './config.js';
 import {
   $, clearElement, createElement, escapeHtml, getCurrentIdentity,
@@ -61,7 +61,7 @@ function choiceDeduction(choice, product) { return choice?.kind === 'base' ? bas
 async function loadQuickData() {
   const [productsResult, variantsResult] = await Promise.all([
     supabase.from(TABLES.products)
-      .select('id,name,image_url,category,stock_quantity,stock_unit,retail_price,portion_price,portion_size,sale_mode,is_active,show_public')
+      .select('id,name,image_url,stock_quantity,stock_unit,retail_price,portion_price,portion_size,sale_mode,is_active,show_public')
       .eq('is_active', true)
       .order('name', { ascending: true }),
     supabase.from(TABLES.productSaleVariants)
@@ -245,19 +245,18 @@ async function openGlobalQuickSale(trigger) {
   products
     .filter(product => productStock(product) > 0 && saleChoices(product).length > 0)
     .sort((a, b) => {
-      const rank = product => {
+      const priority = product => {
         const name = normalizeString(productName(product)).toLocaleLowerCase('az-AZ');
-        const category = normalizeString(product?.category).toLocaleLowerCase('az-AZ');
-        const text = `${name} ${category}`;
 
+        // Tez satış sırası: Su → kreatinlər → proteinlər → qalan məhsullar.
         if (name === 'su' || name.startsWith('su ')) return 0;
-        if (text.includes('creatin') || text.includes('kreatin')) return 1;
-        if (text.includes('protein') || text.includes('whey')) return 2;
+        if (/\b(kreatin|creatine)\b/i.test(name)) return 1;
+        if (/\b(protein|whey|gainer)\b/i.test(name)) return 2;
         return 3;
       };
 
-      const rankDiff = rank(a) - rank(b);
-      if (rankDiff !== 0) return rankDiff;
+      const priorityDiff = priority(a) - priority(b);
+      if (priorityDiff !== 0) return priorityDiff;
 
       const aName = normalizeString(productName(a)).toLocaleLowerCase('az-AZ');
       const bName = normalizeString(productName(b)).toLocaleLowerCase('az-AZ');
