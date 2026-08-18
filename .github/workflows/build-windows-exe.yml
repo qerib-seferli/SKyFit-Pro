@@ -1,1 +1,35 @@
+name: Build SKy Fit Windows EXE
 
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    name: Build Windows Setup
+    runs-on: windows-latest
+
+    steps:
+      - name: Repository-ni götür
+        uses: actions/checkout@v4
+
+      - name: Node.js qur
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Desktop build paketlərini qur
+        run: npm install --no-audit --no-fund
+
+      - name: SKy Fit Setup.exe hazırla
+        run: npm run desktop:build:win
+
+      - name: EXE artifact yüklə
+        uses: actions/upload-artifact@v4
+        with:
+          name: SKy-Fit-Pro-Windows-Setup
+          path: dist/*.exe
+          if-no-files-found: error
+          retention-days: 14
