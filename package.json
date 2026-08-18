@@ -1,0 +1,60 @@
+{
+  "name": "skyfit-pro-desktop",
+  "version": "1.5.3",
+  "private": true,
+  "description": "SKy Fit Pro Windows desktop application",
+  "author": "Qərib Səfərli",
+  "main": "electron/main.js",
+  "scripts": {
+    "desktop:start": "electron .",
+    "desktop:build:win": "electron-builder --win nsis --x64"
+  },
+  "devDependencies": {
+    "electron": "^37.2.6",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "az.skyfit.pro",
+    "productName": "SKy Fit Pro",
+    "asar": true,
+    "files": [
+      "electron/main.js",
+      "electron/preload.js",
+      "index.html",
+      "login.html",
+      "register.html",
+      "profile.html",
+      "admin.html",
+      "favorites.html",
+      "reset-password.html",
+      "update-password.html",
+      "css/**/*",
+      "js/**/*",
+      "assets/**/*",
+      "manifest.json",
+      "service-worker.js"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "icon": "assets/icons/icon-512x512.png",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "SKy-Fit-Pro-${version}-Setup.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "SKy Fit Pro"
+    }
+  }
+}
