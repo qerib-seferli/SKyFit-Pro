@@ -23,7 +23,7 @@
 // Frontenddə böyük dəyişiklik etdikdə yalnız APP_VERSION-u
 // artırmaq kifayətdir:
 //
-const APP_VERSION = 'skyfit-pro-v1.5.5-final-checklist';
+const APP_VERSION = 'skyfit-pro-v1.5.6-access-v1';
 
 
 const STATIC_CACHE =
@@ -72,6 +72,7 @@ const APP_SHELL = [
   './css/app.css',
 
   // JavaScript modules
+  './js/admin-access.js',
   './js/admin-dashboard.js',
   './js/admin-data.js',
   './js/admin-debt-actions.js',

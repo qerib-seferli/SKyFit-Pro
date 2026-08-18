@@ -8,6 +8,7 @@
 
 const {
   contextBridge,
+  ipcRenderer,
 } = require('electron');
 
 
@@ -27,6 +28,8 @@ contextBridge.exposeInMainWorld(
 
     platform:
       process.platform,
+
+    readLegacyAccessDatabase: () => ipcRenderer.invoke('access:read-legacy-database'),
 
     versions: {
 

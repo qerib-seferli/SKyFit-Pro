@@ -176,6 +176,9 @@ export const RPC = Object.freeze({
   getAdminFeedV1: 'get_admin_feed_v1',
   getDashboardOverviewV2: 'get_dashboard_overview_v2',
   createManualCustomerV1: 'create_manual_customer_v1',
+  upsertLegacyAccessPeopleV1: 'upsert_legacy_access_people_v1',
+  linkAccessPersonV1: 'link_access_person_v1',
+  unlinkAccessPersonV1: 'unlink_access_person_v1',
 });
 
 // Supabase cədvəlləri
@@ -204,6 +207,12 @@ export const TABLES = Object.freeze({
   staffEmployment: 'staff_employment',
   staffPayrolls: 'staff_payrolls',
   saleReversals: 'sale_reversals',
+  accessLegacyPeople: 'access_legacy_people',
+  accessCards: 'access_cards',
+  accessEvents: 'access_events',
+  accessDevices: 'access_devices',
+  accessCommands: 'access_commands',
+  accessSyncRuns: 'access_sync_runs',
 });
 
 // Konfiqurasiya yoxlaması

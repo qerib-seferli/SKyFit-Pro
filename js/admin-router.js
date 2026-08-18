@@ -3,7 +3,7 @@ import { STORAGE_KEYS } from './config.js';
 import { $$, normalizeString } from './core.js';
 
 const ADMIN_TABS = new Set([
-  'dashboard', 'pos', 'members', 'memberships', 'products', 'stock',
+  'dashboard', 'pos', 'members', 'memberships', 'access', 'products', 'stock',
   'debts', 'finance', 'employees', 'reports', 'trainers', 'history',
 ]);
 

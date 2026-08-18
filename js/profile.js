@@ -58,6 +58,8 @@ const state = {
   profile: null,
   membership: null,
   memberships: [],
+  accessCard: null,
+  accessLegacy: null,
   avatarUploading: false,
   savingProfile: false,
 };
@@ -90,6 +92,15 @@ function getElements() {
     membershipCardDaysLeft: byId('membership-card-days-left'),
     membershipCardPrice: byId('membership-card-price'),
     membershipCardProgress: byId('membership-card-progress'),
+
+    accessCard: byId('profile-access-card'),
+    accessEmpty: byId('profile-access-empty'),
+    accessStatus: byId('profile-access-status'),
+    accessEmpNo: byId('profile-access-emp-no'),
+    accessCardNo: byId('profile-access-card-no'),
+    accessValidFrom: byId('profile-access-valid-from'),
+    accessValidUntil: byId('profile-access-valid-until'),
+    accessDaysLeft: byId('profile-access-days-left'),
 
 
     changePasswordButton: byId('profile-change-password-button'),
@@ -318,6 +329,70 @@ async function loadMemberships() {
     findCurrentMembership(state.memberships);
 
   renderMembership();
+}
+
+async function loadAccessCard() {
+  const profileId = state.identity?.profileId;
+  if (!profileId) return;
+
+  const [{ data: cards, error: cardError }, { data: legacy, error: legacyError }] = await Promise.all([
+    supabase.from(TABLES.accessCards)
+      .select('id,profile_id,card_number,card_uid,valid_from,valid_until,is_enabled,status,last_synced_at')
+      .eq('profile_id', profileId)
+      .order('updated_at', { ascending: false })
+      .limit(1),
+    supabase.from(TABLES.accessLegacyPeople)
+      .select('id,legacy_emp_no,legacy_name,legacy_phone,valid_from,valid_until,match_method')
+      .eq('profile_id', profileId)
+      .limit(1),
+  ]);
+
+  if (cardError || legacyError) {
+    console.warn('[SKy Fit Profile] Turniket məlumatı:', cardError || legacyError);
+    state.accessCard = null;
+    state.accessLegacy = null;
+    renderAccessCard();
+    return;
+  }
+
+  state.accessCard = Array.isArray(cards) ? cards[0] || null : null;
+  state.accessLegacy = Array.isArray(legacy) ? legacy[0] || null : null;
+  renderAccessCard();
+}
+
+function renderAccessCard() {
+  const el = getElements();
+  const card = state.accessCard;
+  const legacy = state.accessLegacy;
+  if (!card && !legacy) {
+    hideElement(el.accessCard);
+    showElement(el.accessEmpty);
+    if (el.accessStatus) {
+      el.accessStatus.className = 'ui-badge ui-badge--neutral';
+      setText(el.accessStatus, 'Bağlanmayıb');
+    }
+    return;
+  }
+
+  showElement(el.accessCard);
+  hideElement(el.accessEmpty);
+  const validUntil = card?.valid_until || legacy?.valid_until || null;
+  const validFrom = card?.valid_from || legacy?.valid_from || null;
+  let days = null;
+  if (validUntil) {
+    const end = new Date(`${validUntil}T23:59:59`);
+    days = Math.max(0, Math.ceil((end.getTime() - Date.now()) / 86400000));
+  }
+  const active = card?.is_enabled !== false && (!validUntil || new Date(`${validUntil}T23:59:59`).getTime() >= Date.now());
+  if (el.accessStatus) {
+    el.accessStatus.className = active ? 'ui-badge ui-badge--success' : 'ui-badge ui-badge--danger';
+    setText(el.accessStatus, active ? 'Giriş aktivdir' : 'Giriş bağlıdır');
+  }
+  setText(el.accessEmpNo, legacy?.legacy_emp_no || '—');
+  setText(el.accessCardNo, card?.card_number || '—');
+  setText(el.accessValidFrom, validFrom ? formatDate(validFrom) : '—');
+  setText(el.accessValidUntil, validUntil ? formatDate(validUntil) : 'Limitsiz / qeyd yoxdur');
+  setText(el.accessDaysLeft, days === null ? '—' : active ? `${days} gün` : 'Müddət bitib');
 }
 
 function findCurrentMembership(memberships) {
@@ -1295,7 +1370,7 @@ function bindProfileChangeEvents() {
 }
 
 async function loadProfileData() {
-  await loadMemberships();
+  await Promise.all([loadMemberships(), loadAccessCard()]);
 }
 
 function bindEvents() {

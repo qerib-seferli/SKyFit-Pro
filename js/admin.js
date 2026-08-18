@@ -126,6 +126,7 @@ import { createAdminProductEditor, stockUnitLabel } from './admin-product-editor
 import { createAdminDataService } from './admin-data.js';
 import { createAdminRouter } from './admin-router.js';
 import { bindAdminRuntimeEvents } from './admin-events.js';
+import { createAdminAccessController } from './admin-access.js';
 
 const ADMIN_OPERATION_EVENT = 'skyfit:admin-operation';
 
@@ -363,6 +364,8 @@ const financeActionsController = createAdminFinanceActions({
 });
 
 
+const accessController = createAdminAccessController({ state });
+
 const adminRouter = createAdminRouter({ state, loadActiveTab });
 const { setActiveTab, bindTabEvents, resolveInitialAdminTab } = adminRouter;
 
@@ -581,6 +584,11 @@ async function loadActiveTab() {
 
       renderMembershipPlans();
       renderMemberships();
+      break;
+
+    case 'access':
+      await loadMembers();
+      await accessController.loadRemote();
       break;
 
     case 'products':
@@ -2299,6 +2307,7 @@ function bindAdminEvents() {
 
   bindMembershipEvents();
 
+  accessController.bind();
 
   bindDebtEvents();
 

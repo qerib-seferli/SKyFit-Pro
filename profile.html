@@ -315,6 +315,29 @@
               </div>
             </article>
           </section>
+
+          <section class="profile-card" aria-labelledby="access-card-title">
+            <div class="profile-card__header">
+              <div>
+                <span class="section-eyebrow">Turniket</span>
+                <h2 id="access-card-title" class="profile-card__title">Giriş kartım</h2>
+              </div>
+              <span id="profile-access-status" class="ui-badge ui-badge--neutral">—</span>
+            </div>
+            <div id="profile-access-empty" class="ui-empty-state is-hidden" hidden>
+              <strong>Turniket kartı hələ bağlanmayıb</strong>
+              <span>Telefon nömrən turniket bazasındakı nömrə ilə eyni olduqda məlumat avtomatik profilinə bağlanacaq.</span>
+            </div>
+            <div id="profile-access-card" class="access-profile-card is-hidden" hidden>
+              <div class="profile-detail-grid">
+                <article class="profile-detail-item"><span class="profile-detail-item__label">Turniket №</span><strong id="profile-access-emp-no">—</strong></article>
+                <article class="profile-detail-item"><span class="profile-detail-item__label">Kart №</span><strong id="profile-access-card-no">—</strong></article>
+                <article class="profile-detail-item"><span class="profile-detail-item__label">Aktivlik başlanğıcı</span><strong id="profile-access-valid-from">—</strong></article>
+                <article class="profile-detail-item"><span class="profile-detail-item__label">Son tarix</span><strong id="profile-access-valid-until">—</strong></article>
+                <article class="profile-detail-item profile-detail-item--wide"><span class="profile-detail-item__label">Qalan vaxt</span><strong id="profile-access-days-left">—</strong></article>
+              </div>
+            </div>
+          </section>
         </div>
 
         <aside

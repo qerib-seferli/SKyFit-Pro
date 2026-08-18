@@ -11385,3 +11385,47 @@ body[data-page="admin"] .audit-change__field {
     min-width: 0 !important;
   }
 }
+
+/* ============================================================
+   SKy Fit Pro — Turniket / IC Card V1
+   Yalnız yeni access paneli/profil kartına aiddir; mövcud səhifələrə toxunmur.
+   ============================================================ */
+body[data-page="admin"] .access-header-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+body[data-page="admin"] .access-kpi-grid {
+  margin-bottom: 18px;
+}
+body[data-page="admin"] .access-kpi-text {
+  font-size: 14px !important;
+  line-height: 1.25;
+}
+body[data-page="admin"] .access-table td {
+  vertical-align: middle;
+}
+body[data-page="admin"] .access-table td strong,
+body[data-page="admin"] .access-table td span,
+body[data-page="admin"] .access-table td small {
+  display: block;
+}
+body[data-page="admin"] .access-table td small {
+  margin-top: 4px;
+  color: var(--text-faint);
+  font-size: 11px;
+}
+.access-profile-card {
+  margin-top: 4px;
+}
+
+@media (max-width: 860px) {
+  body[data-page="admin"] .access-header-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+  body[data-page="admin"] .access-header-actions .ui-button {
+    flex: 1 1 160px;
+  }
+}

@@ -323,6 +323,21 @@
               </span>
 
             </button>
+
+            <button
+              class="admin-navigation__item"
+              type="button"
+              data-admin-tab="access"
+              aria-selected="false"
+              id="admin-tab-access"
+              role="tab"
+              aria-controls="admin-panel-access"
+            >
+              <span class="admin-navigation__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M8 8l-3 4 3 4M16 8l3 4-3 4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><rect x="9" y="5" width="6" height="14" rx="2" stroke="currentColor" stroke-width="1.7"/></svg>
+              </span>
+              <span>Turniket</span>
+            </button>
             <button
               class="admin-navigation__item"
               type="button"
@@ -1376,6 +1391,51 @@
 
             </section>
 
+          </section>
+
+
+          <section
+            class="admin-panel is-hidden"
+            data-admin-panel="access"
+            id="admin-panel-access"
+            role="tabpanel"
+            aria-labelledby="admin-tab-access"
+            hidden
+          >
+            <div class="admin-panel__header">
+              <div>
+                <span class="section-eyebrow">Giriş nəzarəti</span>
+                <h2 class="admin-panel__title">Turniket və IC kartlar</h2>
+                <p class="admin-panel__description">Köhnə IC Card bazasını təhlükəsiz oxu, SKyFit üzvləri ilə telefon nömrəsinə görə avtomatik və ya əl ilə uyğunlaşdır.</p>
+              </div>
+              <div class="access-header-actions">
+                <button id="access-refresh" class="ui-button ui-button--ghost" type="button">Yenilə</button>
+                <button id="access-read-local" class="ui-button ui-button--secondary" type="button">Lokal bazanı oxu</button>
+                <button id="access-sync-local" class="ui-button ui-button--primary" type="button">Supabase-a sinxron et</button>
+              </div>
+            </div>
+
+            <div class="admin-kpi-grid access-kpi-grid">
+              <article class="admin-kpi-card"><span class="admin-kpi-card__label">Turniket bazası</span><strong id="access-kpi-total">0</strong></article>
+              <article class="admin-kpi-card"><span class="admin-kpi-card__label">SKyFit-ə bağlanıb</span><strong id="access-kpi-linked">0</strong></article>
+              <article class="admin-kpi-card admin-kpi-card--danger"><span class="admin-kpi-card__label">Uyğunlaşdırılmayıb</span><strong id="access-kpi-unlinked">0</strong></article>
+              <article class="admin-kpi-card"><span class="admin-kpi-card__label">Lokal əlaqə</span><strong id="access-kpi-local" class="access-kpi-text">—</strong></article>
+            </div>
+
+            <section class="admin-section">
+              <div class="admin-section__header">
+                <div>
+                  <span class="section-eyebrow">Read-only V1</span>
+                  <h3 class="admin-section__title">IC Card istifadəçiləri</h3>
+                  <p id="access-local-path" class="admin-section__description">Windows tətbiqində “Lokal bazanı oxu” seçildikdə Database.mdb yalnız oxunur; mövcud turniket bazasına yazılmır.</p>
+                </div>
+              </div>
+              <div class="admin-toolbar">
+                <label class="search-control"><span class="search-control__icon" aria-hidden="true">⌕</span><input id="access-search" class="search-control__input" type="search" placeholder="№, ad, telefon və ya kart..." aria-label="Turniket istifadəçilərində axtar"></label>
+                <select id="access-status-filter" class="ui-select admin-toolbar__select" aria-label="Uyğunlaşdırma filtri"><option value="all">Hamısı</option><option value="linked">Bağlanıb</option><option value="unlinked">Uyğunlaşdırılmayıb</option></select>
+              </div>
+              <div id="access-people-list" class="admin-table-wrap"></div>
+            </section>
           </section>
 
           <section
