@@ -235,6 +235,27 @@ function createMainWindow() {
 
 const DEFAULT_ACCESS_DB = 'C:\\Program Files (x86)\\ICV5.5.5\\ICV5.5.5\\Database.mdb';
 
+function cleanPowerShellError(value) {
+  const text = String(value || '').trim();
+  if (!text) return '';
+
+  // PowerShell bəzən stderr-i CLIXML kimi qaytarır. İstifadəçiyə XML yox,
+  // yalnız real xəta mətnini göstəririk.
+  const xmlErrors = [...text.matchAll(/<S S="Error">([\s\S]*?)<\/S>/g)]
+    .map(match => match[1])
+    .join(' ');
+
+  return (xmlErrors || text)
+    .replace(/_x000D__x000A_/g, '\n')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s*\n\s*/g, '\n')
+    .trim();
+}
+
 function runPowerShellJson(script) {
   return new Promise((resolve, reject) => {
     const systemRoot = process.env.WINDIR || 'C:\\Windows';
@@ -245,12 +266,51 @@ function runPowerShellJson(script) {
     execFile(exe, ['-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-EncodedCommand', encoded],
       { windowsHide: true, maxBuffer: 32 * 1024 * 1024 },
       (error, stdout, stderr) => {
-        if (error) return reject(new Error((stderr || error.message || '').trim()));
+        if (error) {
+          const message = cleanPowerShellError(stderr || error.message);
+          return reject(new Error(message || 'Turniket bazası oxunmadı.'));
+        }
         try { resolve(JSON.parse(String(stdout || '').trim() || '{}')); }
         catch (parseError) { reject(new Error(`Turniket bazası cavabı oxunmadı: ${parseError.message}`)); }
       }
     );
   });
+}
+
+function createReadOnlyAccessSnapshot(sourcePath) {
+  // Jet/OLEDB hətta Mode=Read zamanı Database.mdb yanında .ldb lock faylı
+  // yaratmağa cəhd edə bilir. Program Files buna icazə vermədiyi üçün tətbiq
+  // administrator tələb edirdi. Orijinal bazaya toxunmadan TEMP-də snapshot
+  // yaradıb yalnız həmin nüsxəni oxuyuruq.
+  const tempRoot = fs.mkdtempSync(
+    path.join(
+      app.getPath('temp'),
+      'skyfit-access-'
+    )
+  );
+
+  const sourceExt = path.extname(sourcePath).toLowerCase() || '.mdb';
+  const snapshotPath = path.join(tempRoot, `Database-readonly${sourceExt}`);
+
+  fs.copyFileSync(sourcePath, snapshotPath, fs.constants.COPYFILE_FICLONE || 0);
+
+  return {
+    tempRoot,
+    snapshotPath,
+  };
+}
+
+function removeAccessSnapshot(tempRoot) {
+  if (!tempRoot) return;
+
+  try {
+    fs.rmSync(tempRoot, {
+      recursive: true,
+      force: true,
+    });
+  } catch {
+    // TEMP cleanup uğursuz olsa tətbiqin işləməsinə mane olmasın.
+  }
 }
 
 async function chooseAccessDatabase() {
@@ -270,17 +330,28 @@ async function chooseAccessDatabase() {
 
 ipcMain.handle('access:read-legacy-database', async () => {
   if (process.platform !== 'win32') return { ok: false, error: 'MDB bridge yalnız Windows-da işləyir.' };
+
+  let snapshot = null;
+
   try {
     const dbPath = await chooseAccessDatabase();
     if (!dbPath) return { ok: false, cancelled: true, error: 'Fayl seçilmədi.' };
     if (!fs.existsSync(dbPath)) return { ok: false, error: 'Database faylı tapılmadı.' };
+
     const ext = path.extname(dbPath).toLowerCase();
     if (!['.mdb','.bak'].includes(ext)) return { ok: false, error: 'Yalnız .mdb və .bak faylları qəbul edilir.' };
 
-    const escapedPath = dbPath.replace(/'/g, "''");
+    // MƏHSULDARLIQ/TƏHLÜKƏSİZLİK:
+    // Mənbə Database.mdb yalnız kopyalanır. Jet bağlantısı orijinal fayla deyil,
+    // istifadəçinin TEMP qovluğunda yaradılan snapshot-a açılır.
+    snapshot = createReadOnlyAccessSnapshot(dbPath);
+
+    const escapedSnapshotPath = snapshot.snapshotPath.replace(/'/g, "''");
+    const escapedSourcePath = dbPath.replace(/'/g, "''");
     const script = `
 $ErrorActionPreference = 'Stop'
-$db = '${escapedPath}'
+$db = '${escapedSnapshotPath}'
+$source = '${escapedSourcePath}'
 $conn = New-Object -ComObject ADODB.Connection
 $conn.Open("Provider=Microsoft.Jet.OLEDB.4.0;Data Source=$db;Mode=Read;")
 $rs = New-Object -ComObject ADODB.Recordset
@@ -299,12 +370,14 @@ while (-not $rs.EOF) {
   $rs.MoveNext()
 }
 $rs.Close(); $conn.Close()
-[pscustomobject]@{ ok = $true; path = $db; people = $items } | ConvertTo-Json -Depth 8 -Compress
+[pscustomobject]@{ ok = $true; path = $source; people = $items; snapshot = $true } | ConvertTo-Json -Depth 8 -Compress
 `;
-    const data = await runPowerShellJson(script);
-    return data;
+
+    return await runPowerShellJson(script);
   } catch (error) {
     return { ok: false, error: error?.message || 'Turniket bazası oxunmadı.' };
+  } finally {
+    removeAccessSnapshot(snapshot?.tempRoot);
   }
 });
 
