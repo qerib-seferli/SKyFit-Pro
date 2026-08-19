@@ -535,7 +535,7 @@ $targetName = '${selectorName}'
 
 function Normalize-Text($value) {
   if ($null -eq $value -or $value -is [DBNull]) { return '' }
-  return ([string]$value).Replace([char]0,'').Trim()
+  return ([string]$value).Replace([string][char]0,[string]'').Trim()
 }
 
 function Normalize-No($value) {
