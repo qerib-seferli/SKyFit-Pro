@@ -60,6 +60,7 @@ const state = {
   memberships: [],
   accessCard: null,
   accessLegacy: null,
+  accessLastEvent: null,
   avatarUploading: false,
   savingProfile: false,
 };
@@ -101,6 +102,7 @@ function getElements() {
     accessValidFrom: byId('profile-access-valid-from'),
     accessValidUntil: byId('profile-access-valid-until'),
     accessDaysLeft: byId('profile-access-days-left'),
+    accessLastEntry: byId('profile-access-last-entry'),
 
 
     changePasswordButton: byId('profile-change-password-button'),
@@ -335,7 +337,11 @@ async function loadAccessCard() {
   const profileId = state.identity?.profileId;
   if (!profileId) return;
 
-  const [{ data: cards, error: cardError }, { data: legacy, error: legacyError }] = await Promise.all([
+  const [
+    { data: cards, error: cardError },
+    { data: legacy, error: legacyError },
+    { data: events, error: eventError },
+  ] = await Promise.all([
     supabase.from(TABLES.accessCards)
       .select('id,profile_id,card_number,card_uid,valid_from,valid_until,is_enabled,status,last_synced_at')
       .eq('profile_id', profileId)
@@ -345,18 +351,25 @@ async function loadAccessCard() {
       .select('id,legacy_emp_no,legacy_name,legacy_phone,valid_from,valid_until,match_method')
       .eq('profile_id', profileId)
       .limit(1),
+    supabase.from(TABLES.accessEvents)
+      .select('id,event_at,direction,result')
+      .eq('profile_id', profileId)
+      .order('event_at', { ascending: false })
+      .limit(1),
   ]);
 
-  if (cardError || legacyError) {
-    console.warn('[SKy Fit Profile] Turniket məlumatı:', cardError || legacyError);
+  if (cardError || legacyError || eventError) {
+    console.warn('[SKy Fit Profile] Turniket məlumatı:', cardError || legacyError || eventError);
     state.accessCard = null;
     state.accessLegacy = null;
+    state.accessLastEvent = null;
     renderAccessCard();
     return;
   }
 
   state.accessCard = Array.isArray(cards) ? cards[0] || null : null;
   state.accessLegacy = Array.isArray(legacy) ? legacy[0] || null : null;
+  state.accessLastEvent = Array.isArray(events) ? events[0] || null : null;
   renderAccessCard();
 }
 
@@ -393,6 +406,7 @@ function renderAccessCard() {
   setText(el.accessValidFrom, validFrom ? formatDate(validFrom) : '—');
   setText(el.accessValidUntil, validUntil ? formatDate(validUntil) : 'Limitsiz / qeyd yoxdur');
   setText(el.accessDaysLeft, days === null ? '—' : active ? `${days} gün` : 'Müddət bitib');
+  setText(el.accessLastEntry, state.accessLastEvent?.event_at ? new Date(state.accessLastEvent.event_at).toLocaleString('az-AZ') : 'Hələ giriş qeydi yoxdur');
 }
 
 function findCurrentMembership(memberships) {

@@ -30,6 +30,9 @@ contextBridge.exposeInMainWorld(
       process.platform,
 
     readLegacyAccessDatabase: () => ipcRenderer.invoke('access:read-legacy-database'),
+    configureAccessBridge: (config) => ipcRenderer.invoke('access:configure-bridge', config),
+    getAccessBridgeStatus: () => ipcRenderer.invoke('access:get-bridge-status'),
+    runAccessBridgeNow: () => ipcRenderer.invoke('access:run-bridge-now'),
 
     versions: {
 

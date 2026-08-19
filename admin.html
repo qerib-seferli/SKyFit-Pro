@@ -1406,10 +1406,11 @@
               <div>
                 <span class="section-eyebrow">Giriş nəzarəti</span>
                 <h2 class="admin-panel__title">Turniket və IC kartlar</h2>
-                <p class="admin-panel__description">Köhnə IC Card bazasını təhlükəsiz oxu, SKyFit üzvləri ilə telefon nömrəsinə görə avtomatik və ya əl ilə uyğunlaşdır.</p>
+                <p class="admin-panel__description">IC Card bazasını oxu, SKyFit üzvləri ilə uyğunlaşdır və zal Desktop Bridge vasitəsilə seçilmiş istifadəçi üçün kart/müddət əmrlərini təhlükəsiz növbəyə göndər.</p>
               </div>
               <div class="access-header-actions">
                 <button id="access-refresh" class="ui-button ui-button--ghost" type="button">Yenilə</button>
+                <button id="access-bridge-setup" class="ui-button ui-button--ghost" type="button">Bridge qur</button>
                 <button id="access-read-local" class="ui-button ui-button--secondary" type="button">Lokal bazanı oxu</button>
                 <button id="access-sync-local" class="ui-button ui-button--primary" type="button">Supabase-a sinxron et</button>
               </div>
@@ -1425,9 +1426,9 @@
             <section class="admin-section">
               <div class="admin-section__header">
                 <div>
-                  <span class="section-eyebrow">Read-only V1</span>
+                  <span class="section-eyebrow">Access Bridge V2</span>
                   <h3 class="admin-section__title">IC Card istifadəçiləri</h3>
-                  <p id="access-local-path" class="admin-section__description">Windows tətbiqində “Lokal bazanı oxu” seçildikdə Database.mdb yalnız oxunur; mövcud turniket bazasına yazılmır.</p>
+                  <p id="access-local-path" class="admin-section__description">Windows tətbiqində oxuma snapshot üzərindən edilir. Yazma yalnız ayrıca command queue əmri ilə, MDB backup alındıqdan sonra və konkret istifadəçi üzrə tətbiq olunur.</p>
                 </div>
               </div>
               <div class="admin-toolbar">
@@ -1435,6 +1436,17 @@
                 <select id="access-status-filter" class="ui-select admin-toolbar__select" aria-label="Uyğunlaşdırma filtri"><option value="all">Hamısı</option><option value="linked">Bağlanıb</option><option value="unlinked">Uyğunlaşdırılmayıb</option></select>
               </div>
               <div id="access-people-list" class="admin-table-wrap"></div>
+            </section>
+
+            <section class="admin-section">
+              <div class="admin-section__header">
+                <div>
+                  <span class="section-eyebrow">Bridge vəziyyəti</span>
+                  <h3 class="admin-section__title">Zal bridge və əmrlər</h3>
+                  <p id="access-bridge-state" class="admin-section__description">Bridge vəziyyəti yoxlanılır...</p>
+                </div>
+              </div>
+              <div id="access-command-list" class="admin-table-wrap"></div>
             </section>
           </section>
 

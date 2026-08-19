@@ -26,7 +26,7 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 export const APP_CONFIG = Object.freeze({
   name: 'SKy Fit Pro',
   shortName: 'SKy Fit',
-  version: '1.5.3',
+  version: '1.6.0',
   developer: 'Qərib Səfərli',
   developerTitle: 'Senior Full Stack Developer',
   locale: 'az-AZ',
@@ -179,6 +179,10 @@ export const RPC = Object.freeze({
   upsertLegacyAccessPeopleV1: 'upsert_legacy_access_people_v1',
   linkAccessPersonV1: 'link_access_person_v1',
   unlinkAccessPersonV1: 'unlink_access_person_v1',
+  registerAccessBridgeV2: 'access_register_bridge_v2',
+  enqueueAccessCommandV2: 'access_enqueue_command_v2',
+  cancelAccessCommandV2: 'access_cancel_command_v2',
+  upsertLegacyAccessEventsV2: 'upsert_legacy_access_events_v2',
 });
 
 // Supabase cədvəlləri
