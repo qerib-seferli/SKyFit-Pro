@@ -23,7 +23,7 @@
 // Frontenddə böyük dəyişiklik etdikdə yalnız APP_VERSION-u
 // artırmaq kifayətdir:
 //
-const APP_VERSION = 'skyfit-pro-v1.6.0-access-v2';
+const APP_VERSION = 'skyfit-pro-v1.7.0-access-v3';
 
 
 const STATIC_CACHE =

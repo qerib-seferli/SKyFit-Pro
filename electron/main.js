@@ -241,6 +241,7 @@ const DEFAULT_ACCESS_DB = 'C:\\Program Files (x86)\\ICV5.5.5\\ICV5.5.5\\Database
 const ACCESS_BRIDGE_CONFIG_FILE = 'access-bridge-v2.json';
 const ACCESS_BRIDGE_DEVICE_KEY = 'skyfit-main-turnstile';
 const ACCESS_POLL_INTERVAL_MS = 5000;
+const ACCESS_DATA_SYNC_INTERVAL_MS = 60000;
 
 let accessBridgePollTimer = null;
 let accessBridgeBusy = false;
@@ -251,6 +252,10 @@ let accessBridgeRuntime = {
   lastSuccessAt: null,
   lastError: null,
   lastCommandId: null,
+  lastDataSyncAt: null,
+  lastPeopleSyncCount: 0,
+  lastEventSyncCount: 0,
+  lastDataSyncError: null,
   mode: null,
   deviceKey: null,
   databasePath: DEFAULT_ACCESS_DB,
@@ -522,6 +527,22 @@ function buildMdbWriteScript(dbPath, command) {
     writeBody = `
       $rs.Fields.Item('card_no').Value = '${card}'
     `;
+  } else if (type === 'block_access') {
+    const blockedUntil = normalizeIsoDate(payload.blocked_until);
+    if (!blockedUntil) throw new Error('Bloklama tarixi düzgün deyil.');
+    writeBody = `
+      $newDate = New-Object DateTime(${Number(blockedUntil.slice(0, 4))},${Number(blockedUntil.slice(5, 7))},${Number(blockedUntil.slice(8, 10))})
+      $rs.Fields.Item('limDate').Value = $newDate
+      try { $rs.Fields.Item('isDate').Value = 1 } catch {}
+    `;
+  } else if (type === 'unblock_access') {
+    const restoreUntil = normalizeIsoDate(payload.valid_until);
+    if (!restoreUntil) throw new Error('Aktivləşdirmə üçün son tarix tələb olunur.');
+    writeBody = `
+      $newDate = New-Object DateTime(${Number(restoreUntil.slice(0, 4))},${Number(restoreUntil.slice(5, 7))},${Number(restoreUntil.slice(8, 10))})
+      $rs.Fields.Item('limDate').Value = $newDate
+      try { $rs.Fields.Item('isDate').Value = 1 } catch {}
+    `;
   } else {
     throw new Error(`Dəstəklənməyən MDB əmri: ${type}`);
   }
@@ -693,6 +714,116 @@ async function supabaseBridgeRpc(config, functionName, payload) {
   return body;
 }
 
+
+function accessPick(row, names) {
+  const entries = Object.entries(row || {});
+  for (const name of names) {
+    const hit = entries.find(([key]) => String(key).toLowerCase() === String(name).toLowerCase());
+    if (hit && hit[1] !== null && hit[1] !== undefined && String(hit[1]).trim() !== '') return hit[1];
+  }
+  return null;
+}
+
+function accessDateOnly(value) {
+  const text = String(value || '').trim().replace(/\//g, '-');
+  const match = text.match(/(20\d{2})-(\d{1,2})-(\d{1,2})/);
+  if (!match) return null;
+  return `${match[1]}-${String(match[2]).padStart(2,'0')}-${String(match[3]).padStart(2,'0')}`;
+}
+
+function accessDateTime(value) {
+  const text = String(value || '').trim().replace(/\//g, '-');
+  const match = text.match(/(20\d{2})-(\d{1,2})-(\d{1,2})(?:[ T](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
+  if (!match) return null;
+  return `${match[1]}-${String(match[2]).padStart(2,'0')}-${String(match[3]).padStart(2,'0')}T${String(match[4] || '00').padStart(2,'0')}:${String(match[5] || '00').padStart(2,'0')}:${String(match[6] || '00').padStart(2,'0')}`;
+}
+
+function accessInferPhone(row) {
+  const direct = accessPick(row, ['phone','tel','telephone','mobile','mobile_phone','phone_no','emp_phone']);
+  if (direct) return String(direct).trim();
+  for (const value of Object.values(row || {})) {
+    const text = String(value ?? '').replace(/\s+/g,'');
+    const hit = text.match(/(?:\+?994|0)(?:10|50|51|55|60|70|77|99)\d{7}/);
+    if (hit) return hit[0];
+  }
+  return null;
+}
+
+function canonicalizeBridgePeople(rows) {
+  return (Array.isArray(rows) ? rows : []).map(row => ({
+    legacy_emp_no: String(accessPick(row,['emp_no','number','employee_no','user_no']) ?? '').trim(),
+    legacy_card_no: String(accessPick(row,['card_no','card_id','cardnumber']) ?? '').trim() || null,
+    legacy_name: String(accessPick(row,['emp_name','name','username']) ?? '').trim() || null,
+    legacy_phone: accessInferPhone(row),
+    room_number: String(accessPick(row,['room_number','room','floor']) ?? '').trim() || null,
+    valid_from: accessDateOnly(accessPick(row,['limDate_start','effective_start_date','start_date'])),
+    valid_until: accessDateOnly(accessPick(row,['limDate','effective_end_date','end_date'])),
+    frequency_control: accessPick(row,['isTimes','frequency_control']),
+    frequency_limit: accessPick(row,['Times','frequency_limit']),
+    raw_data: row,
+  })).filter(row => row.legacy_emp_no);
+}
+
+function canonicalizeBridgeEvents(rows) {
+  return (Array.isArray(rows) ? rows : []).map(row => {
+    const card = String(accessPick(row,['card_id','card_no','card_number']) ?? '').trim() || null;
+    const eventAt = accessDateTime(accessPick(row,['through_time','event_at','time','record_time','datetime']));
+    if (!eventAt) return null;
+    const type = String(accessPick(row,['card_type','direction','event_type']) ?? 'unknown').trim() || 'unknown';
+    const sourceId = String(accessPick(row,['id','record_id','record_no','sn','serial_no']) ?? '').trim();
+    return {
+      legacy_event_key: sourceId ? `mdb:${sourceId}` : `${card || 'nocard'}|${eventAt}|${type}`,
+      card_number: card,
+      event_at: eventAt,
+      direction: type,
+      result: 'granted',
+      raw_data: row,
+    };
+  }).filter(Boolean);
+}
+
+async function syncAccessDatabaseToSupabase(config) {
+  let snapshot = null;
+  try {
+    const dbPath = String(config.databasePath || DEFAULT_ACCESS_DB);
+    if (!fs.existsSync(dbPath)) return;
+    snapshot = createReadOnlyAccessSnapshot(dbPath);
+    const data = await runPowerShellJson(buildReadLegacyScript(snapshot.snapshotPath, dbPath));
+    const people = canonicalizeBridgePeople(data?.people);
+    const events = canonicalizeBridgeEvents(data?.events);
+    let peopleCount = 0;
+    let eventCount = 0;
+
+    for (let i = 0; i < people.length; i += 100) {
+      const chunk = people.slice(i, i + 100);
+      const result = await supabaseBridgeRpc(config, 'access_bridge_sync_people_v3', {
+        p_device_key: config.deviceKey,
+        p_secret: config.secret,
+        p_rows: chunk,
+        p_source_path: dbPath,
+      });
+      peopleCount += Number(result?.imported || chunk.length);
+    }
+
+    for (let i = 0; i < events.length; i += 200) {
+      const chunk = events.slice(i, i + 200);
+      const result = await supabaseBridgeRpc(config, 'access_bridge_sync_events_v3', {
+        p_device_key: config.deviceKey,
+        p_secret: config.secret,
+        p_rows: chunk,
+      });
+      eventCount += Number(result?.imported || chunk.length);
+    }
+
+    accessBridgeRuntime.lastDataSyncAt = new Date().toISOString();
+    accessBridgeRuntime.lastPeopleSyncCount = peopleCount;
+    accessBridgeRuntime.lastEventSyncCount = eventCount;
+    accessBridgeRuntime.lastDataSyncError = null;
+  } finally {
+    removeAccessSnapshot(snapshot?.tempRoot);
+  }
+}
+
 async function completeAccessBridgeCommand(config, commandId, ok, result, errorMessage) {
   return supabaseBridgeRpc(config, 'access_bridge_complete_command_v2', {
     p_device_key: config.deviceKey,
@@ -735,6 +866,17 @@ async function pollAccessBridgeOnce() {
       } catch (error) {
         await completeAccessBridgeCommand(config, command.id, false, {}, error?.message || 'MDB əmri tətbiq edilmədi.');
         accessBridgeRuntime.lastError = error?.message || 'MDB əmri tətbiq edilmədi.';
+      }
+    }
+
+    const lastDataSyncMs = accessBridgeRuntime.lastDataSyncAt
+      ? Date.parse(accessBridgeRuntime.lastDataSyncAt)
+      : 0;
+    if (!lastDataSyncMs || Date.now() - lastDataSyncMs >= ACCESS_DATA_SYNC_INTERVAL_MS) {
+      try {
+        await syncAccessDatabaseToSupabase(config);
+      } catch (syncError) {
+        accessBridgeRuntime.lastDataSyncError = syncError?.message || 'Turniket məlumatlarının avtomatik sinxronu alınmadı.';
       }
     }
   } catch (error) {

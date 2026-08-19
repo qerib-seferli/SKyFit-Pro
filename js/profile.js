@@ -348,7 +348,7 @@ async function loadAccessCard() {
       .order('updated_at', { ascending: false })
       .limit(1),
     supabase.from(TABLES.accessLegacyPeople)
-      .select('id,legacy_emp_no,legacy_name,legacy_phone,valid_from,valid_until,match_method')
+      .select('id,legacy_emp_no,legacy_name,legacy_phone,valid_from,valid_until,match_method,manual_blocked,blocked_at,blocked_previous_valid_until')
       .eq('profile_id', profileId)
       .limit(1),
     supabase.from(TABLES.accessEvents)
@@ -396,7 +396,7 @@ function renderAccessCard() {
     const end = new Date(`${validUntil}T23:59:59`);
     days = Math.max(0, Math.ceil((end.getTime() - Date.now()) / 86400000));
   }
-  const active = card?.is_enabled !== false && (!validUntil || new Date(`${validUntil}T23:59:59`).getTime() >= Date.now());
+  const active = legacy?.manual_blocked !== true && card?.is_enabled !== false && (!validUntil || new Date(`${validUntil}T23:59:59`).getTime() >= Date.now());
   if (el.accessStatus) {
     el.accessStatus.className = active ? 'ui-badge ui-badge--success' : 'ui-badge ui-badge--danger';
     setText(el.accessStatus, active ? 'Giriş aktivdir' : 'Giriş bağlıdır');
@@ -405,7 +405,7 @@ function renderAccessCard() {
   setText(el.accessCardNo, card?.card_number || '—');
   setText(el.accessValidFrom, validFrom ? formatDate(validFrom) : '—');
   setText(el.accessValidUntil, validUntil ? formatDate(validUntil) : 'Limitsiz / qeyd yoxdur');
-  setText(el.accessDaysLeft, days === null ? '—' : active ? `${days} gün` : 'Müddət bitib');
+  setText(el.accessDaysLeft, legacy?.manual_blocked ? 'Admin tərəfindən bloklanıb' : days === null ? '—' : active ? `${days} gün` : 'Müddət bitib');
   setText(el.accessLastEntry, state.accessLastEvent?.event_at ? new Date(state.accessLastEvent.event_at).toLocaleString('az-AZ') : 'Hələ giriş qeydi yoxdur');
 }
 

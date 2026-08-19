@@ -97,7 +97,26 @@ function randomSecret() {
 function commandLabel(type) {
   if (type === 'set_validity') return 'Müddət dəyiş';
   if (type === 'set_card') return 'Kart dəyiş';
+  if (type === 'block_access') return 'Girişi blokla';
+  if (type === 'unblock_access') return 'Girişi aktiv et';
   return type || 'Əmr';
+}
+
+function isoToday() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+}
+
+function addDaysIso(value, days) {
+  const parsed = value ? new Date(`${value}T12:00:00`) : new Date();
+  const base = Number.isFinite(parsed.getTime()) ? parsed : new Date();
+  base.setDate(base.getDate() + Number(days || 0));
+  return `${base.getFullYear()}-${String(base.getMonth()+1).padStart(2,'0')}-${String(base.getDate()).padStart(2,'0')}`;
+}
+
+function extensionBase(validUntil) {
+  const today = isoToday();
+  return validUntil && validUntil > today ? validUntil : today;
 }
 
 function commandStatus(status) {
@@ -126,7 +145,7 @@ export function createAdminAccessController({ state }) {
     const [peopleResult, commandResult, deviceResult] = await Promise.all([
       supabase
         .from(TABLES.accessLegacyPeople)
-        .select('id,legacy_emp_no,legacy_card_no,legacy_name,legacy_phone,room_number,valid_from,valid_until,profile_id,match_method,last_seen_at')
+        .select('id,legacy_emp_no,legacy_card_no,legacy_name,legacy_phone,room_number,valid_from,valid_until,profile_id,match_method,last_seen_at,manual_blocked,blocked_at,blocked_previous_valid_until')
         .order('legacy_emp_no', { ascending: true }),
       supabase
         .from(TABLES.accessCommands)
@@ -242,7 +261,9 @@ export function createAdminAccessController({ state }) {
         <td><strong>${escapeHtml(row.legacy_emp_no || '—')}</strong></td>
         <td><strong>${escapeHtml(row.legacy_name || '—')}</strong><small>${escapeHtml(row.room_number || '')}</small></td>
         <td><span>${escapeHtml(row.legacy_phone || 'Telefon yoxdur')}</span><small>${escapeHtml(row.legacy_card_no || 'Kart yoxdur')}</small></td>
-        <td>${escapeHtml(row.valid_until || '—')}</td>
+        <td>${row.manual_blocked
+          ? `<span class="ui-badge ui-badge--danger">Bloklanıb</span><small>${escapeHtml(row.blocked_previous_valid_until || row.valid_until || '—')}</small>`
+          : escapeHtml(row.valid_until || '—')}</td>
         <td>${member ? `<span class="ui-badge ui-badge--success">Bağlanıb</span><small>${escapeHtml(member.full_name || member.phone || '')}</small>` : '<span class="ui-badge ui-badge--warning">Uyğunlaşdırılmayıb</span>'}</td>
         <td>
           <button type="button" class="ui-button ui-button--ghost ui-button--sm" data-access-manage="${row.id}">İdarə et</button>
@@ -395,24 +416,43 @@ export function createAdminAccessController({ state }) {
     const row = local.remote.find(item => String(item.id) === String(legacyId));
     if (!row) return;
 
+    const shownUntil = row.manual_blocked
+      ? (row.blocked_previous_valid_until || row.valid_until || '')
+      : (row.valid_until || '');
+
     const content = document.createElement('div');
     content.innerHTML = `
       <div class="modal-form__grid">
         <div class="ui-field"><label class="ui-field__label">Turniket №</label><input class="ui-input" value="${escapeHtml(row.legacy_emp_no || '')}" disabled></div>
         <div class="ui-field"><label class="ui-field__label">Ad</label><input class="ui-input" value="${escapeHtml(row.legacy_name || '')}" disabled></div>
-        <div class="ui-field"><label class="ui-field__label">Başlanğıc tarixi (məlumat)</label><input id="access-manage-from" class="ui-input" type="date" value="${escapeHtml(row.valid_from || '')}" disabled></div>
-        <div class="ui-field"><label class="ui-field__label">Son tarix</label><input id="access-manage-until" class="ui-input" type="date" value="${escapeHtml(row.valid_until || '')}"></div>
+        <div class="ui-field"><label class="ui-field__label">Başlanğıc tarixi (məlumat)</label><input class="ui-input" type="date" value="${escapeHtml(row.valid_from || '')}" disabled></div>
+        <div class="ui-field"><label class="ui-field__label">Son tarix</label><input id="access-manage-until" class="ui-input" type="date" value="${escapeHtml(shownUntil)}"></div>
         <div class="ui-field"><label class="ui-field__label">Kart №</label><input id="access-manage-card" class="ui-input" value="${escapeHtml(row.legacy_card_no || '')}" autocomplete="off"></div>
+        <div class="ui-field"><label class="ui-field__label">Giriş statusu</label><div>${row.manual_blocked ? '<span class="ui-badge ui-badge--danger">Bloklanıb</span>' : '<span class="ui-badge ui-badge--success">Aktiv / tarixə bağlı</span>'}</div></div>
       </div>
-      <p class="admin-section__description">Başlanğıc tarixi məlumat üçündür və adi müddət uzatmada dəyişmir. Son tarix əmri Supabase növbəsinə düşür; Desktop Bridge MDB backup yaradır, yalnız bu istifadəçinin son tarixini dəyişir və nəticəni təsdiqləyir.</p>
+      <div class="modal-form__actions" style="justify-content:flex-start;margin-top:12px">
+        <button type="button" class="ui-button ui-button--ghost" data-access-add-days="7">+7 gün</button>
+        <button type="button" class="ui-button ui-button--ghost" data-access-add-days="30">+30 gün</button>
+        <button type="button" class="ui-button ui-button--ghost" data-access-add-days="90">+90 gün</button>
+      </div>
+      <p class="admin-section__description">Müddət uzatmada başlanğıc tarixi dəyişmir. Hər MDB yazmasından əvvəl avtomatik backup yaradılır. Bloklama əvvəlki son tarixi saxlayır və sonradan bərpa edə bilir.</p>
     `;
+
+    content.querySelectorAll('[data-access-add-days]').forEach(button => {
+      button.addEventListener('click', () => {
+        const input = byId('access-manage-until');
+        if (!input) return;
+        input.value = addDaysIso(extensionBase(input.value || shownUntil), Number(button.dataset.accessAddDays || 0));
+      });
+    });
 
     const footer = document.createElement('div');
     footer.className = 'modal-form__actions';
     footer.innerHTML = `
       <button type="button" class="ui-button ui-button--ghost" data-access-manage-close>Bağla</button>
       <button type="button" class="ui-button ui-button--secondary" data-access-manage-card-save>Kartı yaz</button>
-      <button type="button" class="ui-button ui-button--primary" data-access-manage-date-save>Müddəti yaz</button>
+      <button type="button" class="ui-button ${row.manual_blocked ? 'ui-button--primary' : 'ui-button--danger'}" data-access-manage-toggle>${row.manual_blocked ? 'Girişi aktiv et' : 'Girişi blokla'}</button>
+      <button type="button" class="ui-button ui-button--primary" data-access-manage-date-save ${row.manual_blocked ? 'disabled' : ''}>Müddəti yaz</button>
     `;
 
     footer.querySelector('[data-access-manage-close]')?.addEventListener('click', () => closeModal());
@@ -420,7 +460,6 @@ export function createAdminAccessController({ state }) {
       const validUntil = byId('access-manage-until')?.value || null;
       if (!validUntil) return notify.warning('Son tarix seç.');
       try {
-        // Adi müddət uzatmada başlanğıc tarixini dəyişmirik.
         await enqueueCommand(row.id, 'set_validity', { valid_until: validUntil, match_card_number: row.legacy_card_no || null, match_name: row.legacy_name || null });
         closeModal();
       } catch (error) {
@@ -436,6 +475,30 @@ export function createAdminAccessController({ state }) {
         closeModal();
       } catch (error) {
         notify.error(getErrorMessage(error, 'Kart dəyişmə əmri yaradılmadı.'));
+      }
+    });
+
+    footer.querySelector('[data-access-manage-toggle]')?.addEventListener('click', async () => {
+      try {
+        if (row.manual_blocked) {
+          const validUntil = byId('access-manage-until')?.value || row.blocked_previous_valid_until || null;
+          if (!validUntil) return notify.warning('Aktivləşdirmək üçün son tarix seç.');
+          await enqueueCommand(row.id, 'unblock_access', {
+            valid_until: validUntil,
+            match_card_number: row.legacy_card_no || null,
+            match_name: row.legacy_name || null,
+          });
+        } else {
+          await enqueueCommand(row.id, 'block_access', {
+            blocked_until: addDaysIso(isoToday(), -1),
+            previous_valid_until: row.valid_until || null,
+            match_card_number: row.legacy_card_no || null,
+            match_name: row.legacy_name || null,
+          });
+        }
+        closeModal();
+      } catch (error) {
+        notify.error(getErrorMessage(error, 'Giriş statusu dəyişdirilmədi.'));
       }
     });
 
