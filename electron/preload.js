@@ -33,6 +33,7 @@ contextBridge.exposeInMainWorld(
     configureAccessBridge: (config) => ipcRenderer.invoke('access:configure-bridge', config),
     getAccessBridgeStatus: () => ipcRenderer.invoke('access:get-bridge-status'),
     runAccessBridgeNow: () => ipcRenderer.invoke('access:run-bridge-now'),
+    getCardRegisterDiagnostics: () => ipcRenderer.invoke('access:card-register-diagnostics'),
 
     versions: {
 

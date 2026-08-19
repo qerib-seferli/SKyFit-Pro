@@ -1411,6 +1411,7 @@
               <div class="access-header-actions">
                 <button id="access-refresh" class="ui-button ui-button--ghost" type="button">Yenilə</button>
                 <button id="access-bridge-setup" class="ui-button ui-button--ghost" type="button">Bridge qur</button>
+                <button id="access-card-register-check" class="ui-button ui-button--ghost" type="button">Card Register yoxla</button>
                 <button id="access-read-local" class="ui-button ui-button--secondary" type="button">Lokal bazanı oxu</button>
                 <button id="access-sync-local" class="ui-button ui-button--primary" type="button">Supabase-a sinxron et</button>
               </div>
@@ -1436,6 +1437,24 @@
                 <select id="access-status-filter" class="ui-select admin-toolbar__select" aria-label="Uyğunlaşdırma filtri"><option value="all">Hamısı</option><option value="linked">Bağlanıb</option><option value="unlinked">Uyğunlaşdırılmayıb</option></select>
               </div>
               <div id="access-people-list" class="admin-table-wrap"></div>
+            </section>
+
+            <section class="admin-section">
+              <div class="admin-section__header"><div>
+                <span class="section-eyebrow">Card Register</span>
+                <h3 class="admin-section__title">Kart oxuyucu diaqnostikası</h3>
+                <p id="access-card-register-state" class="admin-section__description">Card Register cihazını USB ilə qoş və “Card Register yoxla” düyməsini bas.</p>
+              </div></div>
+              <div id="access-card-register-list" class="admin-table-wrap"></div>
+            </section>
+
+            <section class="admin-section">
+              <div class="admin-section__header"><div>
+                <span class="section-eyebrow">Giriş tarixçəsi</span>
+                <h3 class="admin-section__title">Son turniket keçidləri</h3>
+                <p class="admin-section__description">AccessData-dan Supabase-a gələn son 100 keçid.</p>
+              </div></div>
+              <div id="access-event-list" class="admin-table-wrap"></div>
             </section>
 
             <section class="admin-section">

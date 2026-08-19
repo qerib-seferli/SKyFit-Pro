@@ -261,6 +261,21 @@ let accessBridgeRuntime = {
   databasePath: DEFAULT_ACCESS_DB,
 };
 
+async function getCardRegisterDiagnostics() {
+  if (process.platform !== 'win32') return { ok: false, error: 'Card Register diaqnostikası yalnız Windows-da işləyir.', devices: [] };
+  const script = `
+$ErrorActionPreference = 'Stop'
+$items = Get-CimInstance Win32_PnPEntity | Where-Object { ($_.PNPDeviceID -match '^(HID|USB|SMARTCARD)') -and (($_.Name -match '(?i)card|reader|rfid|smart|hid|usb input|register') -or ($_.PNPClass -match '(?i)hid|smartcard')) } | Select-Object Name,Manufacturer,PNPClass,PNPDeviceID,Status
+[pscustomobject]@{ ok = $true; devices = @($items) } | ConvertTo-Json -Depth 6 -Compress
+`;
+  try {
+    const result = await runPowerShellJson(script);
+    return { ok: true, devices: Array.isArray(result?.devices) ? result.devices : (result?.devices ? [result.devices] : []) };
+  } catch (error) {
+    return { ok: false, error: error?.message || 'Card Register diaqnostikası alınmadı.', devices: [] };
+  }
+}
+
 function cleanPowerShellError(value) {
   const text = String(value || '').trim();
   if (!text) return '';
@@ -949,6 +964,8 @@ ipcMain.handle('access:get-bridge-status', async () => {
     },
   };
 });
+
+ipcMain.handle('access:card-register-diagnostics', async () => getCardRegisterDiagnostics());
 
 ipcMain.handle('access:run-bridge-now', async () => {
   try {

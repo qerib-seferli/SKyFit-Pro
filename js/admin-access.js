@@ -138,11 +138,13 @@ export function createAdminAccessController({ state }) {
     remote: [],
     commands: [],
     devices: [],
+    remoteEvents: [],
+    cardDiagnostics: null,
     desktopStatus: null,
   };
 
   async function loadRemote() {
-    const [peopleResult, commandResult, deviceResult] = await Promise.all([
+    const [peopleResult, commandResult, deviceResult, eventResult] = await Promise.all([
       supabase
         .from(TABLES.accessLegacyPeople)
         .select('id,legacy_emp_no,legacy_card_no,legacy_name,legacy_phone,room_number,valid_from,valid_until,profile_id,match_method,last_seen_at,manual_blocked,blocked_at,blocked_previous_valid_until')
@@ -156,15 +158,22 @@ export function createAdminAccessController({ state }) {
         .from(TABLES.accessDevices)
         .select('id,device_key,name,bridge_mode,is_active,last_seen_at,last_heartbeat_at')
         .order('created_at', { ascending: true }),
+      supabase
+        .from(TABLES.accessEvents)
+        .select('id,legacy_person_id,profile_id,card_number,event_at,direction,result,source')
+        .order('event_at', { ascending: false })
+        .limit(100),
     ]);
 
     if (peopleResult.error) throw peopleResult.error;
     if (commandResult.error) throw commandResult.error;
     if (deviceResult.error) throw deviceResult.error;
+    if (eventResult.error) throw eventResult.error;
 
     local.remote = Array.isArray(peopleResult.data) ? peopleResult.data : [];
     local.commands = Array.isArray(commandResult.data) ? commandResult.data : [];
     local.devices = Array.isArray(deviceResult.data) ? deviceResult.data : [];
+    local.remoteEvents = Array.isArray(eventResult.data) ? eventResult.data : [];
 
     await refreshDesktopStatus();
     render();
@@ -296,10 +305,40 @@ export function createAdminAccessController({ state }) {
     }).join('')}</tbody></table>`;
   }
 
+  function renderEvents() {
+    const root = byId('access-event-list');
+    if (!root) return;
+    if (!local.remoteEvents.length) { root.innerHTML = '<div class="admin-empty-state"><strong>Giriş qeydi yoxdur</strong><span>Bridge AccessData-dan keçidləri oxuyanda burada görünəcək.</span></div>'; return; }
+    root.innerHTML = `<table class="admin-table"><thead><tr><th>Tarix</th><th>Üzv</th><th>Kart</th><th>İstiqamət</th><th>Nəticə</th></tr></thead><tbody>${local.remoteEvents.map(event => { const member = event.profile_id ? memberById(event.profile_id) : null; const legacy = event.legacy_person_id ? local.remote.find(row => String(row.id) === String(event.legacy_person_id)) : null; const name = member?.full_name || legacy?.legacy_name || 'Uyğunlaşdırılmayıb'; return `<tr><td>${escapeHtml(event.event_at ? new Date(event.event_at).toLocaleString('az-AZ') : '—')}</td><td><strong>${escapeHtml(name)}</strong></td><td>${escapeHtml(event.card_number || '—')}</td><td>${escapeHtml(event.direction || 'unknown')}</td><td>${escapeHtml(event.result || '—')}</td></tr>`; }).join('')}</tbody></table>`;
+  }
+
+  function renderCardDiagnostics() {
+    const root = byId('access-card-register-list'); if (!root) return; const diag = local.cardDiagnostics;
+    if (!diag) { root.innerHTML = '<div class="admin-empty-state"><strong>Hələ yoxlanmayıb</strong><span>Card Register-i qoş və yoxla.</span></div>'; return; }
+    const devices = Array.isArray(diag.devices) ? diag.devices : [];
+    byId('access-card-register-state').textContent = diag.ok ? `${devices.length} uyğun cihaz tapıldı.` : (diag.error || 'Diaqnostika alınmadı.');
+    root.innerHTML = devices.length ? `<table class="admin-table"><thead><tr><th>Cihaz</th><th>İstehsalçı</th><th>Sinif</th><th>PNP ID</th><th>Status</th></tr></thead><tbody>${devices.map(d => `<tr><td><strong>${escapeHtml(d.Name || '—')}</strong></td><td>${escapeHtml(d.Manufacturer || '—')}</td><td>${escapeHtml(d.PNPClass || '—')}</td><td><small>${escapeHtml(d.PNPDeviceID || '—')}</small></td><td>${escapeHtml(d.Status || '—')}</td></tr>`).join('')}</tbody></table>` : '<div class="admin-empty-state"><strong>Uyğun cihaz tapılmadı</strong><span>Reader xüsusi HID protokolu istifadə edə bilər.</span></div>';
+  }
+
+  async function inspectCardRegister() {
+    if (!window.skyfitDesktop?.getCardRegisterDiagnostics) return notify.warning('Bu yoxlama yalnız Windows Desktop tətbiqində işləyir.');
+    local.cardDiagnostics = await window.skyfitDesktop.getCardRegisterDiagnostics(); renderCardDiagnostics();
+  }
+
+  function startCardCapture(input) {
+    if (!input) return; input.value = ''; input.focus(); input.placeholder = 'Kartı reader üzərinə qoy...'; notify.info('Kart oxuma rejimi 10 saniyə aktivdir.');
+    let buffer=''; let last=0; const start=Date.now();
+    const cleanup=()=>{ window.removeEventListener('keydown',onKey,true); input.placeholder=''; if (!input.value && buffer) input.value=buffer; };
+    const onKey=(e)=>{ if (Date.now()-start>10000) return cleanup(); if (e.key==='Enter') { if (buffer) input.value=buffer; cleanup(); if (input.value) notify.success(`Kart oxundu: ${input.value}`); return; } if (e.key.length!==1 || !/[A-Za-z0-9_-]/.test(e.key)) return; const now=Date.now(); if (last && now-last>250) buffer=''; buffer+=e.key; last=now; };
+    window.addEventListener('keydown',onKey,true); setTimeout(cleanup,10050);
+  }
+
   function render() {
     renderStats();
     renderPeople();
     renderCommands();
+    renderEvents();
+    renderCardDiagnostics();
   }
 
   async function readLocalDatabase() {
@@ -427,7 +466,7 @@ export function createAdminAccessController({ state }) {
         <div class="ui-field"><label class="ui-field__label">Ad</label><input class="ui-input" value="${escapeHtml(row.legacy_name || '')}" disabled></div>
         <div class="ui-field"><label class="ui-field__label">Başlanğıc tarixi (məlumat)</label><input class="ui-input" type="date" value="${escapeHtml(row.valid_from || '')}" disabled></div>
         <div class="ui-field"><label class="ui-field__label">Son tarix</label><input id="access-manage-until" class="ui-input" type="date" value="${escapeHtml(shownUntil)}"></div>
-        <div class="ui-field"><label class="ui-field__label">Kart №</label><input id="access-manage-card" class="ui-input" value="${escapeHtml(row.legacy_card_no || '')}" autocomplete="off"></div>
+        <div class="ui-field"><label class="ui-field__label">Kart №</label><div style="display:flex;gap:8px"><input id="access-manage-card" class="ui-input" value="${escapeHtml(row.legacy_card_no || '')}" autocomplete="off"><button type="button" class="ui-button ui-button--ghost" data-access-card-capture>Kartı oxu</button></div></div>
         <div class="ui-field"><label class="ui-field__label">Giriş statusu</label><div>${row.manual_blocked ? '<span class="ui-badge ui-badge--danger">Bloklanıb</span>' : '<span class="ui-badge ui-badge--success">Aktiv / tarixə bağlı</span>'}</div></div>
       </div>
       <div class="modal-form__actions" style="justify-content:flex-start;margin-top:12px">
@@ -455,6 +494,7 @@ export function createAdminAccessController({ state }) {
       <button type="button" class="ui-button ui-button--primary" data-access-manage-date-save ${row.manual_blocked ? 'disabled' : ''}>Müddəti yaz</button>
     `;
 
+    content.querySelector('[data-access-card-capture]')?.addEventListener('click', () => startCardCapture(byId('access-manage-card')));
     footer.querySelector('[data-access-manage-close]')?.addEventListener('click', () => closeModal());
     footer.querySelector('[data-access-manage-date-save]')?.addEventListener('click', async () => {
       const validUntil = byId('access-manage-until')?.value || null;
@@ -571,6 +611,7 @@ export function createAdminAccessController({ state }) {
     byId('access-sync-local')?.addEventListener('click', syncLocalDatabase);
     byId('access-refresh')?.addEventListener('click', () => loadRemote().catch(error => notify.error(getErrorMessage(error,'Turniket siyahısı yenilənmədi.'))));
     byId('access-bridge-setup')?.addEventListener('click', openBridgeSetupModal);
+    byId('access-card-register-check')?.addEventListener('click', inspectCardRegister);
     byId('access-search')?.addEventListener('input', renderPeople);
     byId('access-status-filter')?.addEventListener('change', renderPeople);
 
