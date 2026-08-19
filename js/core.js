@@ -1570,7 +1570,11 @@ export async function openExternal(url) {
 }
 
 export async function registerServiceWorker() {
-  if (!('serviceWorker' in navigator) || window.location.protocol === 'file:') return null;
+  if (
+    !('serviceWorker' in navigator) ||
+    window.location.protocol === 'file:' ||
+    window.location.protocol === 'skyfit:'
+  ) return null;
   try {
     return await navigator.serviceWorker.register('./service-worker.js', { scope: './' });
   } catch (error) {

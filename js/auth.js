@@ -41,6 +41,23 @@ const state = {
   recoverySessionReady: false,
 };
 
+
+const DESKTOP_AUTH_REDIRECT_BASE =
+  'https://qerib-seferli.github.io/SKyFit-Pro/';
+
+function authEmailRedirectUrl(route) {
+  const isWeb =
+    window.location.protocol === 'http:' ||
+    window.location.protocol === 'https:';
+
+  return new URL(
+    route,
+    isWeb
+      ? window.location.href
+      : DESKTOP_AUTH_REDIRECT_BASE
+  ).href;
+}
+
 function currentPage() {
   if (state.page) return state.page;
 
@@ -390,10 +407,9 @@ function bindRegister() {
 
       try {
         const emailRedirectTo =
-          new URL(
-            APP_CONFIG.routes.login,
-            window.location.href
-          ).href;
+          authEmailRedirectUrl(
+            APP_CONFIG.routes.login
+          );
 
         const { data, error } =
           await supabase.auth.signUp({
@@ -565,10 +581,9 @@ function bindResetPassword() {
 
       try {
         const redirectTo =
-          new URL(
-            APP_CONFIG.routes.updatePassword,
-            window.location.href
-          ).href;
+          authEmailRedirectUrl(
+            APP_CONFIG.routes.updatePassword
+          );
 
         const { error } =
           await supabase.auth.resetPasswordForEmail(

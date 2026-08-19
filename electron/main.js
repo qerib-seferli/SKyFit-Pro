@@ -13,6 +13,8 @@ const {
   nativeTheme,
   ipcMain,
   dialog,
+  protocol,
+  net,
 } = require('electron');
 
 
@@ -20,6 +22,33 @@ const path =
   require('path');
 const fs = require('fs');
 const { execFile } = require('child_process');
+const { pathToFileURL } = require('url');
+
+
+// ============================================================
+// DESKTOP APP ORIGIN
+//
+// file:// hər HTML faylı üçün Web Storage davranışı platformdan
+// asılı ola bilər. Supabase Auth sessiyasının login.html,
+// admin.html, profile.html və digər səhifələr arasında eyni
+// localStorage origin-də qalması üçün standart/secure lokal
+// protokol istifadə edirik.
+// ============================================================
+
+const SKYFIT_APP_SCHEME = 'skyfit';
+const SKYFIT_APP_HOST = 'app';
+
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: SKYFIT_APP_SCHEME,
+    privileges: {
+      standard: true,
+      secure: true,
+      supportFetchAPI: true,
+      corsEnabled: true,
+    },
+  },
+]);
 
 
 let mainWindow =
@@ -107,8 +136,8 @@ function createMainWindow() {
   // Load application
   // ----------------------------------------------------------
 
-  mainWindow.loadFile(
-    INDEX_FILE
+  mainWindow.loadURL(
+    `${SKYFIT_APP_SCHEME}://${SKYFIT_APP_HOST}/index.html`
   );
 
 
@@ -182,10 +211,12 @@ function createMainWindow() {
             new URL(url);
 
 
-          // file:// app navigation allowed
+          // Local SKy Fit navigation allowed.
           if (
             target.protocol ===
-            'file:'
+              `${SKYFIT_APP_SCHEME}:` ||
+            target.protocol ===
+              'file:'
           ) {
             return;
           }
@@ -987,6 +1018,64 @@ app.whenReady()
       // OS theme follows system.
       nativeTheme.themeSource =
         'system';
+
+
+      // All local pages are served from skyfit://app/... so
+      // Supabase Auth uses one persistent Web Storage origin.
+      protocol.handle(
+        SKYFIT_APP_SCHEME,
+        request => {
+          try {
+            const target = new URL(request.url);
+
+            if (target.host !== SKYFIT_APP_HOST) {
+              return new Response('Not found', { status: 404 });
+            }
+
+            const decodedPath =
+              decodeURIComponent(target.pathname || '/');
+
+            const requestedPath =
+              decodedPath === '/'
+                ? '/index.html'
+                : decodedPath;
+
+            const filePath =
+              path.resolve(
+                ROOT_DIR,
+                `.${requestedPath}`
+              );
+
+            const relativePath =
+              path.relative(
+                ROOT_DIR,
+                filePath
+              );
+
+            const isSafe =
+              Boolean(relativePath) &&
+              !relativePath.startsWith('..') &&
+              !path.isAbsolute(relativePath);
+
+            if (!isSafe) {
+              return new Response('Bad request', { status: 400 });
+            }
+
+            if (
+              !fs.existsSync(filePath) ||
+              !fs.statSync(filePath).isFile()
+            ) {
+              return new Response('Not found', { status: 404 });
+            }
+
+            return net.fetch(
+              pathToFileURL(filePath).toString()
+            );
+          } catch {
+            return new Response('Bad request', { status: 400 });
+          }
+        }
+      );
 
 
       createMainWindow();
