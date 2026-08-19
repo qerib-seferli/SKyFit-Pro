@@ -565,7 +565,7 @@ async function applyAccessCommandToMdb(config, command) {
     return { ...result, backup_path: backupPath, elevated: false, mode: config.mode };
   } catch (error) {
     const message = String(error?.message || '');
-    const needsElevation = /lock file|access.*denied|permission|icaz|could not lock/i.test(message);
+    const needsElevation = /lock file|access.*denied|permission|icaz|could not lock|updateable query|updatable query|read[- ]?only|write.*denied/i.test(message);
     if (!needsElevation) throw error;
 
     const result = await runPowerShellJsonElevated(script);

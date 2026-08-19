@@ -368,13 +368,15 @@ export function createAdminAccessController({ state }) {
       p_target_device_key: BRIDGE_DEVICE_KEY,
     });
     if (error) throw error;
-    notify.success(`Turniket əmri növbəyə əlavə edildi: ${String(data || '').slice(0,8)}`);
+    notify.success(`Əmr növbəyə əlavə edildi: ${String(data || '').slice(0,8)} · Bridge MDB-yə tətbiq edəndən sonra məlumat yenilənəcək.`);
 
     if (window.skyfitDesktop?.runAccessBridgeNow) {
       void window.skyfitDesktop.runAccessBridgeNow();
     }
 
     setTimeout(() => loadRemote().catch(() => {}), 1800);
+    setTimeout(() => loadRemote().catch(() => {}), 6000);
+    setTimeout(() => loadRemote().catch(() => {}), 12000);
   }
 
   function openManageModal(legacyId) {
@@ -406,6 +408,9 @@ export function createAdminAccessController({ state }) {
       const validFrom = byId('access-manage-from')?.value || null;
       const validUntil = byId('access-manage-until')?.value || null;
       if (!validUntil) return notify.warning('Son tarix seç.');
+      if (validFrom && validFrom > validUntil) {
+        return notify.warning('Başlanğıc tarixi son tarixdən böyük ola bilməz.');
+      }
       try {
         await enqueueCommand(row.id, 'set_validity', { valid_from: validFrom, valid_until: validUntil });
         closeModal();
