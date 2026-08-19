@@ -368,15 +368,27 @@ export function createAdminAccessController({ state }) {
       p_target_device_key: BRIDGE_DEVICE_KEY,
     });
     if (error) throw error;
-    notify.success(`Əmr növbəyə əlavə edildi: ${String(data || '').slice(0,8)} · Bridge MDB-yə tətbiq edəndən sonra məlumat yenilənəcək.`);
 
     if (window.skyfitDesktop?.runAccessBridgeNow) {
-      void window.skyfitDesktop.runAccessBridgeNow();
+      const bridgeResult = await window.skyfitDesktop.runAccessBridgeNow();
+
+      if (!bridgeResult?.ok) {
+        throw new Error(bridgeResult?.error || 'Bridge əmri icra edə bilmədi.');
+      }
+
+      const bridgeError = String(bridgeResult?.status?.lastError || '').trim();
+      if (bridgeError) {
+        throw new Error(`Əmr növbəyə düşdü, amma MDB-yə tətbiq edilmədi: ${bridgeError}`);
+      }
+
+      await loadRemote();
+      notify.success('Turniket əmri MDB bazasına tətbiq edildi.');
+      return data;
     }
 
+    notify.success(`Əmr növbəyə əlavə edildi (${String(data || '').slice(0,8)}). Zal Desktop Bridge onu icra edəcək.`);
     setTimeout(() => loadRemote().catch(() => {}), 1800);
-    setTimeout(() => loadRemote().catch(() => {}), 6000);
-    setTimeout(() => loadRemote().catch(() => {}), 12000);
+    return data;
   }
 
   function openManageModal(legacyId) {
@@ -388,11 +400,11 @@ export function createAdminAccessController({ state }) {
       <div class="modal-form__grid">
         <div class="ui-field"><label class="ui-field__label">Turniket №</label><input class="ui-input" value="${escapeHtml(row.legacy_emp_no || '')}" disabled></div>
         <div class="ui-field"><label class="ui-field__label">Ad</label><input class="ui-input" value="${escapeHtml(row.legacy_name || '')}" disabled></div>
-        <div class="ui-field"><label class="ui-field__label">Başlanğıc tarixi</label><input id="access-manage-from" class="ui-input" type="date" value="${escapeHtml(row.valid_from || '')}"></div>
+        <div class="ui-field"><label class="ui-field__label">Başlanğıc tarixi (məlumat)</label><input id="access-manage-from" class="ui-input" type="date" value="${escapeHtml(row.valid_from || '')}" disabled></div>
         <div class="ui-field"><label class="ui-field__label">Son tarix</label><input id="access-manage-until" class="ui-input" type="date" value="${escapeHtml(row.valid_until || '')}"></div>
         <div class="ui-field"><label class="ui-field__label">Kart №</label><input id="access-manage-card" class="ui-input" value="${escapeHtml(row.legacy_card_no || '')}" autocomplete="off"></div>
       </div>
-      <p class="admin-section__description">Yazma əmri əvvəl Supabase növbəsinə düşür. Zal Desktop Bridge əmri götürür, MDB backup yaradır, yalnız bu istifadəçini dəyişir və nəticəni geri təsdiqləyir.</p>
+      <p class="admin-section__description">Başlanğıc tarixi məlumat üçündür və adi müddət uzatmada dəyişmir. Son tarix əmri Supabase növbəsinə düşür; Desktop Bridge MDB backup yaradır, yalnız bu istifadəçinin son tarixini dəyişir və nəticəni təsdiqləyir.</p>
     `;
 
     const footer = document.createElement('div');
@@ -405,14 +417,11 @@ export function createAdminAccessController({ state }) {
 
     footer.querySelector('[data-access-manage-close]')?.addEventListener('click', () => closeModal());
     footer.querySelector('[data-access-manage-date-save]')?.addEventListener('click', async () => {
-      const validFrom = byId('access-manage-from')?.value || null;
       const validUntil = byId('access-manage-until')?.value || null;
       if (!validUntil) return notify.warning('Son tarix seç.');
-      if (validFrom && validFrom > validUntil) {
-        return notify.warning('Başlanğıc tarixi son tarixdən böyük ola bilməz.');
-      }
       try {
-        await enqueueCommand(row.id, 'set_validity', { valid_from: validFrom, valid_until: validUntil });
+        // Adi müddət uzatmada başlanğıc tarixini dəyişmirik.
+        await enqueueCommand(row.id, 'set_validity', { valid_until: validUntil });
         closeModal();
       } catch (error) {
         notify.error(getErrorMessage(error, 'Müddət dəyişmə əmri yaradılmadı.'));

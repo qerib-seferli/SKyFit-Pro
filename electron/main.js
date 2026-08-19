@@ -322,7 +322,7 @@ function runPowerShellJsonElevated(script) {
 
     sudo.exec(
       command,
-      { name: 'SKy Fit Pro — Turniket Bridge' },
+      { name: 'SKy Fit Pro Turniket Bridge' },
       (error, stdout, stderr) => {
         if (error) {
           const message = cleanPowerShellError(stderr || error.message);
@@ -507,12 +507,16 @@ function buildMdbWriteScript(dbPath, command) {
     const validUntil = normalizeIsoDate(payload.valid_until);
     if (!validUntil) throw new Error('Son tarix YYYY-MM-DD formatında olmalıdır.');
 
-    const fromExpr = validFrom
-      ? `DateSerial(${Number(validFrom.slice(0, 4))},${Number(validFrom.slice(5, 7))},${Number(validFrom.slice(8, 10))})`
-      : 'Null';
     const untilExpr = `DateSerial(${Number(validUntil.slice(0, 4))},${Number(validUntil.slice(5, 7))},${Number(validUntil.slice(8, 10))})`;
 
-    updateSql = `UPDATE Yz_person SET limDate_start=${fromExpr}, limDate=${untilExpr}, isDate_start=${validFrom ? 1 : 0}, isDate=1 WHERE emp_no='${empNo}'`;
+    // Mövcud IC bazasında bəzi köhnə başlanğıc tarixləri qeyri-standart ola bilər.
+    // Admin yalnız son tarixi uzadanda limDate_start/isDate_start-a toxunmuruq.
+    if (validFrom) {
+      const fromExpr = `DateSerial(${Number(validFrom.slice(0, 4))},${Number(validFrom.slice(5, 7))},${Number(validFrom.slice(8, 10))})`;
+      updateSql = `UPDATE Yz_person SET limDate_start=${fromExpr}, limDate=${untilExpr}, isDate_start=1, isDate=1 WHERE emp_no='${empNo}'`;
+    } else {
+      updateSql = `UPDATE Yz_person SET limDate=${untilExpr}, isDate=1 WHERE emp_no='${empNo}'`;
+    }
     selectSql = `SELECT emp_no, card_no, emp_name, limDate_start, limDate, isDate_start, isDate FROM Yz_person WHERE emp_no='${empNo}'`;
   } else if (type === 'set_card') {
     const card = psSingleQuote(validateCardNumber(payload.card_number));
@@ -565,7 +569,7 @@ async function applyAccessCommandToMdb(config, command) {
     return { ...result, backup_path: backupPath, elevated: false, mode: config.mode };
   } catch (error) {
     const message = String(error?.message || '');
-    const needsElevation = /lock file|access.*denied|permission|icaz|could not lock|updateable query|updatable query|read[- ]?only|write.*denied/i.test(message);
+    const needsElevation = /lock file|access.*denied|permission|icaz|could not lock|updateable query/i.test(message);
     if (!needsElevation) throw error;
 
     const result = await runPowerShellJsonElevated(script);
