@@ -421,7 +421,7 @@ export function createAdminAccessController({ state }) {
       if (!validUntil) return notify.warning('Son tarix seç.');
       try {
         // Adi müddət uzatmada başlanğıc tarixini dəyişmirik.
-        await enqueueCommand(row.id, 'set_validity', { valid_until: validUntil });
+        await enqueueCommand(row.id, 'set_validity', { valid_until: validUntil, match_card_number: row.legacy_card_no || null, match_name: row.legacy_name || null });
         closeModal();
       } catch (error) {
         notify.error(getErrorMessage(error, 'Müddət dəyişmə əmri yaradılmadı.'));
@@ -432,7 +432,7 @@ export function createAdminAccessController({ state }) {
       const cardNumber = String(byId('access-manage-card')?.value || '').trim();
       if (!cardNumber) return notify.warning('Kart nömrəsini yaz.');
       try {
-        await enqueueCommand(row.id, 'set_card', { card_number: cardNumber });
+        await enqueueCommand(row.id, 'set_card', { card_number: cardNumber, previous_card_number: row.legacy_card_no || null, match_name: row.legacy_name || null });
         closeModal();
       } catch (error) {
         notify.error(getErrorMessage(error, 'Kart dəyişmə əmri yaradılmadı.'));

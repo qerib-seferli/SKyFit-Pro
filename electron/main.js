@@ -497,36 +497,31 @@ function buildMdbWriteScript(dbPath, command) {
   const db = psSingleQuote(dbPath);
   const rawEmpNo = validateLegacyEmpNo(command.legacy_emp_no);
   const empNo = psSingleQuote(rawEmpNo);
-  const empNoNumeric = Number.parseInt(rawEmpNo, 10);
-  const empWhere = Number.isFinite(empNoNumeric)
-    ? `([emp_no]='${empNo}' OR Val([emp_no])=${empNoNumeric})`
-    : `[emp_no]='${empNo}'`;
   const type = String(command.command_type || '');
   const payload = command.payload || {};
 
-  let updateSql;
-  let selectSql;
+  const selectorCardRaw = type === 'set_card'
+    ? (payload.previous_card_number || payload.match_card_number || '')
+    : (payload.match_card_number || payload.previous_card_number || '');
+  const selectorCard = psSingleQuote(String(selectorCardRaw || '').trim());
+  const selectorName = psSingleQuote(String(payload.match_name || '').trim());
+
+  let writeBody;
 
   if (type === 'set_validity') {
-    const validFrom = normalizeIsoDate(payload.valid_from);
     const validUntil = normalizeIsoDate(payload.valid_until);
     if (!validUntil) throw new Error('Son tarix YYYY-MM-DD formatında olmalıdır.');
 
-    const untilExpr = `DateSerial(${Number(validUntil.slice(0, 4))},${Number(validUntil.slice(5, 7))},${Number(validUntil.slice(8, 10))})`;
-
-    // Mövcud IC bazasında bəzi köhnə başlanğıc tarixləri qeyri-standart ola bilər.
-    // Admin yalnız son tarixi uzadanda limDate_start/isDate_start-a toxunmuruq.
-    if (validFrom) {
-      const fromExpr = `DateSerial(${Number(validFrom.slice(0, 4))},${Number(validFrom.slice(5, 7))},${Number(validFrom.slice(8, 10))})`;
-      updateSql = `UPDATE Yz_person SET limDate_start=${fromExpr}, limDate=${untilExpr}, isDate_start=1, isDate=1 WHERE ${empWhere}`;
-    } else {
-      updateSql = `UPDATE Yz_person SET limDate=${untilExpr}, isDate=1 WHERE ${empWhere}`;
-    }
-    selectSql = `SELECT emp_no, card_no, emp_name, limDate_start, limDate, isDate_start, isDate FROM Yz_person WHERE ${empWhere}`;
+    writeBody = `
+      $newDate = New-Object DateTime(${Number(validUntil.slice(0, 4))},${Number(validUntil.slice(5, 7))},${Number(validUntil.slice(8, 10))})
+      $rs.Fields.Item('limDate').Value = $newDate
+      try { $rs.Fields.Item('isDate').Value = 1 } catch {}
+    `;
   } else if (type === 'set_card') {
     const card = psSingleQuote(validateCardNumber(payload.card_number));
-    updateSql = `UPDATE Yz_person SET card_no='${card}' WHERE ${empWhere}`;
-    selectSql = `SELECT emp_no, card_no, emp_name, limDate_start, limDate, isDate_start, isDate FROM Yz_person WHERE ${empWhere}`;
+    writeBody = `
+      $rs.Fields.Item('card_no').Value = '${card}'
+    `;
   } else {
     throw new Error(`Dəstəklənməyən MDB əmri: ${type}`);
   }
@@ -534,24 +529,118 @@ function buildMdbWriteScript(dbPath, command) {
   return `
 $ErrorActionPreference = 'Stop'
 $db = '${db}'
+$targetNo = '${empNo}'
+$targetCard = '${selectorCard}'
+$targetName = '${selectorName}'
+
+function Normalize-Text($value) {
+  if ($null -eq $value -or $value -is [DBNull]) { return '' }
+  return ([string]$value).Replace([char]0,'').Trim()
+}
+
+function Normalize-No($value) {
+  $text = Normalize-Text $value
+  if (-not $text) { return '' }
+  $digits = ($text -replace '[^0-9]','')
+  if (-not $digits) { return $text.ToLowerInvariant() }
+  $trimmed = $digits.TrimStart('0')
+  if (-not $trimmed) { $trimmed = '0' }
+  return $trimmed
+}
+
 $conn = New-Object -ComObject ADODB.Connection
 $conn.Open("Provider=Microsoft.Jet.OLEDB.4.0;Data Source=$db;")
-$affected = $conn.Execute("${updateSql}").RecordsAffected
-if ($affected -lt 1) { throw 'Turniket istifadəçisi MDB bazasında tapılmadı.' }
+
 $rs = New-Object -ComObject ADODB.Recordset
-$rs.Open("${selectSql}", $conn, 0, 1)
-$row = [ordered]@{}
-if (-not $rs.EOF) {
-  for ($i = 0; $i -lt $rs.Fields.Count; $i++) {
-    $f = $rs.Fields.Item($i)
-    $v = $f.Value
-    if ($null -eq $v -or $v -is [DBNull]) { $row[$f.Name] = $null }
-    elseif ($v -is [DateTime]) { $row[$f.Name] = $v.ToString('yyyy-MM-dd HH:mm:ss') }
-    else { $row[$f.Name] = $v }
+# adOpenKeyset=1, adLockOptimistic=3 -> writable Recordset
+$rs.Open('SELECT * FROM Yz_person', $conn, 1, 3)
+
+$targetNoNorm = Normalize-No $targetNo
+$targetCardNorm = (Normalize-Text $targetCard).ToUpperInvariant()
+$found = $false
+$matchedBy = ''
+$rawMatchedNo = ''
+$rawMatchedCard = ''
+$rawMatchedName = ''
+$sample = New-Object System.Collections.ArrayList
+
+$empField = $rs.Fields.Item('emp_no')
+$empFieldType = $empField.Type
+$empFieldSize = $empField.DefinedSize
+$cardFieldType = $null
+$cardFieldSize = $null
+try {
+  $cardField = $rs.Fields.Item('card_no')
+  $cardFieldType = $cardField.Type
+  $cardFieldSize = $cardField.DefinedSize
+} catch {}
+
+while (-not $rs.EOF) {
+  $rowNo = Normalize-Text $rs.Fields.Item('emp_no').Value
+  $rowNoNorm = Normalize-No $rowNo
+  $rowCard = ''
+  $rowName = ''
+  try { $rowCard = Normalize-Text $rs.Fields.Item('card_no').Value } catch {}
+  try { $rowName = Normalize-Text $rs.Fields.Item('emp_name').Value } catch {}
+
+  if ($sample.Count -lt 12) {
+    [void]$sample.Add("$rowNo|$rowCard|$rowName")
   }
+
+  $isMatch = $false
+  if ($rowNo -eq $targetNo -or ($targetNoNorm -and $rowNoNorm -eq $targetNoNorm)) {
+    $isMatch = $true
+    $matchedBy = 'emp_no'
+  } elseif ($targetCardNorm -and $rowCard -and $rowCard.ToUpperInvariant() -eq $targetCardNorm) {
+    $isMatch = $true
+    $matchedBy = 'card_no'
+  }
+
+  if ($isMatch) {
+    $found = $true
+    $rawMatchedNo = $rowNo
+    $rawMatchedCard = $rowCard
+    $rawMatchedName = $rowName
+
+${writeBody}
+    $rs.Update()
+
+    # Persisted values are read from the current updated row.
+    $out = [ordered]@{}
+    foreach ($fieldName in @('emp_no','card_no','emp_name','limDate_start','limDate','isDate_start','isDate')) {
+      try {
+        $v = $rs.Fields.Item($fieldName).Value
+        if ($null -eq $v -or $v -is [DBNull]) { $out[$fieldName] = $null }
+        elseif ($v -is [DateTime]) { $out[$fieldName] = $v.ToString('yyyy-MM-dd HH:mm:ss') }
+        else { $out[$fieldName] = $v }
+      } catch {}
+    }
+    break
+  }
+
+  $rs.MoveNext()
 }
+
+if (-not $found) {
+  $rs.Close(); $conn.Close()
+  $schema = "emp_no(type=$empFieldType,size=$empFieldSize) card_no(type=$cardFieldType,size=$cardFieldSize)"
+  $sampleText = ($sample -join '; ')
+  throw "Turniket istifadəçisi MDB bazasında tapılmadı. targetNo=[$targetNo], targetNoNorm=[$targetNoNorm], targetCard=[$targetCard], schema=$schema, sample=$sampleText"
+}
+
 $rs.Close(); $conn.Close()
-[pscustomobject]@{ ok = $true; affected = $affected; row = [pscustomobject]$row } | ConvertTo-Json -Depth 8 -Compress
+[pscustomobject]@{
+  ok = $true
+  matched_by = $matchedBy
+  matched_emp_no = $rawMatchedNo
+  matched_card_no = $rawMatchedCard
+  matched_name = $rawMatchedName
+  emp_no_field_type = $empFieldType
+  emp_no_field_size = $empFieldSize
+  card_no_field_type = $cardFieldType
+  card_no_field_size = $cardFieldSize
+  row = [pscustomobject]$out
+} | ConvertTo-Json -Depth 8 -Compress
 `;
 }
 
