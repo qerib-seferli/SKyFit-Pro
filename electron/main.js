@@ -495,7 +495,12 @@ function createAccessBackup(sourcePath, commandId) {
 
 function buildMdbWriteScript(dbPath, command) {
   const db = psSingleQuote(dbPath);
-  const empNo = psSingleQuote(validateLegacyEmpNo(command.legacy_emp_no));
+  const rawEmpNo = validateLegacyEmpNo(command.legacy_emp_no);
+  const empNo = psSingleQuote(rawEmpNo);
+  const empNoNumeric = Number.parseInt(rawEmpNo, 10);
+  const empWhere = Number.isFinite(empNoNumeric)
+    ? `([emp_no]='${empNo}' OR Val([emp_no])=${empNoNumeric})`
+    : `[emp_no]='${empNo}'`;
   const type = String(command.command_type || '');
   const payload = command.payload || {};
 
@@ -513,15 +518,15 @@ function buildMdbWriteScript(dbPath, command) {
     // Admin yalnız son tarixi uzadanda limDate_start/isDate_start-a toxunmuruq.
     if (validFrom) {
       const fromExpr = `DateSerial(${Number(validFrom.slice(0, 4))},${Number(validFrom.slice(5, 7))},${Number(validFrom.slice(8, 10))})`;
-      updateSql = `UPDATE Yz_person SET limDate_start=${fromExpr}, limDate=${untilExpr}, isDate_start=1, isDate=1 WHERE emp_no='${empNo}'`;
+      updateSql = `UPDATE Yz_person SET limDate_start=${fromExpr}, limDate=${untilExpr}, isDate_start=1, isDate=1 WHERE ${empWhere}`;
     } else {
-      updateSql = `UPDATE Yz_person SET limDate=${untilExpr}, isDate=1 WHERE emp_no='${empNo}'`;
+      updateSql = `UPDATE Yz_person SET limDate=${untilExpr}, isDate=1 WHERE ${empWhere}`;
     }
-    selectSql = `SELECT emp_no, card_no, emp_name, limDate_start, limDate, isDate_start, isDate FROM Yz_person WHERE emp_no='${empNo}'`;
+    selectSql = `SELECT emp_no, card_no, emp_name, limDate_start, limDate, isDate_start, isDate FROM Yz_person WHERE ${empWhere}`;
   } else if (type === 'set_card') {
     const card = psSingleQuote(validateCardNumber(payload.card_number));
-    updateSql = `UPDATE Yz_person SET card_no='${card}' WHERE emp_no='${empNo}'`;
-    selectSql = `SELECT emp_no, card_no, emp_name, limDate_start, limDate, isDate_start, isDate FROM Yz_person WHERE emp_no='${empNo}'`;
+    updateSql = `UPDATE Yz_person SET card_no='${card}' WHERE ${empWhere}`;
+    selectSql = `SELECT emp_no, card_no, emp_name, limDate_start, limDate, isDate_start, isDate FROM Yz_person WHERE ${empWhere}`;
   } else {
     throw new Error(`Dəstəklənməyən MDB əmri: ${type}`);
   }
