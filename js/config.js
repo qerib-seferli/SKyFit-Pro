@@ -3,6 +3,73 @@
 
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
+// ============================================================
+// Auth storage resilience
+//
+// Bəzi Windows kompüterlərində browser/Electron refresh zamanı əsas
+// Supabase storage açarı qısa müddətə itə bilir. Sessiyanı ayrıca
+// recovery mirror-da saxlayırıq və yalnız istifadəçi açıq şəkildə
+// çıxış etdikdə tam təmizləyirik.
+// ============================================================
+
+const AUTH_STORAGE_KEY = 'skyfit-pro-auth';
+const AUTH_RECOVERY_KEY = 'skyfit-pro-auth-recovery-v1';
+
+function safeGet(storage, key) {
+  try { return storage?.getItem(key) || null; } catch { return null; }
+}
+
+function safeSet(storage, key, value) {
+  try { storage?.setItem(key, value); } catch {}
+}
+
+function safeRemove(storage, key) {
+  try { storage?.removeItem(key); } catch {}
+}
+
+const resilientAuthStorage = {
+  getItem(key) {
+    const primary = safeGet(window.localStorage, key) || safeGet(window.sessionStorage, key);
+    if (primary) return primary;
+
+    if (key === AUTH_STORAGE_KEY) {
+      const recovery = safeGet(window.localStorage, AUTH_RECOVERY_KEY) || safeGet(window.sessionStorage, AUTH_RECOVERY_KEY);
+      if (recovery) {
+        safeSet(window.localStorage, AUTH_STORAGE_KEY, recovery);
+        safeSet(window.sessionStorage, AUTH_STORAGE_KEY, recovery);
+        return recovery;
+      }
+    }
+
+    return null;
+  },
+  setItem(key, value) {
+    safeSet(window.localStorage, key, value);
+    safeSet(window.sessionStorage, key, value);
+    if (key === AUTH_STORAGE_KEY && value) {
+      safeSet(window.localStorage, AUTH_RECOVERY_KEY, value);
+      safeSet(window.sessionStorage, AUTH_RECOVERY_KEY, value);
+    }
+  },
+  removeItem(key) {
+    // Supabase-in transient SIGNED_OUT/refresh yarışında recovery mirror-u
+    // saxlayırıq. Açıq istifadəçi çıxışı clearAuthRecoveryStorage() çağırır.
+    safeRemove(window.localStorage, key);
+    safeRemove(window.sessionStorage, key);
+  },
+};
+
+export function readAuthRecoveryStorage() {
+  return safeGet(window.localStorage, AUTH_RECOVERY_KEY) || safeGet(window.sessionStorage, AUTH_RECOVERY_KEY);
+}
+
+export function clearAuthRecoveryStorage() {
+  [AUTH_STORAGE_KEY, AUTH_RECOVERY_KEY].forEach(key => {
+    safeRemove(window.localStorage, key);
+    safeRemove(window.sessionStorage, key);
+  });
+}
+
 // Supabase
 export const SUPABASE_URL = 'https://elpwornsvnplyzyufqir.supabase.co';
 export const SUPABASE_ANON_KEY =
@@ -13,7 +80,8 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-    storageKey: 'skyfit-pro-auth',
+    storageKey: AUTH_STORAGE_KEY,
+    storage: resilientAuthStorage,
   },
   global: {
     headers: {
@@ -26,7 +94,7 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 export const APP_CONFIG = Object.freeze({
   name: 'SKy Fit Pro',
   shortName: 'SKy Fit',
-  version: '1.7.2',
+  version: '1.7.3',
   developer: 'Qərib Səfərli',
   developerTitle: 'Senior Full Stack Developer',
   locale: 'az-AZ',
@@ -217,6 +285,7 @@ export const TABLES = Object.freeze({
   accessDevices: 'access_devices',
   accessCommands: 'access_commands',
   accessSyncRuns: 'access_sync_runs',
+  accessMobileEntryRequests: 'access_mobile_entry_requests',
 });
 
 // Konfiqurasiya yoxlaması

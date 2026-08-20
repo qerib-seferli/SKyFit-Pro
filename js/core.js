@@ -8,6 +8,8 @@ import {
   UI_CONFIG,
   STORAGE_KEYS as CONFIG_STORAGE_KEYS,
   USER_ROLES as CONFIG_USER_ROLES,
+  readAuthRecoveryStorage,
+  clearAuthRecoveryStorage,
   PAYMENT_STATUS,
   SALE_MODES as CONFIG_SALE_MODES,
 } from './config.js';
@@ -508,9 +510,58 @@ function buildIdentity(user, profile) {
   };
 }
 
+let authRecoveryPromise = null;
+
+async function recoverSessionFromMirror() {
+  if (authRecoveryPromise) return authRecoveryPromise;
+
+  authRecoveryPromise = (async () => {
+    const raw = readAuthRecoveryStorage();
+    if (!raw) return null;
+
+    try {
+      const parsed = JSON.parse(raw);
+      const candidate = parsed?.currentSession || parsed?.session || parsed;
+      const accessToken = candidate?.access_token;
+      const refreshToken = candidate?.refresh_token;
+      if (!accessToken || !refreshToken) return null;
+
+      const { data, error } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+
+      if (error) {
+        console.warn('[SKy Fit auth recovery]', error);
+        return null;
+      }
+
+      return data?.session || null;
+    } catch (error) {
+      console.warn('[SKy Fit auth recovery parse]', error);
+      return null;
+    }
+  })();
+
+  try {
+    return await authRecoveryPromise;
+  } finally {
+    authRecoveryPromise = null;
+  }
+}
+
 async function loadCurrentIdentity() {
-  const { data, error } = await supabase.auth.getSession();
+  let { data, error } = await supabase.auth.getSession();
   if (error) throw error;
+
+  let session = data?.session || null;
+  if (!session) {
+    session = await recoverSessionFromMirror();
+    if (session) {
+      data = { session };
+    }
+  }
+
   const user = data?.session?.user || null;
   const profile = user ? await fetchCurrentProfile(user) : null;
   identityState.user = user;
@@ -540,8 +591,15 @@ export function clearIdentityCache() {
 }
 
 export async function requireAuth(options = {}) {
-  const identity = await getCurrentIdentity();
+  let identity = await getCurrentIdentity();
   if (identity.authenticated) return identity;
+
+  // Windows/browser refresh yarışına qısa recovery pəncərəsi ver.
+  await new Promise(resolve => setTimeout(resolve, 550));
+  clearIdentityCache();
+  identity = await getCurrentIdentity({ force: true });
+  if (identity.authenticated) return identity;
+
   if (options.redirect !== false) window.location.replace(options.redirectTo || APP_CONFIG.routes.login);
   return null;
 }
@@ -1531,17 +1589,31 @@ export function startAuthListener() {
 
   const { data } = supabase.auth.onAuthStateChange((event, session) => {
     clearIdentityCache();
+
+    // SIGNED_OUT hadisəsini dərhal redirect kimi qəbul etmirik. Bəzi
+    // Windows sistemlərində auto-refresh zamanı qısa false-negative olur.
+    const delay = event === 'SIGNED_OUT' ? 900 : 0;
+
     setTimeout(async () => {
       let identity = null;
+      let effectiveEvent = event;
+      let effectiveSession = session;
+
       try {
-        if (session?.user) identity = await getCurrentIdentity({ force: true });
+        identity = await getCurrentIdentity({ force: true });
+        if (event === 'SIGNED_OUT' && identity?.authenticated) {
+          const { data: sessionData } = await supabase.auth.getSession();
+          effectiveEvent = 'SESSION_RECOVERED';
+          effectiveSession = sessionData?.session || null;
+        }
       } catch (error) {
         console.error('[SKy Fit auth]', error);
       }
+
       window.dispatchEvent(new CustomEvent(SKYFIT_EVENTS.authChange, {
-        detail: { event, session, identity },
+        detail: { event: effectiveEvent, session: effectiveSession, identity },
       }));
-    }, 0);
+    }, delay);
   });
 
   authSubscription = data?.subscription || null;
@@ -1549,6 +1621,7 @@ export function startAuthListener() {
 }
 
 export async function signOut(options = {}) {
+  clearAuthRecoveryStorage();
   const { error } = await supabase.auth.signOut();
   if (error) {
     if (options.notify !== false) notify.error(getErrorMessage(error, 'Çıxış zamanı xəta baş verdi.'));

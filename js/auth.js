@@ -4,6 +4,7 @@
 import {
   supabase,
   APP_CONFIG,
+  clearAuthRecoveryStorage,
 } from './config.js';
 
 import {
@@ -223,6 +224,7 @@ function bindLogin() {
           identity?.profile &&
           identity.profile.is_active === false
         ) {
+          clearAuthRecoveryStorage();
           await supabase.auth.signOut();
           clearIdentityCache();
 
@@ -803,6 +805,7 @@ function bindUpdatePassword() {
           'Şifrə uğurla yeniləndi.'
         );
 
+        clearAuthRecoveryStorage();
         await supabase.auth.signOut();
         clearIdentityCache();
         setRecoveryState(false);

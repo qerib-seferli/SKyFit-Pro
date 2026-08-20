@@ -103,6 +103,8 @@ function getElements() {
     accessValidUntil: byId('profile-access-valid-until'),
     accessDaysLeft: byId('profile-access-days-left'),
     accessLastEntry: byId('profile-access-last-entry'),
+    mobileEntryButton: byId('profile-mobile-entry-button'),
+    mobileEntryHint: byId('profile-mobile-entry-hint'),
 
 
     changePasswordButton: byId('profile-change-password-button'),
@@ -407,6 +409,112 @@ function renderAccessCard() {
   setText(el.accessValidUntil, validUntil ? formatDate(validUntil) : 'Limitsiz / qeyd yoxdur');
   setText(el.accessDaysLeft, legacy?.manual_blocked ? 'Admin tərəfindən bloklanıb' : days === null ? '—' : active ? `${days} gün` : 'Müddət bitib');
   setText(el.accessLastEntry, state.accessLastEvent?.event_at ? new Date(state.accessLastEvent.event_at).toLocaleString('az-AZ') : 'Hələ giriş qeydi yoxdur');
+}
+
+function mobileEntryReasonMessage(code, fallback = '') {
+  const map = {
+    profile_not_found: 'Profil məlumatı tapılmadı.',
+    access_not_linked: 'Turniket kartın profilinə bağlanmayıb.',
+    access_blocked: 'Giriş administrator tərəfindən bloklanıb.',
+    access_expired: 'Giriş müddətin bitib.',
+    access_date_missing: 'Giriş üçün son tarix məlumatı yoxdur.',
+    account_inactive: 'Hesab deaktivdir.',
+    hardware_not_ready: 'Telefonla giriş üçün turniket controller adapteri hələ aktiv deyil.',
+    timeout: 'Turniketdən vaxtında təsdiq gəlmədi.',
+  };
+  return map[code] || fallback || 'Giriş təsdiqlənmədi.';
+}
+
+function renderMobileEntryResult({ ok, title, message }) {
+  const content = createElement('div');
+  content.style.cssText = 'display:grid;justify-items:center;gap:14px;text-align:center;padding:4px 0 8px';
+
+  if (ok) {
+    const img = createElement('img', { attrs: { src: './assets/foto/onaylandi_512.gif', alt: 'Giriş təsdiqləndi' } });
+    img.style.cssText = 'width:150px;max-width:55vw;height:auto;object-fit:contain';
+    content.append(img);
+  } else {
+    const failed = createElement('div', { text: '×' });
+    failed.style.cssText = 'display:grid;place-items:center;width:118px;height:118px;border-radius:999px;background:rgba(239,68,68,.12);border:2px solid rgba(239,68,68,.5);color:#ef4444;font-size:86px;line-height:1';
+    content.append(failed);
+  }
+
+  const text = createElement('p', { text: message });
+  text.style.cssText = 'margin:0;max-width:420px;line-height:1.55';
+  content.append(text);
+
+  openModal({ eyebrow: 'Telefonla giriş', title, content });
+}
+
+async function waitForMobileEntryResult(requestId, timeoutMs = 18000) {
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < timeoutMs) {
+    const { data, error } = await supabase
+      .from(TABLES.accessMobileEntryRequests)
+      .select('id,status,reason_code,reason_message,result,completed_at')
+      .eq('id', requestId)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (data && ['approved','denied','failed','expired'].includes(data.status)) return data;
+    await new Promise(resolve => setTimeout(resolve, 900));
+  }
+  return { status: 'expired', reason_code: 'timeout' };
+}
+
+async function requestMobileEntry() {
+  const button = getElements().mobileEntryButton;
+  if (!state.accessLegacy) {
+    renderMobileEntryResult({ ok: false, title: 'Giriş mümkün deyil', message: 'Turniket kartın profilinə bağlanmayıb.' });
+    return;
+  }
+
+  setButtonLoading(button, true, { loadingText: 'Yoxlanılır...' });
+  try {
+    const gate = normalizeString(new URLSearchParams(window.location.search).get('gate'), 'main');
+    const { data, error } = await supabase.rpc('request_mobile_entry_v1', { p_gate_key: gate });
+    if (error) throw error;
+
+    if (!data?.ok) {
+      renderMobileEntryResult({ ok: false, title: 'Giriş təsdiqlənmədi', message: mobileEntryReasonMessage(data?.reason_code, data?.message) });
+      return;
+    }
+
+    const requestId = data?.request_id;
+    if (!requestId) {
+      renderMobileEntryResult({ ok: false, title: 'Giriş təsdiqlənmədi', message: 'Sorğu identifikatoru yaradılmadı.' });
+      return;
+    }
+
+    notify.info('Giriş sorğusu turniketə göndərildi...');
+    const result = await waitForMobileEntryResult(requestId);
+    const approved = result?.status === 'approved';
+    renderMobileEntryResult({
+      ok: approved,
+      title: approved ? 'Giriş təsdiqləndi' : 'Giriş təsdiqlənmədi',
+      message: approved ? 'Turniket açıldı. Xoş məşqlər!' : mobileEntryReasonMessage(result?.reason_code, result?.reason_message),
+    });
+  } catch (error) {
+    console.error('[SKy Fit Profile] Mobile entry:', error);
+    renderMobileEntryResult({ ok: false, title: 'Giriş təsdiqlənmədi', message: getErrorMessage(error, 'Telefonla giriş sorğusu göndərilmədi.') });
+  } finally {
+    setButtonLoading(button, false);
+  }
+}
+
+function bindMobileEntry() {
+  const button = getElements().mobileEntryButton;
+  button?.addEventListener('click', () => { void requestMobileEntry(); });
+
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('mobile_entry') === '1' && params.get('gate')) {
+    setTimeout(() => {
+      if (state.accessLegacy && state.identity?.authenticated) {
+        notify.info('Turniket NFC etiketi aşkarlandı. Telefonla giriş üçün düyməni təsdiqlə.');
+        button?.focus();
+      }
+    }, 450);
+  }
 }
 
 function findCurrentMembership(memberships) {
@@ -1394,6 +1502,7 @@ function bindEvents() {
   bindThemeAction();
   bindLogoutAction();
   bindAuthEvents();
+  bindMobileEntry();
   bindProfileChangeEvents();
 }
 

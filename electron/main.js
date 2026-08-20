@@ -915,6 +915,35 @@ async function pollAccessBridgeOnce() {
       }
     }
 
+    // Telefon/NFC giriş proqram qatını da bridge görür. Hazırda real
+    // controller relay/network adapterinin modeli təsdiqlənmədiyi üçün
+    // fiziki turniketi saxta şəkildə açmırıq; istifadəçiyə dəqiq səbəb
+    // qaytarırıq. Controller adapteri qoşulanda yalnız bu hook dəyişəcək.
+    try {
+      const mobileResponse = await supabaseBridgeRpc(config, 'access_bridge_pull_mobile_entries_v1', {
+        p_device_key: config.deviceKey,
+        p_secret: config.secret,
+        p_limit: 5,
+      });
+      const mobileRequests = Array.isArray(mobileResponse?.requests) ? mobileResponse.requests : [];
+      for (const request of mobileRequests) {
+        await supabaseBridgeRpc(config, 'access_bridge_complete_mobile_entry_v1', {
+          p_device_key: config.deviceKey,
+          p_secret: config.secret,
+          p_request_id: request.id,
+          p_ok: false,
+          p_reason_code: 'hardware_not_ready',
+          p_reason_message: 'Turniket controller adapteri hələ konfiqurasiya edilməyib.',
+          p_result: { gate_key: request.gate_key || 'main' },
+        });
+      }
+    } catch (mobileError) {
+      // Mobile entry V5 SQL hələ tətbiq edilməyibsə əsas MDB bridge dayanmasın.
+      if (!/access_bridge_(pull|complete)_mobile_entries|access_bridge_complete_mobile_entry/i.test(String(mobileError?.message || ''))) {
+        console.warn('[SKy Fit Bridge] Mobile entry:', mobileError);
+      }
+    }
+
     const lastDataSyncMs = accessBridgeRuntime.lastDataSyncAt
       ? Date.parse(accessBridgeRuntime.lastDataSyncAt)
       : 0;
