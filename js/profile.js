@@ -434,9 +434,14 @@ function renderMobileEntryResult({ ok, title, message }) {
     img.style.cssText = 'width:150px;max-width:55vw;height:auto;object-fit:contain';
     content.append(img);
   } else {
-    const failed = createElement('div', { text: '×' });
-    failed.style.cssText = 'display:grid;place-items:center;width:118px;height:118px;border-radius:999px;background:rgba(239,68,68,.12);border:2px solid rgba(239,68,68,.5);color:#ef4444;font-size:86px;line-height:1';
-    content.append(failed);
+    const img = createElement('img', { attrs: { src: './assets/foto/onaylanmadi_512.gif', alt: 'Giriş təsdiqlənmədi' } });
+    img.style.cssText = 'width:150px;max-width:55vw;height:auto;object-fit:contain';
+    img.addEventListener('error', () => {
+      const failed = createElement('div', { text: '×' });
+      failed.style.cssText = 'display:grid;place-items:center;width:118px;height:118px;border-radius:999px;background:rgba(239,68,68,.12);border:2px solid rgba(239,68,68,.5);color:#ef4444;font-size:86px;line-height:1';
+      img.replaceWith(failed);
+    }, { once: true });
+    content.append(img);
   }
 
   const text = createElement('p', { text: message });
@@ -471,8 +476,24 @@ async function requestMobileEntry() {
 
   setButtonLoading(button, true, { loadingText: 'Yoxlanılır...' });
   try {
-    const gate = normalizeString(new URLSearchParams(window.location.search).get('gate'), 'main');
-    const { data, error } = await supabase.rpc('request_mobile_entry_v1', { p_gate_key: gate });
+    const searchParams = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(String(window.location.hash || '').replace(/^#/, ''));
+    const gate = normalizeString(searchParams.get('gate'), 'main');
+    const gateToken = normalizeString(searchParams.get('gate_token') || hashParams.get('gate_token'));
+
+    if (!gateToken) {
+      renderMobileEntryResult({
+        ok: false,
+        title: 'Turniketə yaxınlaş',
+        message: 'Üzvlər üçün uzaqdan açılış bağlıdır. Zalda turniketin yanındakı NFC etiketini telefonla oxut və profil bu giriş linki ilə açılsın.',
+      });
+      return;
+    }
+
+    const { data, error } = await supabase.rpc('request_mobile_entry_v2', {
+      p_gate_key: gate,
+      p_gate_token: gateToken,
+    });
     if (error) throw error;
 
     if (!data?.ok) {
@@ -486,7 +507,7 @@ async function requestMobileEntry() {
       return;
     }
 
-    notify.info('Giriş sorğusu turniketə göndərildi...');
+    notify.info('NFC yaxınlığı təsdiqləndi. Giriş sorğusu turniketə göndərildi...');
     const result = await waitForMobileEntryResult(requestId);
     const approved = result?.status === 'approved';
     renderMobileEntryResult({
@@ -504,17 +525,40 @@ async function requestMobileEntry() {
 
 function bindMobileEntry() {
   const button = getElements().mobileEntryButton;
+  const hint = getElements().mobileEntryHint;
   button?.addEventListener('click', () => { void requestMobileEntry(); });
 
   const params = new URLSearchParams(window.location.search);
-  if (params.get('mobile_entry') === '1' && params.get('gate')) {
-    setTimeout(() => {
-      if (state.accessLegacy && state.identity?.authenticated) {
-        notify.info('Turniket NFC etiketi aşkarlandı. Telefonla giriş üçün düyməni təsdiqlə.');
-        button?.focus();
-      }
-    }, 450);
+  const hashParams = new URLSearchParams(String(window.location.hash || '').replace(/^#/, ''));
+  const gateToken = normalizeString(params.get('gate_token') || hashParams.get('gate_token'));
+  const hasNfcPresence = params.get('mobile_entry') === '1' && params.get('gate') && gateToken;
+
+  if (hint) {
+    hint.textContent = hasNfcPresence
+      ? 'NFC yaxınlığı təsdiqlənib. Giriş icazən yoxlanacaq və turniketə sorğu göndəriləcək.'
+      : 'Uzaqdan açılış üzvlər üçün bağlıdır. Zalda turniketin yanındakı NFC etiketini telefonla oxut.';
   }
+
+  if (!hasNfcPresence) return;
+
+  let attempts = 0;
+  const autoStart = () => {
+    attempts += 1;
+    if (state.accessLegacy && state.identity?.authenticated) {
+      const key = `skyfit-mobile-entry-auto:${params.get('gate')}:${gateToken.slice(0, 12)}`;
+      try {
+        if (window.sessionStorage.getItem(key) === '1') return;
+        window.sessionStorage.setItem(key, '1');
+      } catch {}
+      notify.info('Turniket NFC etiketi aşkarlandı. Giriş avtomatik yoxlanılır...');
+      void requestMobileEntry();
+      return;
+    }
+
+    if (attempts < 20) setTimeout(autoStart, 250);
+  };
+
+  setTimeout(autoStart, 250);
 }
 
 function findCurrentMembership(memberships) {

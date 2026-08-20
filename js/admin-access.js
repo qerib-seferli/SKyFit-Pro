@@ -140,6 +140,7 @@ export function createAdminAccessController({ state }) {
     devices: [],
     remoteEvents: [],
     cardDiagnostics: null,
+    controllerDiagnostics: null,
     desktopStatus: null,
   };
 
@@ -313,16 +314,176 @@ export function createAdminAccessController({ state }) {
   }
 
   function renderCardDiagnostics() {
-    const root = byId('access-card-register-list'); if (!root) return; const diag = local.cardDiagnostics;
-    if (!diag) { root.innerHTML = '<div class="admin-empty-state"><strong>Hələ yoxlanmayıb</strong><span>Card Register-i qoş və yoxla.</span></div>'; return; }
+    const root = byId('access-card-register-list');
+    if (!root) return;
+    const diag = local.cardDiagnostics;
+
+    if (!diag) {
+      root.innerHTML = '<div class="admin-empty-state"><strong>Hələ yoxlanmayıb</strong><span>Card Register-i qoş və yoxla.</span></div>';
+      return;
+    }
+
     const devices = Array.isArray(diag.devices) ? diag.devices : [];
-    byId('access-card-register-state').textContent = diag.ok ? `${devices.length} uyğun cihaz tapıldı.` : (diag.error || 'Diaqnostika alınmadı.');
-    root.innerHTML = devices.length ? `<table class="admin-table"><thead><tr><th>Cihaz</th><th>İstehsalçı</th><th>Sinif</th><th>PNP ID</th><th>Status</th></tr></thead><tbody>${devices.map(d => `<tr><td><strong>${escapeHtml(d.Name || '—')}</strong></td><td>${escapeHtml(d.Manufacturer || '—')}</td><td>${escapeHtml(d.PNPClass || '—')}</td><td><small>${escapeHtml(d.PNPDeviceID || '—')}</small></td><td>${escapeHtml(d.Status || '—')}</td></tr>`).join('')}</tbody></table>` : '<div class="admin-empty-state"><strong>Uyğun cihaz tapılmadı</strong><span>Reader xüsusi HID protokolu istifadə edə bilər.</span></div>';
+    const stateEl = byId('access-card-register-state');
+    if (stateEl) stateEl.textContent = diag.ok
+      ? `${devices.length} USB/HID namizəd cihaz tapıldı.`
+      : (diag.error || 'Diaqnostika alınmadı.');
+
+    root.innerHTML = devices.length
+      ? `<table class="admin-table"><thead><tr><th>Cihaz</th><th>İstehsalçı</th><th>VID / PID</th><th>Sinif</th><th>PNP ID</th><th>Status</th></tr></thead><tbody>${devices.map(d => `<tr>
+          <td><strong>${escapeHtml(d.Name || '—')}</strong></td>
+          <td>${escapeHtml(d.Manufacturer || '—')}</td>
+          <td><strong>${escapeHtml(d.VID || '—')} / ${escapeHtml(d.PID || '—')}</strong></td>
+          <td>${escapeHtml(d.PNPClass || '—')}</td>
+          <td><small>${escapeHtml(d.PNPDeviceID || '—')}</small></td>
+          <td>${escapeHtml(d.Status || '—')}</td>
+        </tr>`).join('')}</tbody></table>`
+      : '<div class="admin-empty-state"><strong>USB/HID namizəd cihaz tapılmadı</strong><span>Card Register qoşuludursa bu nəticənin şəklini göndər. Xüsusi HID driver/protokolu ola bilər.</span></div>';
   }
 
   async function inspectCardRegister() {
-    if (!window.skyfitDesktop?.getCardRegisterDiagnostics) return notify.warning('Bu yoxlama yalnız Windows Desktop tətbiqində işləyir.');
-    local.cardDiagnostics = await window.skyfitDesktop.getCardRegisterDiagnostics(); renderCardDiagnostics();
+    if (!window.skyfitDesktop?.getCardRegisterDiagnostics) {
+      notify.warning('Bu yoxlama yalnız Windows Desktop tətbiqində işləyir.');
+      return;
+    }
+
+    const button = byId('access-card-register-check');
+    const original = button?.textContent || 'Card Register yoxla';
+    if (button) {
+      button.disabled = true;
+      button.textContent = 'Yoxlanılır...';
+    }
+
+    try {
+      notify.info('Windows-da Card Register / USB HID cihazları yoxlanılır...');
+      local.cardDiagnostics = await window.skyfitDesktop.getCardRegisterDiagnostics();
+      renderCardDiagnostics();
+      const count = Array.isArray(local.cardDiagnostics?.devices) ? local.cardDiagnostics.devices.length : 0;
+      if (local.cardDiagnostics?.ok) notify.success(`Card Register diaqnostikası tamamlandı: ${count} namizəd cihaz.`);
+      else notify.error(local.cardDiagnostics?.error || 'Card Register diaqnostikası alınmadı.');
+    } finally {
+      if (button) {
+        button.disabled = false;
+        button.textContent = original;
+      }
+    }
+  }
+
+  function renderControllerDiagnostics() {
+    const root = byId('access-controller-list');
+    const stateEl = byId('access-controller-state');
+    if (!root) return;
+
+    const diag = local.controllerDiagnostics;
+    if (!diag) {
+      root.innerHTML = '<div class="admin-empty-state"><strong>Hələ yoxlanmayıb</strong><span>Zal kompüterində Controller yoxla düyməsini bas.</span></div>';
+      return;
+    }
+
+    if (!diag.ok) {
+      if (stateEl) stateEl.textContent = diag.error || 'Controller diaqnostikası alınmadı.';
+      root.innerHTML = `<div class="admin-empty-state"><strong>Diaqnostika alınmadı</strong><span>${escapeHtml(diag.error || 'Naməlum xəta')}</span></div>`;
+      return;
+    }
+
+    const pnp = Array.isArray(diag.pnpDevices) ? diag.pnpDevices : [];
+    const samples = Array.isArray(diag.tableSamples) ? diag.tableSamples : [];
+    const nonEmptySamples = samples.filter(item => Array.isArray(item.rows) && item.rows.length);
+
+    if (stateEl) {
+      stateEl.textContent = `${diag.databasePath || 'Database.mdb'} · ${pnp.length} PnP cihaz · ${nonEmptySamples.length} namizəd MDB cədvəli`;
+    }
+
+    const pnpHtml = pnp.length
+      ? `<h4 style="margin:0 0 10px">Windows cihazları</h4><table class="admin-table"><thead><tr><th>Cihaz</th><th>İstehsalçı</th><th>Sinif</th><th>PNP ID</th><th>Status</th></tr></thead><tbody>${pnp.map(d => `<tr><td><strong>${escapeHtml(d.Name || '—')}</strong></td><td>${escapeHtml(d.Manufacturer || '—')}</td><td>${escapeHtml(d.PNPClass || '—')}</td><td><small>${escapeHtml(d.PNPDeviceID || '—')}</small></td><td>${escapeHtml(d.Status || '—')}</td></tr>`).join('')}</tbody></table>`
+      : '<div class="admin-empty-state"><strong>ZKTeco adı ilə PnP cihaz tapılmadı</strong><span>Bu normal ola bilər; controller şəbəkə/RS-485 ilə işləyə bilər.</span></div>';
+
+    const mdbHtml = nonEmptySamples.length
+      ? nonEmptySamples.map(item => {
+          const rows = item.rows.slice(0, 6);
+          const keys = [...new Set(rows.flatMap(row => Object.keys(row || {})))].slice(0, 10);
+          return `<div style="margin-top:16px"><h4 style="margin:0 0 8px">${escapeHtml(item.table || 'MDB')}</h4><div class="admin-table-wrap"><table class="admin-table"><thead><tr>${keys.map(k => `<th>${escapeHtml(k)}</th>`).join('')}</tr></thead><tbody>${rows.map(row => `<tr>${keys.map(k => `<td><small>${escapeHtml(row?.[k] ?? '—')}</small></td>`).join('')}</tr>`).join('')}</tbody></table></div></div>`;
+        }).join('')
+      : '<div class="admin-empty-state" style="margin-top:14px"><strong>Namizəd MDB cədvəlində məlumat tapılmadı</strong><span>Diaqnostika nəticəsini göndər; növbəti adapteri buna görə quraq.</span></div>';
+
+    const arp = String(diag.arp || '').trim();
+    root.innerHTML = `${pnpHtml}${mdbHtml}${arp ? `<details style="margin-top:16px"><summary>Şəbəkə ARP siyahısı</summary><pre style="white-space:pre-wrap;overflow:auto;max-height:280px">${escapeHtml(arp)}</pre></details>` : ''}`;
+  }
+
+  async function inspectController() {
+    if (!window.skyfitDesktop?.getTurnstileControllerDiagnostics) {
+      notify.warning('Controller yoxlaması yalnız Windows Desktop tətbiqində işləyir.');
+      return;
+    }
+
+    const button = byId('access-controller-check');
+    const original = button?.textContent || 'Controller yoxla';
+    if (button) {
+      button.disabled = true;
+      button.textContent = 'Yoxlanılır...';
+    }
+
+    try {
+      notify.info('Controller, MDB konfiqurasiyası və Windows şəbəkəsi oxunur...');
+      local.controllerDiagnostics = await window.skyfitDesktop.getTurnstileControllerDiagnostics();
+      renderControllerDiagnostics();
+      if (local.controllerDiagnostics?.ok) notify.success('Controller diaqnostikası tamamlandı.');
+      else notify.error(local.controllerDiagnostics?.error || 'Controller diaqnostikası alınmadı.');
+    } finally {
+      if (button) {
+        button.disabled = false;
+        button.textContent = original;
+      }
+    }
+  }
+
+  async function rotateMobileGateToken() {
+    const button = byId('access-mobile-gate-token');
+    const output = byId('access-mobile-gate-output');
+    if (!button || !output) return;
+
+    button.disabled = true;
+    const oldText = button.textContent;
+    button.textContent = 'Yaradılır...';
+
+    try {
+      const { data, error } = await supabase.rpc('access_admin_rotate_mobile_gate_token_v1', {
+        p_gate_key: 'main',
+        p_label: 'Əsas turniket',
+      });
+      if (error) throw error;
+      if (!data?.ok || !data?.token) throw new Error(data?.message || 'NFC giriş açarı yaradılmadı.');
+
+      const base = window.location.protocol === 'http:' || window.location.protocol === 'https:'
+        ? new URL('./profile.html', window.location.href).href
+        : 'https://qerib-seferli.github.io/SKyFit-Pro/profile.html';
+
+      const url = `${base}?mobile_entry=1&gate=${encodeURIComponent(data.gate_key || 'main')}#gate_token=${encodeURIComponent(data.token)}`;
+      output.innerHTML = `
+        <strong>NFC üçün təhlükəsiz giriş linki yaradıldı</strong>
+        <span>Bu linki NFC etiketinə yaz. Link yalnız fiziki yaxınlıq təsdiqi üçündür; üzv hesabı və giriş müddəti ayrıca yoxlanılır.</span>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;width:100%;margin-top:10px">
+          <input id="access-mobile-gate-url" class="ui-input" value="${escapeHtml(url)}" readonly style="min-width:min(100%,540px);flex:1">
+          <button id="access-mobile-gate-copy" class="ui-button ui-button--ghost" type="button">Linki kopyala</button>
+        </div>
+        <small>Etiket itərsə və ya link paylaşılarsa “NFC link yarat / yenilə” düyməsini yenidən bas; köhnə link dərhal etibarsız olacaq.</small>
+      `;
+      byId('access-mobile-gate-copy')?.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(url);
+          notify.success('NFC link kopyalandı.');
+        } catch {
+          byId('access-mobile-gate-url')?.select();
+          notify.info('Link seçildi. Ctrl+C ilə kopyala.');
+        }
+      });
+      notify.success('Əsas turniket üçün yeni NFC yaxınlıq açarı yaradıldı.');
+    } catch (error) {
+      notify.error(getErrorMessage(error, 'NFC giriş açarı yaradılmadı.'));
+    } finally {
+      button.disabled = false;
+      button.textContent = oldText;
+    }
   }
 
   function startCardCapture(input) {
@@ -339,6 +500,7 @@ export function createAdminAccessController({ state }) {
     renderCommands();
     renderEvents();
     renderCardDiagnostics();
+    renderControllerDiagnostics();
   }
 
   async function readLocalDatabase() {
@@ -612,6 +774,8 @@ export function createAdminAccessController({ state }) {
     byId('access-refresh')?.addEventListener('click', () => loadRemote().catch(error => notify.error(getErrorMessage(error,'Turniket siyahısı yenilənmədi.'))));
     byId('access-bridge-setup')?.addEventListener('click', openBridgeSetupModal);
     byId('access-card-register-check')?.addEventListener('click', inspectCardRegister);
+    byId('access-controller-check')?.addEventListener('click', inspectController);
+    byId('access-mobile-gate-token')?.addEventListener('click', () => { void rotateMobileGateToken(); });
     byId('access-search')?.addEventListener('input', renderPeople);
     byId('access-status-filter')?.addEventListener('change', renderPeople);
 

@@ -23,7 +23,7 @@
 // Frontenddə böyük dəyişiklik etdikdə yalnız APP_VERSION-u
 // artırmaq kifayətdir:
 //
-const APP_VERSION = 'skyfit-pro-v1.7.3-auth-mobile-entry';
+const APP_VERSION = 'skyfit-pro-v1.7.4-controller-nfc-diagnostics';
 
 
 const STATIC_CACHE =

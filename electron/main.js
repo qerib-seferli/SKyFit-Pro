@@ -296,14 +296,146 @@ async function getCardRegisterDiagnostics() {
   if (process.platform !== 'win32') return { ok: false, error: 'Card Register diaqnostikası yalnız Windows-da işləyir.', devices: [] };
   const script = `
 $ErrorActionPreference = 'Stop'
-$items = Get-CimInstance Win32_PnPEntity | Where-Object { ($_.PNPDeviceID -match '^(HID|USB|SMARTCARD)') -and (($_.Name -match '(?i)card|reader|rfid|smart|hid|usb input|register') -or ($_.PNPClass -match '(?i)hid|smartcard')) } | Select-Object Name,Manufacturer,PNPClass,PNPDeviceID,Status
-[pscustomobject]@{ ok = $true; devices = @($items) } | ConvertTo-Json -Depth 6 -Compress
+$items = Get-CimInstance Win32_PnPEntity |
+  Where-Object {
+    ($_.PNPDeviceID -match '^(HID|USB|SMARTCARD)') -and
+    (
+      ($_.Name -match '(?i)card|reader|rfid|smart|hid|usb input|register|contactless|proximity') -or
+      ($_.PNPClass -match '(?i)hid|smartcard|usb')
+    )
+  } |
+  ForEach-Object {
+    $vid = $null
+    $pid = $null
+    if ($_.PNPDeviceID -match '(?i)VID_([0-9A-F]{4})') { $vid = $Matches[1].ToUpperInvariant() }
+    if ($_.PNPDeviceID -match '(?i)PID_([0-9A-F]{4})') { $pid = $Matches[1].ToUpperInvariant() }
+    [pscustomobject]@{
+      Name = $_.Name
+      Manufacturer = $_.Manufacturer
+      PNPClass = $_.PNPClass
+      PNPDeviceID = $_.PNPDeviceID
+      Status = $_.Status
+      VID = $vid
+      PID = $pid
+    }
+  }
+[pscustomobject]@{ ok = $true; devices = @($items) } | ConvertTo-Json -Depth 7 -Compress
 `;
   try {
     const result = await runPowerShellJson(script);
     return { ok: true, devices: Array.isArray(result?.devices) ? result.devices : (result?.devices ? [result.devices] : []) };
   } catch (error) {
     return { ok: false, error: error?.message || 'Card Register diaqnostikası alınmadı.', devices: [] };
+  }
+}
+
+async function getTurnstileControllerDiagnostics() {
+  if (process.platform !== 'win32') return { ok: false, error: 'Controller diaqnostikası yalnız Windows-da işləyir.' };
+
+  const config = loadAccessBridgeConfig();
+  const dbPath = String(config?.databasePath || DEFAULT_ACCESS_DB);
+  let snapshot = null;
+
+  try {
+    if (!fs.existsSync(dbPath)) {
+      return { ok: false, error: `Database.mdb tapılmadı: ${dbPath}` };
+    }
+
+    snapshot = createReadOnlyAccessSnapshot(dbPath);
+    const db = psSingleQuote(snapshot.snapshotPath);
+    const source = psSingleQuote(dbPath);
+
+    const script = `
+$ErrorActionPreference = 'Stop'
+$db = '${db}'
+$source = '${source}'
+
+function Convert-Row($rs) {
+  $row = [ordered]@{}
+  for ($i = 0; $i -lt $rs.Fields.Count; $i++) {
+    $f = $rs.Fields.Item($i)
+    $v = $f.Value
+    if ($null -eq $v -or $v -is [DBNull]) { $row[$f.Name] = $null }
+    elseif ($v -is [DateTime]) { $row[$f.Name] = $v.ToString('yyyy-MM-dd HH:mm:ss') }
+    else { $row[$f.Name] = [string]$v }
+  }
+  return [pscustomobject]$row
+}
+
+$conn = New-Object -ComObject ADODB.Connection
+$conn.Open("Provider=Microsoft.Jet.OLEDB.4.0;Data Source=$db;Mode=Read;")
+
+$tables = New-Object System.Collections.ArrayList
+$schema = $conn.OpenSchema(20)
+while (-not $schema.EOF) {
+  $name = [string]$schema.Fields.Item('TABLE_NAME').Value
+  $type = [string]$schema.Fields.Item('TABLE_TYPE').Value
+  if ($name -and $name -notmatch '^MSys' -and $type -match '(?i)table|view') {
+    [void]$tables.Add($name)
+  }
+  $schema.MoveNext()
+}
+$schema.Close()
+
+$candidateNames = @($tables | Where-Object {
+  $_ -match '(?i)device|controller|machine|option|para|door|access|comm|system|terminal|reader|equipment'
+} | Select-Object -First 20)
+
+$samples = New-Object System.Collections.ArrayList
+foreach ($table in $candidateNames) {
+  try {
+    $safe = $table.Replace(']', ']]')
+    $rs = New-Object -ComObject ADODB.Recordset
+    $rs.Open("SELECT TOP 12 * FROM [$safe]", $conn, 0, 1)
+    $rows = New-Object System.Collections.ArrayList
+    while (-not $rs.EOF) {
+      [void]$rows.Add((Convert-Row $rs))
+      $rs.MoveNext()
+    }
+    $rs.Close()
+    [void]$samples.Add([pscustomobject]@{ table = $table; rows = @($rows) })
+  } catch {
+    [void]$samples.Add([pscustomobject]@{ table = $table; rows = @(); error = $_.Exception.Message })
+  }
+}
+
+$conn.Close()
+
+$pnp = @(
+  Get-CimInstance Win32_PnPEntity |
+  Where-Object {
+    ($_.Name -match '(?i)zk|zkteco|turnstile|access|controller|reader|rfid|card') -or
+    ($_.Manufacturer -match '(?i)zk|zkteco')
+  } |
+  Select-Object Name,Manufacturer,PNPClass,PNPDeviceID,Status
+)
+
+$arp = ''
+try { $arp = (arp -a | Out-String) } catch { $arp = '' }
+
+[pscustomobject]@{
+  ok = $true
+  databasePath = $source
+  candidateTables = @($candidateNames)
+  tableSamples = @($samples)
+  pnpDevices = @($pnp)
+  arp = $arp
+} | ConvertTo-Json -Depth 12 -Compress
+`;
+
+    const result = await runPowerShellJson(script);
+    return {
+      ok: true,
+      databasePath: result?.databasePath || dbPath,
+      candidateTables: Array.isArray(result?.candidateTables) ? result.candidateTables : (result?.candidateTables ? [result.candidateTables] : []),
+      tableSamples: Array.isArray(result?.tableSamples) ? result.tableSamples : (result?.tableSamples ? [result.tableSamples] : []),
+      pnpDevices: Array.isArray(result?.pnpDevices) ? result.pnpDevices : (result?.pnpDevices ? [result.pnpDevices] : []),
+      arp: String(result?.arp || ''),
+    };
+  } catch (error) {
+    return { ok: false, error: error?.message || 'Turniket controller diaqnostikası alınmadı.' };
+  } finally {
+    removeAccessSnapshot(snapshot?.tempRoot);
   }
 }
 
@@ -1026,6 +1158,7 @@ ipcMain.handle('access:get-bridge-status', async () => {
 });
 
 ipcMain.handle('access:card-register-diagnostics', async () => getCardRegisterDiagnostics());
+ipcMain.handle('access:controller-diagnostics', async () => getTurnstileControllerDiagnostics());
 
 ipcMain.handle('access:run-bridge-now', async () => {
   try {

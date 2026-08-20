@@ -1412,6 +1412,7 @@
                 <button id="access-refresh" class="ui-button ui-button--ghost" type="button">Yenilə</button>
                 <button id="access-bridge-setup" class="ui-button ui-button--ghost" type="button">Bridge qur</button>
                 <button id="access-card-register-check" class="ui-button ui-button--ghost" type="button">Card Register yoxla</button>
+                <button id="access-controller-check" class="ui-button ui-button--ghost" type="button">Controller yoxla</button>
                 <button id="access-read-local" class="ui-button ui-button--secondary" type="button">Lokal bazanı oxu</button>
                 <button id="access-sync-local" class="ui-button ui-button--primary" type="button">Supabase-a sinxron et</button>
               </div>
@@ -1446,6 +1447,31 @@
                 <p id="access-card-register-state" class="admin-section__description">Card Register cihazını USB ilə qoş və “Card Register yoxla” düyməsini bas.</p>
               </div></div>
               <div id="access-card-register-list" class="admin-table-wrap"></div>
+            </section>
+
+
+            <section class="admin-section">
+              <div class="admin-section__header"><div>
+                <span class="section-eyebrow">Turniket controller</span>
+                <h3 class="admin-section__title">Controller və şəbəkə diaqnostikası</h3>
+                <p id="access-controller-state" class="admin-section__description">Zal kompüterində “Controller yoxla” düyməsini bas. Bu yoxlama yalnız oxuyur; MDB-yə və controller-ə yazmır.</p>
+              </div></div>
+              <div id="access-controller-list" class="admin-table-wrap"></div>
+            </section>
+
+            <section class="admin-section">
+              <div class="admin-section__header"><div>
+                <span class="section-eyebrow">Telefonla giriş</span>
+                <h3 class="admin-section__title">NFC yaxınlıq açarı</h3>
+                <p class="admin-section__description">Üzvün adi profil düyməsi uzaqdan turniketi açmır. Turniketin yanında yerləşdirilən NFC etiketindəki təhlükəsiz link oxunandan sonra giriş sorğusu yaradıla bilər.</p>
+              </div></div>
+              <div class="admin-toolbar">
+                <button id="access-mobile-gate-token" class="ui-button ui-button--secondary" type="button">NFC link yarat / yenilə</button>
+              </div>
+              <div id="access-mobile-gate-output" class="admin-empty-state">
+                <strong>NFC link hələ yaradılmayıb</strong>
+                <span>Link yaradıldıqda onu NFC etiketinə yaz və etiketi turniketin yanında yerləşdir.</span>
+              </div>
             </section>
 
             <section class="admin-section">
