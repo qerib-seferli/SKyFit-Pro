@@ -410,8 +410,15 @@ $pnp = @(
   Select-Object Name,Manufacturer,PNPClass,PNPDeviceID,Status
 )
 
+$serialPorts = @(Get-CimInstance Win32_SerialPort | Select-Object DeviceID,Name,Description,Manufacturer,PNPDeviceID,Status)
+$icvProcesses = @()
+try {
+  $icvProcesses = @(Get-CimInstance Win32_Process | Where-Object { ($_.Name -match '(?i)icv|access|card|door') -or ($_.ExecutablePath -match '(?i)ICV5') } | Select-Object Name,ProcessId,ExecutablePath,CommandLine)
+} catch {}
 $arp = ''
 try { $arp = (arp -a | Out-String) } catch { $arp = '' }
+$netstat = ''
+try { $netstat = (netstat -ano | Select-String -Pattern 'LISTENING|ESTABLISHED' | Out-String) } catch { $netstat = '' }
 
 [pscustomobject]@{
   ok = $true
@@ -419,7 +426,10 @@ try { $arp = (arp -a | Out-String) } catch { $arp = '' }
   candidateTables = @($candidateNames)
   tableSamples = @($samples)
   pnpDevices = @($pnp)
+  serialPorts = @($serialPorts)
+  icvProcesses = @($icvProcesses)
   arp = $arp
+  netstat = $netstat
 } | ConvertTo-Json -Depth 12 -Compress
 `;
 
@@ -430,7 +440,10 @@ try { $arp = (arp -a | Out-String) } catch { $arp = '' }
       candidateTables: Array.isArray(result?.candidateTables) ? result.candidateTables : (result?.candidateTables ? [result.candidateTables] : []),
       tableSamples: Array.isArray(result?.tableSamples) ? result.tableSamples : (result?.tableSamples ? [result.tableSamples] : []),
       pnpDevices: Array.isArray(result?.pnpDevices) ? result.pnpDevices : (result?.pnpDevices ? [result.pnpDevices] : []),
+      serialPorts: Array.isArray(result?.serialPorts) ? result.serialPorts : (result?.serialPorts ? [result.serialPorts] : []),
+      icvProcesses: Array.isArray(result?.icvProcesses) ? result.icvProcesses : (result?.icvProcesses ? [result.icvProcesses] : []),
       arp: String(result?.arp || ''),
+      netstat: String(result?.netstat || ''),
     };
   } catch (error) {
     return { ok: false, error: error?.message || 'Turniket controller diaqnostikası alınmadı.' };
@@ -540,6 +553,99 @@ function removeAccessSnapshot(tempRoot) {
   }
 }
 
+
+function normalizeHardwareAdapter(input) {
+  const source = input && typeof input === 'object' ? input : {};
+  const type = ['serial_hex','tcp_hex','http'].includes(source.type) ? source.type : 'disabled';
+  return {
+    enabled: source.enabled === true && type !== 'disabled',
+    type,
+    serialPort: String(source.serialPort || 'COM2').trim().toUpperCase(),
+    baudRate: Math.max(300, Math.min(921600, Number(source.baudRate) || 9600)),
+    dataBits: [7,8].includes(Number(source.dataBits)) ? Number(source.dataBits) : 8,
+    parity: ['None','Odd','Even','Mark','Space'].includes(source.parity) ? source.parity : 'None',
+    stopBits: ['One','Two'].includes(source.stopBits) ? source.stopBits : 'One',
+    serialHex: String(source.serialHex || '').replace(/[^0-9a-fA-F]/g, '').toUpperCase(),
+    tcpHost: String(source.tcpHost || '').trim(),
+    tcpPort: Math.max(1, Math.min(65535, Number(source.tcpPort) || 4370)),
+    tcpHex: String(source.tcpHex || '').replace(/[^0-9a-fA-F]/g, '').toUpperCase(),
+    httpUrl: String(source.httpUrl || '').trim(),
+    httpMethod: String(source.httpMethod || 'POST').toUpperCase() === 'GET' ? 'GET' : 'POST',
+    timeoutMs: Math.max(500, Math.min(10000, Number(source.timeoutMs) || 2500)),
+  };
+}
+
+function validateHardwareAdapter(adapter) {
+  if (!adapter.enabled) throw new Error('Controller adapteri aktiv deyil. Əvvəl real controller protokolunu seç və parametrləri saxla.');
+  if (adapter.type === 'serial_hex') {
+    if (!/^COM\d+$/i.test(adapter.serialPort)) throw new Error('Serial COM port düzgün deyil.');
+    if (!adapter.serialHex || adapter.serialHex.length % 2) throw new Error('Serial açma frame-i HEX formatında tam deyil.');
+  } else if (adapter.type === 'tcp_hex') {
+    if (!adapter.tcpHost) throw new Error('Controller IP/host daxil edilməyib.');
+    if (!adapter.tcpHex || adapter.tcpHex.length % 2) throw new Error('TCP açma frame-i HEX formatında tam deyil.');
+  } else if (adapter.type === 'http') {
+    if (!/^https?:\/\//i.test(adapter.httpUrl)) throw new Error('HTTP relay URL düzgün deyil.');
+  } else {
+    throw new Error('Controller adapter növü seçilməyib.');
+  }
+}
+
+async function pulseTurnstileHardware(config) {
+  const adapter = normalizeHardwareAdapter(config?.hardwareAdapter);
+  validateHardwareAdapter(adapter);
+
+  if (adapter.type === 'http') {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), adapter.timeoutMs);
+    try {
+      const response = await fetch(adapter.httpUrl, {
+        method: adapter.httpMethod,
+        headers: adapter.httpMethod === 'POST' ? { 'content-type': 'application/json' } : undefined,
+        body: adapter.httpMethod === 'POST' ? JSON.stringify({ action: 'open', gate: 'main', source: 'skyfit' }) : undefined,
+        signal: controller.signal,
+      });
+      if (!response.ok) throw new Error(`HTTP controller ${response.status} qaytardı.`);
+      return { adapter: 'http', status: response.status };
+    } finally { clearTimeout(timer); }
+  }
+
+  if (adapter.type === 'serial_hex') {
+    const port = psSingleQuote(adapter.serialPort);
+    const hex = psSingleQuote(adapter.serialHex);
+    const script = `
+$ErrorActionPreference = 'Stop'
+$bytes = [byte[]]::new(${adapter.serialHex.length / 2})
+$hex = '${hex}'
+for ($i=0; $i -lt $bytes.Length; $i++) { $bytes[$i] = [Convert]::ToByte($hex.Substring($i*2,2),16) }
+$sp = New-Object System.IO.Ports.SerialPort '${port}',${adapter.baudRate},[System.IO.Ports.Parity]::${adapter.parity},${adapter.dataBits},[System.IO.Ports.StopBits]::${adapter.stopBits}
+$sp.WriteTimeout = ${adapter.timeoutMs}
+$sp.ReadTimeout = ${adapter.timeoutMs}
+try { $sp.Open(); $sp.Write($bytes,0,$bytes.Length); Start-Sleep -Milliseconds 120 } finally { if ($sp.IsOpen) { $sp.Close() }; $sp.Dispose() }
+[pscustomobject]@{ ok=$true; adapter='serial_hex'; port='${port}'; bytes=$bytes.Length } | ConvertTo-Json -Compress
+`;
+    const result = await runPowerShellJson(script);
+    return result;
+  }
+
+  if (adapter.type === 'tcp_hex') {
+    const host = psSingleQuote(adapter.tcpHost);
+    const hex = psSingleQuote(adapter.tcpHex);
+    const script = `
+$ErrorActionPreference = 'Stop'
+$client = New-Object System.Net.Sockets.TcpClient
+$task = $client.ConnectAsync('${host}', ${adapter.tcpPort})
+if (-not $task.Wait(${adapter.timeoutMs})) { throw 'Controller TCP bağlantısı timeout oldu.' }
+$hex='${hex}'; $bytes=[byte[]]::new(${adapter.tcpHex.length / 2})
+for ($i=0; $i -lt $bytes.Length; $i++) { $bytes[$i]=[Convert]::ToByte($hex.Substring($i*2,2),16) }
+try { $stream=$client.GetStream(); $stream.Write($bytes,0,$bytes.Length); $stream.Flush(); Start-Sleep -Milliseconds 120 } finally { $client.Close() }
+[pscustomobject]@{ ok=$true; adapter='tcp_hex'; host='${host}'; port=${adapter.tcpPort}; bytes=$bytes.Length } | ConvertTo-Json -Compress
+`;
+    return runPowerShellJson(script);
+  }
+
+  throw new Error('Controller adapteri dəstəklənmir.');
+}
+
 function accessBridgeConfigPath() {
   return path.join(app.getPath('userData'), ACCESS_BRIDGE_CONFIG_FILE);
 }
@@ -558,6 +664,7 @@ function loadAccessBridgeConfig() {
       databasePath: String(parsed.databasePath || DEFAULT_ACCESS_DB),
       mode: parsed.mode === 'live' ? 'live' : 'test',
       allowLiveWrites: parsed.allowLiveWrites === true,
+      hardwareAdapter: normalizeHardwareAdapter(parsed.hardwareAdapter),
     };
   } catch {
     return null;
@@ -573,6 +680,7 @@ function saveAccessBridgeConfig(config) {
     databasePath: String(config.databasePath || DEFAULT_ACCESS_DB),
     mode: config.mode === 'live' ? 'live' : 'test',
     allowLiveWrites: config.allowLiveWrites === true,
+    hardwareAdapter: normalizeHardwareAdapter(config.hardwareAdapter),
   };
 
   if (!safe.secret || safe.secret.length < 32) throw new Error('Bridge secret düzgün deyil.');
@@ -1059,15 +1167,29 @@ async function pollAccessBridgeOnce() {
       });
       const mobileRequests = Array.isArray(mobileResponse?.requests) ? mobileResponse.requests : [];
       for (const request of mobileRequests) {
-        await supabaseBridgeRpc(config, 'access_bridge_complete_mobile_entry_v1', {
-          p_device_key: config.deviceKey,
-          p_secret: config.secret,
-          p_request_id: request.id,
-          p_ok: false,
-          p_reason_code: 'hardware_not_ready',
-          p_reason_message: 'Turniket controller adapteri hələ konfiqurasiya edilməyib.',
-          p_result: { gate_key: request.gate_key || 'main' },
-        });
+        try {
+          const hardwareResult = await pulseTurnstileHardware(config);
+          await supabaseBridgeRpc(config, 'access_bridge_complete_mobile_entry_v1', {
+            p_device_key: config.deviceKey,
+            p_secret: config.secret,
+            p_request_id: request.id,
+            p_ok: true,
+            p_reason_code: 'opened',
+            p_reason_message: 'Turniket açma əmri controller-ə göndərildi.',
+            p_result: { gate_key: request.gate_key || 'main', hardware: hardwareResult },
+          });
+        } catch (hardwareError) {
+          const notReady = /aktiv deyil|seçilməyib|daxil edilməyib|frame/i.test(String(hardwareError?.message || ''));
+          await supabaseBridgeRpc(config, 'access_bridge_complete_mobile_entry_v1', {
+            p_device_key: config.deviceKey,
+            p_secret: config.secret,
+            p_request_id: request.id,
+            p_ok: false,
+            p_reason_code: notReady ? 'hardware_not_ready' : 'hardware_error',
+            p_reason_message: hardwareError?.message || 'Controller açma əmri alınmadı.',
+            p_result: { gate_key: request.gate_key || 'main' },
+          });
+        }
       }
     } catch (mobileError) {
       // Mobile entry V5 SQL hələ tətbiq edilməyibsə əsas MDB bridge dayanmasın.
@@ -1159,6 +1281,35 @@ ipcMain.handle('access:get-bridge-status', async () => {
 
 ipcMain.handle('access:card-register-diagnostics', async () => getCardRegisterDiagnostics());
 ipcMain.handle('access:controller-diagnostics', async () => getTurnstileControllerDiagnostics());
+
+ipcMain.handle('access:get-hardware-config', async () => {
+  const config = loadAccessBridgeConfig();
+  return { ok: true, hardwareAdapter: normalizeHardwareAdapter(config?.hardwareAdapter) };
+});
+
+ipcMain.handle('access:save-hardware-config', async (_event, input) => {
+  try {
+    const current = loadAccessBridgeConfig();
+    if (!current) return { ok: false, error: 'Əvvəl Desktop Bridge-i qur.' };
+    const hardwareAdapter = normalizeHardwareAdapter(input);
+    if (hardwareAdapter.enabled) validateHardwareAdapter(hardwareAdapter);
+    const saved = saveAccessBridgeConfig({ ...current, hardwareAdapter });
+    return { ok: true, hardwareAdapter: saved.hardwareAdapter };
+  } catch (error) {
+    return { ok: false, error: error?.message || 'Controller adapteri saxlanmadı.' };
+  }
+});
+
+ipcMain.handle('access:test-hardware', async () => {
+  try {
+    const config = loadAccessBridgeConfig();
+    if (!config) return { ok: false, error: 'Əvvəl Desktop Bridge-i qur.' };
+    const result = await pulseTurnstileHardware(config);
+    return { ok: true, result };
+  } catch (error) {
+    return { ok: false, error: error?.message || 'Controller test açılışı alınmadı.' };
+  }
+});
 
 ipcMain.handle('access:run-bridge-now', async () => {
   try {

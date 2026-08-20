@@ -421,6 +421,7 @@ function mobileEntryReasonMessage(code, fallback = '') {
     access_date_missing: 'Giriş üçün son tarix məlumatı yoxdur.',
     account_inactive: 'Hesab deaktivdir.',
     hardware_not_ready: 'Telefonla giriş üçün turniket controller adapteri hələ aktiv deyil.',
+    hardware_error: 'Turniket controller-i açma əmrini icra edə bilmədi.',
     timeout: 'Turniketdən vaxtında təsdiq gəlmədi.',
   };
   return map[code] || fallback || 'Giriş təsdiqlənmədi.';

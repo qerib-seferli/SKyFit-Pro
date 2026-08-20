@@ -406,8 +406,17 @@ export function createAdminAccessController({ state }) {
         }).join('')
       : '<div class="admin-empty-state" style="margin-top:14px"><strong>Namizəd MDB cədvəlində məlumat tapılmadı</strong><span>Diaqnostika nəticəsini göndər; növbəti adapteri buna görə quraq.</span></div>';
 
+    const serialPorts = Array.isArray(diag.serialPorts) ? diag.serialPorts : [];
+    const processes = Array.isArray(diag.icvProcesses) ? diag.icvProcesses : [];
+    const serialHtml = serialPorts.length
+      ? `<div style="margin-top:16px"><h4 style="margin:0 0 8px">COM / Serial portlar</h4><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Port</th><th>Ad</th><th>İstehsalçı</th><th>PNP ID</th><th>Status</th></tr></thead><tbody>${serialPorts.map(d => `<tr><td><strong>${escapeHtml(d.DeviceID || '—')}</strong></td><td>${escapeHtml(d.Name || d.Description || '—')}</td><td>${escapeHtml(d.Manufacturer || '—')}</td><td><small>${escapeHtml(d.PNPDeviceID || '—')}</small></td><td>${escapeHtml(d.Status || '—')}</td></tr>`).join('')}</tbody></table></div></div>`
+      : '<div class="admin-empty-state" style="margin-top:14px"><strong>Windows SerialPort siyahısında COM cihazı görünmədi</strong><span>COM2 OptionPara qeydi MDB-də ola bilər, amma fiziki port kimi təsdiqlənməyib.</span></div>';
+    const processHtml = processes.length
+      ? `<details style="margin-top:16px" open><summary>ICV / access proqram prosesləri</summary><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Proses</th><th>PID</th><th>EXE yolu</th><th>Command line</th></tr></thead><tbody>${processes.map(d => `<tr><td>${escapeHtml(d.Name || '—')}</td><td>${escapeHtml(d.ProcessId || '—')}</td><td><small>${escapeHtml(d.ExecutablePath || '—')}</small></td><td><small>${escapeHtml(d.CommandLine || '—')}</small></td></tr>`).join('')}</tbody></table></div></details>`
+      : '';
     const arp = String(diag.arp || '').trim();
-    root.innerHTML = `${pnpHtml}${mdbHtml}${arp ? `<details style="margin-top:16px"><summary>Şəbəkə ARP siyahısı</summary><pre style="white-space:pre-wrap;overflow:auto;max-height:280px">${escapeHtml(arp)}</pre></details>` : ''}`;
+    const netstat = String(diag.netstat || '').trim();
+    root.innerHTML = `${pnpHtml}${serialHtml}${mdbHtml}${processHtml}${arp ? `<details style="margin-top:16px"><summary>Şəbəkə ARP siyahısı</summary><pre style="white-space:pre-wrap;overflow:auto;max-height:280px">${escapeHtml(arp)}</pre></details>` : ''}${netstat ? `<details style="margin-top:16px"><summary>Aktiv şəbəkə portları (netstat)</summary><pre style="white-space:pre-wrap;overflow:auto;max-height:280px">${escapeHtml(netstat)}</pre></details>` : ''}`;
   }
 
   async function inspectController() {
@@ -753,23 +762,85 @@ export function createAdminAccessController({ state }) {
     notify.success('Turniket və SKyFit profil əlaqəsi ayrıldı.');
   }
 
-  function openBridgeSetupModal() {
+  async function openBridgeSetupModal() {
     if (!window.skyfitDesktop?.configureAccessBridge) {
       notify.warning('Bridge yalnız zalın Windows tətbiqində qurulur.');
       return;
     }
 
+    let currentHardware = { enabled:false, type:'disabled', serialPort:'COM2', baudRate:9600, serialHex:'', tcpHost:'', tcpPort:4370, tcpHex:'', httpUrl:'', httpMethod:'POST' };
+    try {
+      const response = await window.skyfitDesktop.getTurnstileHardwareConfig?.();
+      if (response?.hardwareAdapter) currentHardware = { ...currentHardware, ...response.hardwareAdapter };
+    } catch {}
+
     const content = document.createElement('div');
     content.innerHTML = `
-      <div class="ui-field"><label class="ui-field__label">Rejim</label><select id="access-bridge-mode" class="ui-select"><option value="test">TEST — kopya MDB</option><option value="live">LIVE — zalın real MDB bazası</option></select></div>
+      <div class="ui-field"><label class="ui-field__label">Bridge rejimi</label><select id="access-bridge-mode" class="ui-select"><option value="test">TEST — kopya MDB</option><option value="live">LIVE — zalın real MDB bazası</option></select></div>
       <label class="ui-field"><span class="ui-field__label">Canlı yazma təsdiqi</span><span><input id="access-bridge-live-confirm" type="checkbox"> LIVE seçsəm real MDB-yə yazma əmrlərinin tətbiqinə icazə verirəm.</span></label>
-      <p class="admin-section__description">TEST rejimində öz kompüterindəki kopya Database.mdb ilə sınaq et. LIVE rejimini yalnız zal kompüterinə final quraşdırmada seç.</p>
+      <hr style="border:0;border-top:1px solid var(--border);margin:16px 0">
+      <h4 style="margin:0 0 8px">Fiziki controller adapteri</h4>
+      <p class="admin-section__description">Diaqnostikada görünən <strong>COM2 / OptionPara</strong> hazırda yalnız namizəddir; onun turniket relay protokolu olduğu təsdiqlənməyib. Naməlum HEX frame göndərmirik. Zalda controller-in real protokolu/relay interfeysi müəyyən ediləndən sonra bu adapter fiziki açmanı icra edəcək.</p>
+      <label class="ui-field"><span class="ui-field__label">Adapter aktiv</span><span><input id="access-hw-enabled" type="checkbox" ${currentHardware.enabled ? 'checked' : ''}> Fiziki açma əmrlərinə icazə ver</span></label>
+      <div class="ui-field"><label class="ui-field__label">Protokol</label><select id="access-hw-type" class="ui-select">
+        <option value="disabled">Söndürülüb</option><option value="serial_hex">Serial / RS-232 HEX</option><option value="tcp_hex">TCP socket HEX</option><option value="http">HTTP relay/controller</option>
+      </select></div>
+      <div id="access-hw-serial">
+        <div class="ui-field"><label class="ui-field__label">COM port</label><input id="access-hw-com" class="ui-input" value="${escapeHtml(currentHardware.serialPort || 'COM2')}"></div>
+        <div class="ui-field"><label class="ui-field__label">Baud rate</label><input id="access-hw-baud" class="ui-input" type="number" value="${Number(currentHardware.baudRate)||9600}"></div>
+        <div class="ui-field"><label class="ui-field__label">Açma frame-i (HEX)</label><input id="access-hw-serial-hex" class="ui-input" value="${escapeHtml(currentHardware.serialHex || '')}" placeholder="Məs: AA0101... — yalnız controller sənədindən"></div>
+      </div>
+      <div id="access-hw-tcp">
+        <div class="ui-field"><label class="ui-field__label">Controller IP</label><input id="access-hw-host" class="ui-input" value="${escapeHtml(currentHardware.tcpHost || '')}" placeholder="192.168.x.x"></div>
+        <div class="ui-field"><label class="ui-field__label">TCP port</label><input id="access-hw-port" class="ui-input" type="number" value="${Number(currentHardware.tcpPort)||4370}"></div>
+        <div class="ui-field"><label class="ui-field__label">Açma frame-i (HEX)</label><input id="access-hw-tcp-hex" class="ui-input" value="${escapeHtml(currentHardware.tcpHex || '')}" placeholder="Controller protokolundakı real frame"></div>
+      </div>
+      <div id="access-hw-http">
+        <div class="ui-field"><label class="ui-field__label">Relay/controller URL</label><input id="access-hw-url" class="ui-input" value="${escapeHtml(currentHardware.httpUrl || '')}" placeholder="http://192.168.x.x/open"></div>
+        <div class="ui-field"><label class="ui-field__label">HTTP metod</label><select id="access-hw-method" class="ui-select"><option value="POST">POST</option><option value="GET">GET</option></select></div>
+      </div>
+      <p class="admin-section__description">Bu hissə Database.mdb-dən ayrıdır. QR/NFC və admin “Turniketi aç” sorğusu yalnız adapter uğurla controller-ə açma əmri göndərəndə təsdiqlənəcək.</p>
     `;
+    const typeSelect = content.querySelector('#access-hw-type');
+    typeSelect.value = currentHardware.type || 'disabled';
+    content.querySelector('#access-hw-method').value = currentHardware.httpMethod || 'POST';
+    const syncHardwareFields = () => {
+      const type = typeSelect.value;
+      content.querySelector('#access-hw-serial').hidden = type !== 'serial_hex';
+      content.querySelector('#access-hw-tcp').hidden = type !== 'tcp_hex';
+      content.querySelector('#access-hw-http').hidden = type !== 'http';
+    };
+    typeSelect.addEventListener('change', syncHardwareFields);
+    syncHardwareFields();
 
     const footer = document.createElement('div');
     footer.className = 'modal-form__actions';
-    footer.innerHTML = '<button type="button" class="ui-button ui-button--ghost" data-bridge-cancel>Ləğv et</button><button type="button" class="ui-button ui-button--primary" data-bridge-save>Bridge-i aktiv et</button>';
+    footer.innerHTML = '<button type="button" class="ui-button ui-button--ghost" data-bridge-cancel>Ləğv et</button><button type="button" class="ui-button ui-button--secondary" data-hardware-test>Fiziki açma TEST</button><button type="button" class="ui-button ui-button--primary" data-bridge-save>Bridge-i aktiv et</button>';
     footer.querySelector('[data-bridge-cancel]')?.addEventListener('click', () => closeModal());
+    const readHardwareForm = () => ({
+      enabled: Boolean(content.querySelector('#access-hw-enabled')?.checked),
+      type: content.querySelector('#access-hw-type')?.value || 'disabled',
+      serialPort: content.querySelector('#access-hw-com')?.value || 'COM2',
+      baudRate: Number(content.querySelector('#access-hw-baud')?.value) || 9600,
+      serialHex: content.querySelector('#access-hw-serial-hex')?.value || '',
+      tcpHost: content.querySelector('#access-hw-host')?.value || '',
+      tcpPort: Number(content.querySelector('#access-hw-port')?.value) || 4370,
+      tcpHex: content.querySelector('#access-hw-tcp-hex')?.value || '',
+      httpUrl: content.querySelector('#access-hw-url')?.value || '',
+      httpMethod: content.querySelector('#access-hw-method')?.value || 'POST',
+    });
+    footer.querySelector('[data-hardware-test]')?.addEventListener('click', async () => {
+      try {
+        const saved = await window.skyfitDesktop.saveTurnstileHardwareConfig(readHardwareForm());
+        if (!saved?.ok) throw new Error(saved?.error || 'Adapter saxlanmadı.');
+        const confirmed = window.confirm('Fiziki controller-ə real AÇMA əmri göndəriləcək. Turniketin yanında təhlükəsiz şəkildə test etməyə hazırsan?');
+        if (!confirmed) return;
+        const result = await window.skyfitDesktop.testTurnstileHardware();
+        if (!result?.ok) throw new Error(result?.error || 'Fiziki açma alınmadı.');
+        notify.success('Controller açma əmri uğurla göndərildi. Turniketin fiziki açıldığını yoxla.');
+      } catch (error) { notify.error(getErrorMessage(error, 'Controller testi alınmadı.')); }
+    });
+
     footer.querySelector('[data-bridge-save]')?.addEventListener('click', async () => {
       const mode = byId('access-bridge-mode')?.value === 'live' ? 'live' : 'test';
       const allowLiveWrites = Boolean(byId('access-bridge-live-confirm')?.checked);
@@ -795,6 +866,8 @@ export function createAdminAccessController({ state }) {
           allowLiveWrites,
         });
         if (!desktop?.ok) throw new Error(desktop?.error || 'Desktop bridge konfiqurasiyası saxlanmadı.');
+        const hardware = await window.skyfitDesktop.saveTurnstileHardwareConfig(readHardwareForm());
+        if (!hardware?.ok) throw new Error(hardware?.error || 'Controller adapteri saxlanmadı.');
 
         closeModal();
         notify.success(`Turniket Bridge ${mode.toUpperCase()} rejimində aktiv edildi.`);

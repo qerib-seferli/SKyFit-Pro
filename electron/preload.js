@@ -35,6 +35,9 @@ contextBridge.exposeInMainWorld(
     runAccessBridgeNow: () => ipcRenderer.invoke('access:run-bridge-now'),
     getCardRegisterDiagnostics: () => ipcRenderer.invoke('access:card-register-diagnostics'),
     getTurnstileControllerDiagnostics: () => ipcRenderer.invoke('access:controller-diagnostics'),
+    getTurnstileHardwareConfig: () => ipcRenderer.invoke('access:get-hardware-config'),
+    saveTurnstileHardwareConfig: (config) => ipcRenderer.invoke('access:save-hardware-config', config),
+    testTurnstileHardware: () => ipcRenderer.invoke('access:test-hardware'),
 
     versions: {
 

@@ -23,7 +23,7 @@
 // Frontenddə böyük dəyişiklik etdikdə yalnız APP_VERSION-u
 // artırmaq kifayətdir:
 //
-const APP_VERSION = 'skyfit-pro-v1.7.5-qr-remote-entry';
+const APP_VERSION = 'skyfit-pro-v1.7.6-hardware-adapter';
 
 
 const STATIC_CACHE =
