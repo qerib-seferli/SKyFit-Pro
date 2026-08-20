@@ -11429,3 +11429,61 @@ body[data-page="admin"] .access-table td small {
     flex: 1 1 160px;
   }
 }
+
+
+/* ============================================================
+   Turniket QR scanner + staff uzaqdan açma
+   ============================================================ */
+.global-gate-remote-fab {
+  bottom: calc(var(--bottom-nav-height) + var(--safe-bottom) + 76px);
+  border-color: rgba(98, 210, 255, .46);
+  color: var(--text);
+  background: rgba(23, 42, 56, .94);
+  box-shadow: 0 14px 35px rgba(0,0,0,.3), 0 0 24px rgba(98,210,255,.12);
+}
+.global-gate-remote-fab:hover {
+  background: rgba(31, 55, 72, .98);
+  border-color: rgba(98, 210, 255, .72);
+}
+body[data-page="admin"] .global-gate-remote-fab {
+  bottom: calc(var(--bottom-nav-height) + var(--safe-bottom) + 18px);
+}
+.profile-qr-scanner {
+  display: grid;
+  gap: 12px;
+}
+.profile-qr-scanner__viewport {
+  position: relative;
+  overflow: hidden;
+  width: min(100%, 480px);
+  aspect-ratio: 4 / 3;
+  margin-inline: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: #050607;
+}
+.profile-qr-scanner__viewport video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.profile-qr-scanner__frame {
+  position: absolute;
+  inset: 14%;
+  border: 2px solid var(--accent);
+  border-radius: 22px;
+  box-shadow: 0 0 0 999px rgba(0,0,0,.25), 0 0 28px rgba(255,223,0,.18);
+  pointer-events: none;
+}
+@media (max-width: 640px) {
+  .profile-hero__actions {
+    flex-wrap: wrap;
+  }
+  .profile-hero__actions .ui-button {
+    flex: 1 1 150px;
+  }
+  .global-gate-remote-fab {
+    right: max(12px, calc(var(--safe-right) + 8px));
+  }
+}
+

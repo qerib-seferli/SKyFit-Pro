@@ -75,6 +75,7 @@ function getElements() {
     profileEmail: byId('profile-email'),
     roleBadge: byId('profile-role-badge'),
     editButton: byId('profile-edit-button'),
+    qrEntryButton: byId('profile-qr-entry-button'),
 
     fullName: byId('profile-full-name'),
     phone: byId('profile-phone'),
@@ -467,7 +468,7 @@ async function waitForMobileEntryResult(requestId, timeoutMs = 18000) {
   return { status: 'expired', reason_code: 'timeout' };
 }
 
-async function requestMobileEntry() {
+async function requestMobileEntry(options = {}) {
   const button = getElements().mobileEntryButton;
   if (!state.accessLegacy) {
     renderMobileEntryResult({ ok: false, title: 'Giriş mümkün deyil', message: 'Turniket kartın profilinə bağlanmayıb.' });
@@ -478,21 +479,32 @@ async function requestMobileEntry() {
   try {
     const searchParams = new URLSearchParams(window.location.search);
     const hashParams = new URLSearchParams(String(window.location.hash || '').replace(/^#/, ''));
-    const gate = normalizeString(searchParams.get('gate'), 'main');
-    const gateToken = normalizeString(searchParams.get('gate_token') || hashParams.get('gate_token'));
+    const gate = normalizeString(options.gate || searchParams.get('gate'), 'main');
+    const gateToken = normalizeString(
+      options.gateToken ||
+      searchParams.get('gate_token') ||
+      hashParams.get('gate_token')
+    );
+    const entryMethod = normalizeString(
+      options.entryMethod ||
+      searchParams.get('entry') ||
+      'qr',
+      'qr'
+    ).toLowerCase();
 
     if (!gateToken) {
       renderMobileEntryResult({
         ok: false,
-        title: 'Turniketə yaxınlaş',
-        message: 'Üzvlər üçün uzaqdan açılış bağlıdır. Zalda turniketin yanındakı NFC etiketini telefonla oxut və profil bu giriş linki ilə açılsın.',
+        title: 'QR kodu oxut',
+        message: 'Turniketi açmaq üçün profilin yuxarısındakı “QR ilə giriş” düyməsinə bas və zalda turniketin yanında olan QR kodu oxut.',
       });
       return;
     }
 
-    const { data, error } = await supabase.rpc('request_mobile_entry_v2', {
+    const { data, error } = await supabase.rpc('request_mobile_entry_v3', {
       p_gate_key: gate,
       p_gate_token: gateToken,
+      p_entry_method: entryMethod === 'nfc' ? 'nfc' : 'qr',
     });
     if (error) throw error;
 
@@ -507,7 +519,7 @@ async function requestMobileEntry() {
       return;
     }
 
-    notify.info('NFC yaxınlığı təsdiqləndi. Giriş sorğusu turniketə göndərildi...');
+    notify.info(`${entryMethod === 'nfc' ? 'NFC' : 'QR'} təsdiqləndi. Giriş sorğusu turniketə göndərildi...`);
     const result = await waitForMobileEntryResult(requestId);
     const approved = result?.status === 'approved';
     renderMobileEntryResult({
@@ -523,10 +535,179 @@ async function requestMobileEntry() {
   }
 }
 
+
+function parseGateQrValue(rawValue) {
+  const raw = normalizeString(rawValue);
+  if (!raw) throw new Error('QR kod boşdur.');
+
+  let url;
+  try {
+    url = new URL(raw, window.location.href);
+  } catch {
+    throw new Error('Bu QR kod SKy Fit giriş linki deyil.');
+  }
+
+  const sameHost =
+    url.hostname === window.location.hostname ||
+    url.hostname === 'qerib-seferli.github.io';
+
+  if (!sameHost || !/\/SKyFit-Pro\/profile\.html$|\/profile\.html$/i.test(url.pathname)) {
+    throw new Error('Bu QR kod SKy Fit turniketinə aid deyil.');
+  }
+
+  const params = url.searchParams;
+  const hashParams = new URLSearchParams(String(url.hash || '').replace(/^#/, ''));
+  const gate = normalizeString(params.get('gate'), 'main');
+  const gateToken = normalizeString(params.get('gate_token') || hashParams.get('gate_token'));
+
+  if (params.get('mobile_entry') !== '1' || !gateToken) {
+    throw new Error('QR kodun turniket açarı natamamdır.');
+  }
+
+  return { gate, gateToken, entryMethod: 'qr' };
+}
+
+async function openQrEntryScanner(trigger = null) {
+  if (!state.accessLegacy) {
+    renderMobileEntryResult({
+      ok: false,
+      title: 'Giriş mümkün deyil',
+      message: 'Turniket kartın profilinə bağlanmayıb.',
+    });
+    return;
+  }
+
+  const content = document.createElement('div');
+  content.className = 'profile-qr-scanner';
+  content.innerHTML = `
+    <div class="profile-qr-scanner__viewport">
+      <video id="profile-qr-video" playsinline muted></video>
+      <div class="profile-qr-scanner__frame" aria-hidden="true"></div>
+    </div>
+    <p id="profile-qr-status" class="profile-card__description">
+      Kamera açılır. Turniketdəki SKy Fit QR kodunu çərçivənin içinə gətir.
+    </p>
+    <div class="ui-field">
+      <label class="ui-field__label" for="profile-qr-manual">Test üçün QR linkini yapışdır</label>
+      <input id="profile-qr-manual" class="ui-input" type="url" inputmode="url" placeholder="https://...profile.html?mobile_entry=1...">
+    </div>
+    <div class="modal-form__actions">
+      <button id="profile-qr-manual-submit" class="ui-button ui-button--secondary" type="button">Linki yoxla</button>
+      <button id="profile-qr-close" class="ui-button ui-button--ghost" type="button">Bağla</button>
+    </div>
+  `;
+
+  let stream = null;
+  let stopped = false;
+  let raf = 0;
+  let zxingReader = null;
+
+  const stopScanner = () => {
+    stopped = true;
+    if (raf) cancelAnimationFrame(raf);
+    if (zxingReader?.reset) {
+      try { zxingReader.reset(); } catch {}
+    }
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      stream = null;
+    }
+  };
+
+  const submitValue = async value => {
+    const status = byId('profile-qr-status');
+    try {
+      const parsed = parseGateQrValue(value);
+      stopScanner();
+      closeModal();
+      notify.info('QR kod oxundu. Üzvlük və turniket icazəsi yoxlanılır...');
+      await requestMobileEntry(parsed);
+    } catch (error) {
+      if (status) status.textContent = getErrorMessage(error, 'QR kod oxunmadı.');
+    }
+  };
+
+  openModal({
+    eyebrow: 'Telefonla giriş',
+    title: 'QR kodu oxut',
+    content,
+    trigger,
+    className: 'app-modal--qr-entry',
+    onClose: stopScanner,
+    onOpen: async () => {
+      byId('profile-qr-close')?.addEventListener('click', () => {
+        stopScanner();
+        closeModal();
+      });
+      byId('profile-qr-manual-submit')?.addEventListener('click', () => {
+        void submitValue(byId('profile-qr-manual')?.value);
+      });
+
+      const video = byId('profile-qr-video');
+      const status = byId('profile-qr-status');
+      if (!video) return;
+
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' } },
+          audio: false,
+        });
+        video.srcObject = stream;
+        await video.play();
+
+        if ('BarcodeDetector' in window) {
+          const detector = new BarcodeDetector({ formats: ['qr_code'] });
+          const scan = async () => {
+            if (stopped) return;
+            try {
+              const codes = await detector.detect(video);
+              const value = codes?.[0]?.rawValue;
+              if (value) {
+                await submitValue(value);
+                return;
+              }
+            } catch {}
+            raf = requestAnimationFrame(scan);
+          };
+          raf = requestAnimationFrame(scan);
+          if (status) status.textContent = 'Kamera hazırdır. QR kodu çərçivənin içinə gətir.';
+          return;
+        }
+
+        const module = await import('https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/+esm');
+        const Reader = module.BrowserQRCodeReader;
+        zxingReader = new Reader();
+        if (status) status.textContent = 'Kamera hazırdır. QR kodu çərçivənin içinə gətir.';
+        await zxingReader.decodeFromVideoElement(video, result => {
+          const value = result?.getText?.() || result?.text;
+          if (value && !stopped) void submitValue(value);
+        });
+      } catch (error) {
+        if (status) {
+          status.textContent =
+            'Kamera açıla bilmədi. Kamera icazəsini yoxla və ya aşağıdakı sahəyə QR linkini yapışdır.';
+        }
+      }
+    },
+  });
+}
+
 function bindMobileEntry() {
   const button = getElements().mobileEntryButton;
+  const qrButton = getElements().qrEntryButton;
   const hint = getElements().mobileEntryHint;
-  button?.addEventListener('click', () => { void requestMobileEntry(); });
+
+  qrButton?.addEventListener('click', event => {
+    void openQrEntryScanner(event.currentTarget);
+  });
+
+  button?.addEventListener('click', event => {
+    const params = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(String(window.location.hash || '').replace(/^#/, ''));
+    const hasToken = normalizeString(params.get('gate_token') || hashParams.get('gate_token'));
+    if (hasToken) void requestMobileEntry();
+    else void openQrEntryScanner(event.currentTarget);
+  });
 
   const params = new URLSearchParams(window.location.search);
   const hashParams = new URLSearchParams(String(window.location.hash || '').replace(/^#/, ''));
@@ -535,8 +716,8 @@ function bindMobileEntry() {
 
   if (hint) {
     hint.textContent = hasNfcPresence
-      ? 'NFC yaxınlığı təsdiqlənib. Giriş icazən yoxlanacaq və turniketə sorğu göndəriləcək.'
-      : 'Uzaqdan açılış üzvlər üçün bağlıdır. Zalda turniketin yanındakı NFC etiketini telefonla oxut.';
+      ? 'Turniket yaxınlığı təsdiqlənib. Giriş icazən yoxlanacaq və turniketə sorğu göndəriləcək.'
+      : 'QR ilə giriş düyməsinə basıb turniketdəki QR kodu oxut. NFC linki açılıbsa giriş avtomatik yoxlanacaq.';
   }
 
   if (!hasNfcPresence) return;
@@ -550,7 +731,7 @@ function bindMobileEntry() {
         if (window.sessionStorage.getItem(key) === '1') return;
         window.sessionStorage.setItem(key, '1');
       } catch {}
-      notify.info('Turniket NFC etiketi aşkarlandı. Giriş avtomatik yoxlanılır...');
+      notify.info('Turniket giriş açarı aşkarlandı. Giriş avtomatik yoxlanılır...');
       void requestMobileEntry();
       return;
     }

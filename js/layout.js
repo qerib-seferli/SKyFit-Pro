@@ -1015,6 +1015,9 @@ export async function initLayout() {
     import('./quick-sale.js')
       .then(module => module.initGlobalQuickSale())
       .catch(error => console.error('[SKy Fit Layout] Global quick sale:', error));
+    import('./gate-remote.js')
+      .then(module => module.initGlobalGateRemote())
+      .catch(error => console.error('[SKy Fit Layout] Gate remote:', error));
   }
   return identity;
 }
@@ -1220,6 +1223,9 @@ function bootstrapLayout() {
         import('./quick-sale.js')
           .then(module => module.initGlobalQuickSale())
           .catch(error => console.error('[SKy Fit Layout] Global quick sale:', error));
+        import('./gate-remote.js')
+          .then(module => module.initGlobalGateRemote())
+          .catch(error => console.error('[SKy Fit Layout] Gate remote:', error));
       }
 
       if (window.location.hash) {

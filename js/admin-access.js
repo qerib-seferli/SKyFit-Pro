@@ -437,49 +437,88 @@ export function createAdminAccessController({ state }) {
     }
   }
 
+  function mobileGateUrl(data) {
+    const base = window.location.protocol === 'http:' || window.location.protocol === 'https:'
+      ? new URL('./profile.html', window.location.href).href
+      : 'https://qerib-seferli.github.io/SKyFit-Pro/profile.html';
+
+    return `${base}?mobile_entry=1&entry=qr&gate=${encodeURIComponent(data?.gate_key || 'main')}#gate_token=${encodeURIComponent(data?.token || '')}`;
+  }
+
+  function renderMobileGateToken(data) {
+    const output = byId('access-mobile-gate-output');
+    if (!output) return;
+
+    if (!data?.ok || !data?.token) {
+      output.innerHTML = `
+        <strong>QR / NFC giriş linki yaradılmayıb</strong>
+        <span>“QR / NFC linkini yenilə” düyməsini bir dəfə bas.</span>
+      `;
+      return;
+    }
+
+    const url = mobileGateUrl(data);
+    output.innerHTML = `
+      <strong>QR / NFC üçün sabit giriş linki hazırdır</strong>
+      <span>Bu link Ctrl+F5 və normal yenilənmələrdə dəyişmir. QR kod generatoruna məhz bu linki ver.</span>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;width:100%;margin-top:10px">
+        <input id="access-mobile-gate-url" class="ui-input" value="${escapeHtml(url)}" readonly style="min-width:min(100%,540px);flex:1">
+        <button id="access-mobile-gate-copy" class="ui-button ui-button--ghost" type="button">Linki kopyala</button>
+      </div>
+      <small>QR şəkli və ya link yayılarsa “QR / NFC linkini yenilə” bas. Köhnə QR dərhal etibarsız olacaq. Girişdə üzv hesabı, kart bağlantısı, blok və son tarix ayrıca yoxlanılır.</small>
+    `;
+
+    byId('access-mobile-gate-copy')?.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(url);
+        notify.success('QR / NFC linki kopyalandı.');
+      } catch {
+        byId('access-mobile-gate-url')?.select();
+        notify.info('Link seçildi. Ctrl+C ilə kopyala.');
+      }
+    });
+  }
+
+  async function loadMobileGateToken() {
+    const output = byId('access-mobile-gate-output');
+    if (!output) return;
+
+    try {
+      const { data, error } = await supabase.rpc('access_admin_get_mobile_gate_token_v2', {
+        p_gate_key: 'main',
+        p_label: 'Əsas turniket',
+        p_rotate: false,
+      });
+      if (error) throw error;
+      renderMobileGateToken(data);
+    } catch (error) {
+      output.innerHTML = `
+        <strong>QR / NFC linki yüklənmədi</strong>
+        <span>${escapeHtml(getErrorMessage(error, 'V7 SQL yeniləməsini tətbiq et.'))}</span>
+      `;
+    }
+  }
+
   async function rotateMobileGateToken() {
     const button = byId('access-mobile-gate-token');
-    const output = byId('access-mobile-gate-output');
-    if (!button || !output) return;
+    if (!button) return;
 
     button.disabled = true;
     const oldText = button.textContent;
-    button.textContent = 'Yaradılır...';
+    button.textContent = 'Yenilənir...';
 
     try {
-      const { data, error } = await supabase.rpc('access_admin_rotate_mobile_gate_token_v1', {
+      const { data, error } = await supabase.rpc('access_admin_get_mobile_gate_token_v2', {
         p_gate_key: 'main',
         p_label: 'Əsas turniket',
+        p_rotate: true,
       });
       if (error) throw error;
-      if (!data?.ok || !data?.token) throw new Error(data?.message || 'NFC giriş açarı yaradılmadı.');
-
-      const base = window.location.protocol === 'http:' || window.location.protocol === 'https:'
-        ? new URL('./profile.html', window.location.href).href
-        : 'https://qerib-seferli.github.io/SKyFit-Pro/profile.html';
-
-      const url = `${base}?mobile_entry=1&gate=${encodeURIComponent(data.gate_key || 'main')}#gate_token=${encodeURIComponent(data.token)}`;
-      output.innerHTML = `
-        <strong>NFC üçün təhlükəsiz giriş linki yaradıldı</strong>
-        <span>Bu linki NFC etiketinə yaz. Link yalnız fiziki yaxınlıq təsdiqi üçündür; üzv hesabı və giriş müddəti ayrıca yoxlanılır.</span>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;width:100%;margin-top:10px">
-          <input id="access-mobile-gate-url" class="ui-input" value="${escapeHtml(url)}" readonly style="min-width:min(100%,540px);flex:1">
-          <button id="access-mobile-gate-copy" class="ui-button ui-button--ghost" type="button">Linki kopyala</button>
-        </div>
-        <small>Etiket itərsə və ya link paylaşılarsa “NFC link yarat / yenilə” düyməsini yenidən bas; köhnə link dərhal etibarsız olacaq.</small>
-      `;
-      byId('access-mobile-gate-copy')?.addEventListener('click', async () => {
-        try {
-          await navigator.clipboard.writeText(url);
-          notify.success('NFC link kopyalandı.');
-        } catch {
-          byId('access-mobile-gate-url')?.select();
-          notify.info('Link seçildi. Ctrl+C ilə kopyala.');
-        }
-      });
-      notify.success('Əsas turniket üçün yeni NFC yaxınlıq açarı yaradıldı.');
+      if (!data?.ok || !data?.token) throw new Error(data?.message || 'QR / NFC giriş açarı yaradılmadı.');
+      renderMobileGateToken(data);
+      notify.success('Turniket QR / NFC linki yeniləndi. Köhnə QR artıq etibarsızdır.');
     } catch (error) {
-      notify.error(getErrorMessage(error, 'NFC giriş açarı yaradılmadı.'));
+      notify.error(getErrorMessage(error, 'QR / NFC giriş açarı yenilənmədi.'));
     } finally {
       button.disabled = false;
       button.textContent = oldText;
@@ -776,6 +815,7 @@ export function createAdminAccessController({ state }) {
     byId('access-card-register-check')?.addEventListener('click', inspectCardRegister);
     byId('access-controller-check')?.addEventListener('click', inspectController);
     byId('access-mobile-gate-token')?.addEventListener('click', () => { void rotateMobileGateToken(); });
+    void loadMobileGateToken();
     byId('access-search')?.addEventListener('input', renderPeople);
     byId('access-status-filter')?.addEventListener('change', renderPeople);
 

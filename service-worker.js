@@ -23,7 +23,7 @@
 // Frontenddə böyük dəyişiklik etdikdə yalnız APP_VERSION-u
 // artırmaq kifayətdir:
 //
-const APP_VERSION = 'skyfit-pro-v1.7.4-controller-nfc-diagnostics';
+const APP_VERSION = 'skyfit-pro-v1.7.5-qr-remote-entry';
 
 
 const STATIC_CACHE =
@@ -101,6 +101,7 @@ const APP_SHELL = [
   './js/core.js',
   './js/favorites.js',
   './js/layout.js',
+  './js/gate-remote.js',
   './js/profile.js',
   './js/quick-sale.js',
 
