@@ -566,6 +566,10 @@ function normalizeHardwareAdapter(input) {
     parity: ['None','Odd','Even','Mark','Space'].includes(source.parity) ? source.parity : 'None',
     stopBits: ['One','Two'].includes(source.stopBits) ? source.stopBits : 'One',
     serialHex: String(source.serialHex || '').replace(/[^0-9a-fA-F]/g, '').toUpperCase(),
+    relayOnHex: String(source.relayOnHex || '').replace(/[^0-9a-fA-F]/g, '').toUpperCase(),
+    relayOffHex: String(source.relayOffHex || '').replace(/[^0-9a-fA-F]/g, '').toUpperCase(),
+    pulseMs: Math.max(150, Math.min(5000, Number(source.pulseMs) || 700)),
+    relayDirection: String(source.relayDirection || 'R-OP').toUpperCase() === 'L-OP' ? 'L-OP' : 'R-OP',
     tcpHost: String(source.tcpHost || '').trim(),
     tcpPort: Math.max(1, Math.min(65535, Number(source.tcpPort) || 4370)),
     tcpHex: String(source.tcpHex || '').replace(/[^0-9a-fA-F]/g, '').toUpperCase(),
@@ -580,6 +584,10 @@ function validateHardwareAdapter(adapter) {
   if (adapter.type === 'serial_hex') {
     if (!/^COM\d+$/i.test(adapter.serialPort)) throw new Error('Serial COM port düzgün deyil.');
     if (!adapter.serialHex || adapter.serialHex.length % 2) throw new Error('Serial açma frame-i HEX formatında tam deyil.');
+  } else if (adapter.type === 'relay_serial') {
+    if (!/^COM\d+$/i.test(adapter.serialPort)) throw new Error('USB relay COM port düzgün deyil.');
+    if (!adapter.relayOnHex || adapter.relayOnHex.length % 2) throw new Error('Relay ON frame-i HEX formatında tam deyil.');
+    if (!adapter.relayOffHex || adapter.relayOffHex.length % 2) throw new Error('Relay OFF frame-i HEX formatında tam deyil.');
   } else if (adapter.type === 'tcp_hex') {
     if (!adapter.tcpHost) throw new Error('Controller IP/host daxil edilməyib.');
     if (!adapter.tcpHex || adapter.tcpHex.length % 2) throw new Error('TCP açma frame-i HEX formatında tam deyil.');
@@ -607,6 +615,37 @@ async function pulseTurnstileHardware(config) {
       if (!response.ok) throw new Error(`HTTP controller ${response.status} qaytardı.`);
       return { adapter: 'http', status: response.status };
     } finally { clearTimeout(timer); }
+  }
+
+
+  if (adapter.type === 'relay_serial') {
+    const port = psSingleQuote(adapter.serialPort);
+    const onHex = psSingleQuote(adapter.relayOnHex);
+    const offHex = psSingleQuote(adapter.relayOffHex);
+    const script = `
+$ErrorActionPreference = 'Stop'
+function Hex-Bytes([string]$hex) {
+  $bytes = [byte[]]::new($hex.Length / 2)
+  for ($i=0; $i -lt $bytes.Length; $i++) { $bytes[$i] = [Convert]::ToByte($hex.Substring($i*2,2),16) }
+  return $bytes
+}
+$on = Hex-Bytes '${onHex}'
+$off = Hex-Bytes '${offHex}'
+$sp = New-Object System.IO.Ports.SerialPort '${port}',${adapter.baudRate},[System.IO.Ports.Parity]::${adapter.parity},${adapter.dataBits},[System.IO.Ports.StopBits]::${adapter.stopBits}
+$sp.WriteTimeout = ${adapter.timeoutMs}
+try {
+  $sp.Open()
+  $sp.Write($on,0,$on.Length)
+  Start-Sleep -Milliseconds ${adapter.pulseMs}
+  $sp.Write($off,0,$off.Length)
+  Start-Sleep -Milliseconds 80
+} finally {
+  if ($sp.IsOpen) { $sp.Close() }
+  $sp.Dispose()
+}
+[pscustomobject]@{ ok=$true; adapter='relay_serial'; port='${port}'; pulse_ms=${adapter.pulseMs}; direction='${adapter.relayDirection}' } | ConvertTo-Json -Compress
+`;
+    return runPowerShellJson(script);
   }
 
   if (adapter.type === 'serial_hex') {

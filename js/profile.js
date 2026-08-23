@@ -20,6 +20,7 @@ import {
   formatDate,
   todayIso,
   getCurrentIdentity,
+  requireAuth,
   getProfileName,
   getProfileInitials,
   getProfileAvatar,
@@ -116,13 +117,12 @@ function getElements() {
 }
 
 async function loadIdentity() {
-  const identity =
-    await getCurrentIdentity({ force: true });
+  const identity = await requireAuth({
+    redirect: true,
+    redirectTo: APP_CONFIG.routes.login,
+  });
 
-  if (!identity?.authenticated) {
-    window.location.replace(APP_CONFIG.routes.login);
-    return null;
-  }
+  if (!identity?.authenticated) return null;
 
   if (!identity.profile) {
     notify.error('Profil məlumatı tapılmadı.');

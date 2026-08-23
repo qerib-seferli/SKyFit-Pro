@@ -23,7 +23,7 @@
 // Frontenddə böyük dəyişiklik etdikdə yalnız APP_VERSION-u
 // artırmaq kifayətdir:
 //
-const APP_VERSION = 'skyfit-pro-v1.7.6-hardware-adapter';
+const APP_VERSION = 'skyfit-pro-v1.7.7-auth-relay-fix';
 
 
 const STATIC_CACHE =

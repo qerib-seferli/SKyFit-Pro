@@ -1,33 +1,27 @@
 {
   "name": "skyfit-pro-desktop",
-  "version": "1.5.0",
+  "version": "1.7.7",
   "private": true,
   "description": "SKy Fit Pro desktop application",
   "author": "Qərib Səfərli",
   "main": "main.js",
-
   "scripts": {
     "start": "electron .",
     "dev": "electron .",
     "build": "electron-builder",
     "build:win": "electron-builder --win"
   },
-
   "dependencies": {
     "electron-updater": "^6.3.9"
   },
-
   "devDependencies": {
     "electron": "^37.2.6",
     "electron-builder": "^26.0.12"
   },
-
   "build": {
     "appId": "az.skyfit.pro",
     "productName": "SKy Fit Pro",
-
     "asar": true,
-
     "files": [
       "main.js",
       "preload.js",
@@ -45,11 +39,9 @@
       "../manifest.json",
       "../service-worker.js"
     ],
-
     "directories": {
       "output": "dist"
     },
-
     "win": {
       "target": [
         {
@@ -61,7 +53,6 @@
       ],
       "artifactName": "SKy-Fit-Pro-${version}-Setup.${ext}"
     },
-
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,

@@ -35,6 +35,7 @@ import {
   rows,
 
   getCurrentIdentity,
+  requireStaff,
   getProfileName,
   getProfileInitials,
   getProfileAvatar,
@@ -371,32 +372,12 @@ const { setActiveTab, bindTabEvents, resolveInitialAdminTab } = adminRouter;
 
 
 async function requireAdminStaff() {
-  const identity =
-    await getCurrentIdentity({
-      force:
-        true,
-    });
+  const identity = await requireStaff({
+    redirect: true,
+    redirectTo: APP_CONFIG.routes.login,
+  });
 
-  if (
-    !identity
-      ?.authenticated
-  ) {
-    window.location.replace(
-      APP_CONFIG.routes.login
-    );
-
-    return null;
-  }
-
-  if (
-    !identity.isStaff
-  ) {
-    window.location.replace(
-      APP_CONFIG.routes.home
-    );
-
-    return null;
-  }
+  if (!identity?.authenticated || !identity.isStaff) return null;
 
   state.identity =
     identity;

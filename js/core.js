@@ -1590,30 +1590,31 @@ export function startAuthListener() {
   const { data } = supabase.auth.onAuthStateChange((event, session) => {
     clearIdentityCache();
 
-    // SIGNED_OUT hadisəsini dərhal redirect kimi qəbul etmirik. Bəzi
-    // Windows sistemlərində auto-refresh zamanı qısa false-negative olur.
-    const delay = event === 'SIGNED_OUT' ? 900 : 0;
-
-    setTimeout(async () => {
+    // Supabase-in verdiyi session-u əsas götürürük. TOKEN_REFRESHED / SIGNED_IN
+    // zamanı yenidən getSession/setSession zənciri yaratmırıq; bu, zəif və ya
+    // fərqli Windows brauzer storage davranışında auth rate-limit dövrəsini
+    // aradan qaldırır.
+    window.setTimeout(async () => {
       let identity = null;
-      let effectiveEvent = event;
-      let effectiveSession = session;
 
       try {
-        identity = await getCurrentIdentity({ force: true });
-        if (event === 'SIGNED_OUT' && identity?.authenticated) {
-          const { data: sessionData } = await supabase.auth.getSession();
-          effectiveEvent = 'SESSION_RECOVERED';
-          effectiveSession = sessionData?.session || null;
+        if (session?.user) {
+          const profile = await fetchCurrentProfile(session.user);
+          identityState.user = session.user;
+          identityState.profile = profile;
+          identityState.loaded = true;
+          identity = buildIdentity(session.user, profile);
+        } else if (event !== 'SIGNED_OUT') {
+          identity = await getCurrentIdentity();
         }
       } catch (error) {
         console.error('[SKy Fit auth]', error);
       }
 
       window.dispatchEvent(new CustomEvent(SKYFIT_EVENTS.authChange, {
-        detail: { event: effectiveEvent, session: effectiveSession, identity },
+        detail: { event, session, identity },
       }));
-    }, delay);
+    }, 0);
   });
 
   authSubscription = data?.subscription || null;

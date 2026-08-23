@@ -768,7 +768,7 @@ export function createAdminAccessController({ state }) {
       return;
     }
 
-    let currentHardware = { enabled:false, type:'disabled', serialPort:'COM2', baudRate:9600, serialHex:'', tcpHost:'', tcpPort:4370, tcpHex:'', httpUrl:'', httpMethod:'POST' };
+    let currentHardware = { enabled:false, type:'disabled', serialPort:'COM2', baudRate:9600, serialHex:'', relayOnHex:'', relayOffHex:'', pulseMs:700, relayDirection:'R-OP', tcpHost:'', tcpPort:4370, tcpHex:'', httpUrl:'', httpMethod:'POST' };
     try {
       const response = await window.skyfitDesktop.getTurnstileHardwareConfig?.();
       if (response?.hardwareAdapter) currentHardware = { ...currentHardware, ...response.hardwareAdapter };
@@ -780,15 +780,24 @@ export function createAdminAccessController({ state }) {
       <label class="ui-field"><span class="ui-field__label">Canlı yazma təsdiqi</span><span><input id="access-bridge-live-confirm" type="checkbox"> LIVE seçsəm real MDB-yə yazma əmrlərinin tətbiqinə icazə verirəm.</span></label>
       <hr style="border:0;border-top:1px solid var(--border);margin:16px 0">
       <h4 style="margin:0 0 8px">Fiziki controller adapteri</h4>
-      <p class="admin-section__description">Diaqnostikada görünən <strong>COM2 / OptionPara</strong> hazırda yalnız namizəddir; onun turniket relay protokolu olduğu təsdiqlənməyib. Naməlum HEX frame göndərmirik. Zalda controller-in real protokolu/relay interfeysi müəyyən ediləndən sonra bu adapter fiziki açmanı icra edəcək.</p>
+      <p class="admin-section__description">Turniket controller-də uzaqdan açılış üçün <strong>R-OP / L-OP / COM</strong> terminalları təsdiqlənib. Tövsiyə olunan yol quru kontakt verən USB relay-dir. Relay özü bu terminallara gərginlik verməməlidir; yalnız kontaktı qısa müddət bağlamalıdır.</p>
       <label class="ui-field"><span class="ui-field__label">Adapter aktiv</span><span><input id="access-hw-enabled" type="checkbox" ${currentHardware.enabled ? 'checked' : ''}> Fiziki açma əmrlərinə icazə ver</span></label>
       <div class="ui-field"><label class="ui-field__label">Protokol</label><select id="access-hw-type" class="ui-select">
-        <option value="disabled">Söndürülüb</option><option value="serial_hex">Serial / RS-232 HEX</option><option value="tcp_hex">TCP socket HEX</option><option value="http">HTTP relay/controller</option>
+        <option value="disabled">Söndürülüb</option><option value="relay_serial">USB Relay / Dry Contact</option><option value="serial_hex">Serial / RS-232 HEX</option><option value="tcp_hex">TCP socket HEX</option><option value="http">HTTP relay/controller</option>
       </select></div>
       <div id="access-hw-serial">
         <div class="ui-field"><label class="ui-field__label">COM port</label><input id="access-hw-com" class="ui-input" value="${escapeHtml(currentHardware.serialPort || 'COM2')}"></div>
         <div class="ui-field"><label class="ui-field__label">Baud rate</label><input id="access-hw-baud" class="ui-input" type="number" value="${Number(currentHardware.baudRate)||9600}"></div>
         <div class="ui-field"><label class="ui-field__label">Açma frame-i (HEX)</label><input id="access-hw-serial-hex" class="ui-input" value="${escapeHtml(currentHardware.serialHex || '')}" placeholder="Məs: AA0101... — yalnız controller sənədindən"></div>
+      </div>
+      <div id="access-hw-relay">
+        <div class="ui-field"><label class="ui-field__label">USB relay COM port</label><input id="access-hw-relay-com" class="ui-input" value="${escapeHtml(currentHardware.serialPort || 'COM2')}"></div>
+        <div class="ui-field"><label class="ui-field__label">Baud rate</label><input id="access-hw-relay-baud" class="ui-input" type="number" value="${Number(currentHardware.baudRate)||9600}"></div>
+        <div class="ui-field"><label class="ui-field__label">Turniket istiqaməti</label><select id="access-hw-relay-direction" class="ui-select"><option value="R-OP">R-OP + COM</option><option value="L-OP">L-OP + COM</option></select></div>
+        <div class="ui-field"><label class="ui-field__label">Kontakt impulsu (ms)</label><input id="access-hw-pulse-ms" class="ui-input" type="number" min="150" max="5000" value="${Number(currentHardware.pulseMs)||700}"></div>
+        <div class="ui-field"><label class="ui-field__label">Relay ON frame-i (HEX)</label><input id="access-hw-relay-on" class="ui-input" value="${escapeHtml(currentHardware.relayOnHex || '')}" placeholder="USB relay sənədindəki ON əmri"></div>
+        <div class="ui-field"><label class="ui-field__label">Relay OFF frame-i (HEX)</label><input id="access-hw-relay-off" class="ui-input" value="${escapeHtml(currentHardware.relayOffHex || '')}" placeholder="USB relay sənədindəki OFF əmri"></div>
+        <p class="admin-section__description">Bu sahədəki ON/OFF HEX dəyərləri turniket controller-in deyil, alınacaq USB relay modulunun sənədindən götürülür.</p>
       </div>
       <div id="access-hw-tcp">
         <div class="ui-field"><label class="ui-field__label">Controller IP</label><input id="access-hw-host" class="ui-input" value="${escapeHtml(currentHardware.tcpHost || '')}" placeholder="192.168.x.x"></div>
@@ -804,9 +813,11 @@ export function createAdminAccessController({ state }) {
     const typeSelect = content.querySelector('#access-hw-type');
     typeSelect.value = currentHardware.type || 'disabled';
     content.querySelector('#access-hw-method').value = currentHardware.httpMethod || 'POST';
+    content.querySelector('#access-hw-relay-direction').value = currentHardware.relayDirection || 'R-OP';
     const syncHardwareFields = () => {
       const type = typeSelect.value;
       content.querySelector('#access-hw-serial').hidden = type !== 'serial_hex';
+      content.querySelector('#access-hw-relay').hidden = type !== 'relay_serial';
       content.querySelector('#access-hw-tcp').hidden = type !== 'tcp_hex';
       content.querySelector('#access-hw-http').hidden = type !== 'http';
     };
@@ -820,9 +831,13 @@ export function createAdminAccessController({ state }) {
     const readHardwareForm = () => ({
       enabled: Boolean(content.querySelector('#access-hw-enabled')?.checked),
       type: content.querySelector('#access-hw-type')?.value || 'disabled',
-      serialPort: content.querySelector('#access-hw-com')?.value || 'COM2',
-      baudRate: Number(content.querySelector('#access-hw-baud')?.value) || 9600,
+      serialPort: (content.querySelector('#access-hw-type')?.value === 'relay_serial' ? content.querySelector('#access-hw-relay-com')?.value : content.querySelector('#access-hw-com')?.value) || 'COM2',
+      baudRate: Number(content.querySelector('#access-hw-type')?.value === 'relay_serial' ? content.querySelector('#access-hw-relay-baud')?.value : content.querySelector('#access-hw-baud')?.value) || 9600,
       serialHex: content.querySelector('#access-hw-serial-hex')?.value || '',
+      relayOnHex: content.querySelector('#access-hw-relay-on')?.value || '',
+      relayOffHex: content.querySelector('#access-hw-relay-off')?.value || '',
+      pulseMs: Number(content.querySelector('#access-hw-pulse-ms')?.value) || 700,
+      relayDirection: content.querySelector('#access-hw-relay-direction')?.value || 'R-OP',
       tcpHost: content.querySelector('#access-hw-host')?.value || '',
       tcpPort: Number(content.querySelector('#access-hw-port')?.value) || 4370,
       tcpHex: content.querySelector('#access-hw-tcp-hex')?.value || '',

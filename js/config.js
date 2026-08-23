@@ -29,44 +29,33 @@ function safeRemove(storage, key) {
 
 const resilientAuthStorage = {
   getItem(key) {
-    const primary = safeGet(window.localStorage, key) || safeGet(window.sessionStorage, key);
+    const primary = safeGet(window.localStorage, key);
     if (primary) return primary;
 
     if (key === AUTH_STORAGE_KEY) {
-      const recovery = safeGet(window.localStorage, AUTH_RECOVERY_KEY) || safeGet(window.sessionStorage, AUTH_RECOVERY_KEY);
-      if (recovery) {
-        safeSet(window.localStorage, AUTH_STORAGE_KEY, recovery);
-        safeSet(window.sessionStorage, AUTH_STORAGE_KEY, recovery);
-        return recovery;
-      }
+      return safeGet(window.localStorage, AUTH_RECOVERY_KEY);
     }
 
     return null;
   },
   setItem(key, value) {
     safeSet(window.localStorage, key, value);
-    safeSet(window.sessionStorage, key, value);
     if (key === AUTH_STORAGE_KEY && value) {
       safeSet(window.localStorage, AUTH_RECOVERY_KEY, value);
-      safeSet(window.sessionStorage, AUTH_RECOVERY_KEY, value);
     }
   },
   removeItem(key) {
-    // Supabase-in transient SIGNED_OUT/refresh yarışında recovery mirror-u
-    // saxlayırıq. Açıq istifadəçi çıxışı clearAuthRecoveryStorage() çağırır.
     safeRemove(window.localStorage, key);
-    safeRemove(window.sessionStorage, key);
   },
 };
 
 export function readAuthRecoveryStorage() {
-  return safeGet(window.localStorage, AUTH_RECOVERY_KEY) || safeGet(window.sessionStorage, AUTH_RECOVERY_KEY);
+  return safeGet(window.localStorage, AUTH_RECOVERY_KEY);
 }
 
 export function clearAuthRecoveryStorage() {
   [AUTH_STORAGE_KEY, AUTH_RECOVERY_KEY].forEach(key => {
     safeRemove(window.localStorage, key);
-    safeRemove(window.sessionStorage, key);
   });
 }
 
@@ -94,7 +83,7 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 export const APP_CONFIG = Object.freeze({
   name: 'SKy Fit Pro',
   shortName: 'SKy Fit',
-  version: '1.7.6',
+  version: '1.7.7',
   developer: 'Qərib Səfərli',
   developerTitle: 'Senior Full Stack Developer',
   locale: 'az-AZ',
