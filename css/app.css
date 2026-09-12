@@ -11434,20 +11434,6 @@ body[data-page="admin"] .access-table td small {
 /* ============================================================
    Turniket QR scanner + staff uzaqdan açma
    ============================================================ */
-.global-gate-remote-fab {
-  bottom: calc(var(--bottom-nav-height) + var(--safe-bottom) + 76px);
-  border-color: rgba(98, 210, 255, .46);
-  color: var(--text);
-  background: rgba(23, 42, 56, .94);
-  box-shadow: 0 14px 35px rgba(0,0,0,.3), 0 0 24px rgba(98,210,255,.12);
-}
-.global-gate-remote-fab:hover {
-  background: rgba(31, 55, 72, .98);
-  border-color: rgba(98, 210, 255, .72);
-}
-body[data-page="admin"] .global-gate-remote-fab {
-  bottom: calc(var(--bottom-nav-height) + var(--safe-bottom) + 18px);
-}
 .profile-qr-scanner {
   display: grid;
   gap: 12px;
@@ -11489,8 +11475,28 @@ body[data-page="admin"] .global-gate-remote-fab {
     white-space: nowrap;
     font-size: clamp(11px, 3.2vw, 14px);
   }
-  .global-gate-remote-fab {
-    right: max(12px, calc(var(--safe-right) + 8px));
-  }
 }
 
+
+
+/* QR / NFC sabit gate linkləri */
+.access-gate-link-grid {
+  display: grid;
+  gap: 14px;
+  width: 100%;
+  margin-top: 12px;
+}
+.access-gate-link-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+@media (max-width: 640px) {
+  .access-gate-link-row {
+    grid-template-columns: 1fr;
+  }
+  .access-gate-link-row .ui-button {
+    width: 100%;
+  }
+}

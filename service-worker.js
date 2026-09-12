@@ -23,7 +23,7 @@
 // Frontenddə böyük dəyişiklik etdikdə yalnız APP_VERSION-u
 // artırmaq kifayətdir:
 //
-const APP_VERSION = 'skyfit-pro-v1.7.7-auth-relay-fix';
+const APP_VERSION = 'skyfit-pro-v1.7.8-qr-nfc-auth-final';
 
 
 const STATIC_CACHE =

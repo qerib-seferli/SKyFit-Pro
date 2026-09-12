@@ -8,7 +8,6 @@ import {
   UI_CONFIG,
   STORAGE_KEYS as CONFIG_STORAGE_KEYS,
   USER_ROLES as CONFIG_USER_ROLES,
-  readAuthRecoveryStorage,
   clearAuthRecoveryStorage,
   PAYMENT_STATUS,
   SALE_MODES as CONFIG_SALE_MODES,
@@ -510,57 +509,9 @@ function buildIdentity(user, profile) {
   };
 }
 
-let authRecoveryPromise = null;
-
-async function recoverSessionFromMirror() {
-  if (authRecoveryPromise) return authRecoveryPromise;
-
-  authRecoveryPromise = (async () => {
-    const raw = readAuthRecoveryStorage();
-    if (!raw) return null;
-
-    try {
-      const parsed = JSON.parse(raw);
-      const candidate = parsed?.currentSession || parsed?.session || parsed;
-      const accessToken = candidate?.access_token;
-      const refreshToken = candidate?.refresh_token;
-      if (!accessToken || !refreshToken) return null;
-
-      const { data, error } = await supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken,
-      });
-
-      if (error) {
-        console.warn('[SKy Fit auth recovery]', error);
-        return null;
-      }
-
-      return data?.session || null;
-    } catch (error) {
-      console.warn('[SKy Fit auth recovery parse]', error);
-      return null;
-    }
-  })();
-
-  try {
-    return await authRecoveryPromise;
-  } finally {
-    authRecoveryPromise = null;
-  }
-}
-
 async function loadCurrentIdentity() {
-  let { data, error } = await supabase.auth.getSession();
+  const { data, error } = await supabase.auth.getSession();
   if (error) throw error;
-
-  let session = data?.session || null;
-  if (!session) {
-    session = await recoverSessionFromMirror();
-    if (session) {
-      data = { session };
-    }
-  }
 
   const user = data?.session?.user || null;
   const profile = user ? await fetchCurrentProfile(user) : null;
@@ -591,16 +542,14 @@ export function clearIdentityCache() {
 }
 
 export async function requireAuth(options = {}) {
-  let identity = await getCurrentIdentity();
+  const identity = await getCurrentIdentity();
   if (identity.authenticated) return identity;
 
-  // Windows/browser refresh yarışına qısa recovery pəncərəsi ver.
-  await new Promise(resolve => setTimeout(resolve, 550));
-  clearIdentityCache();
-  identity = await getCurrentIdentity({ force: true });
-  if (identity.authenticated) return identity;
-
-  if (options.redirect !== false) window.location.replace(options.redirectTo || APP_CONFIG.routes.login);
+  // Sessiya localStorage-da yoxdursa refresh/setSession dövrəsi yaratmırıq.
+  // Bu davranış Supabase Auth rate-limit riskini aradan qaldırır.
+  if (options.redirect !== false) {
+    window.location.replace(options.redirectTo || APP_CONFIG.routes.login);
+  }
   return null;
 }
 

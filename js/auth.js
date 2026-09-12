@@ -218,7 +218,7 @@ function bindLogin() {
         clearIdentityCache();
 
         const identity =
-          await getCurrentIdentity({ force: true });
+          await getCurrentIdentity();
 
         if (
           identity?.profile &&

@@ -1015,9 +1015,6 @@ export async function initLayout() {
     import('./quick-sale.js')
       .then(module => module.initGlobalQuickSale())
       .catch(error => console.error('[SKy Fit Layout] Global quick sale:', error));
-    import('./gate-remote.js')
-      .then(module => module.initGlobalGateRemote())
-      .catch(error => console.error('[SKy Fit Layout] Gate remote:', error));
   }
   return identity;
 }
@@ -1106,12 +1103,12 @@ function handleAuthChange(event) {
     authEvent === 'TOKEN_REFRESHED' ||
     authEvent === 'USER_UPDATED'
   ) {
-    refreshLayout({ force: true });
+    refreshLayout({ force: false });
   }
 }
 
 function handleProfileChange() {
-  refreshLayout({ force: true });
+  refreshLayout({ force: false });
 }
 
 function handleThemeChange() {
@@ -1155,7 +1152,7 @@ function handleVisibilityChange() {
   }
 
   lastIdentityRefresh = now;
-  refreshLayout({ force: true });
+  refreshLayout({ force: false });
 }
 
 export function getLayoutState() {
@@ -1170,7 +1167,7 @@ export function getLayoutState() {
 }
 
 export async function refreshLayoutIdentity() {
-  const result = await refreshLayout({ force: true });
+  const result = await refreshLayout({ force: false });
   lastIdentityRefresh = Date.now();
   return result;
 }

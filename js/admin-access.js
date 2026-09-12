@@ -446,12 +446,12 @@ export function createAdminAccessController({ state }) {
     }
   }
 
-  function mobileGateUrl(data) {
+  function mobileGateUrl(data, method = 'qr') {
     const base = window.location.protocol === 'http:' || window.location.protocol === 'https:'
       ? new URL('./profile.html', window.location.href).href
       : 'https://qerib-seferli.github.io/SKyFit-Pro/profile.html';
-
-    return `${base}?mobile_entry=1&entry=qr&gate=${encodeURIComponent(data?.gate_key || 'main')}#gate_token=${encodeURIComponent(data?.token || '')}`;
+    const entry = method === 'nfc' ? 'nfc' : 'qr';
+    return `${base}?mobile_entry=1&entry=${entry}&gate=${encodeURIComponent(data?.gate_key || 'main')}#gate_token=${encodeURIComponent(data?.token || '')}`;
   }
 
   function renderMobileGateToken(data) {
@@ -466,26 +466,46 @@ export function createAdminAccessController({ state }) {
       return;
     }
 
-    const url = mobileGateUrl(data);
+    const qrUrl = mobileGateUrl(data, 'qr');
+    const nfcUrl = mobileGateUrl(data, 'nfc');
     output.innerHTML = `
-      <strong>QR / NFC üçün sabit giriş linki hazırdır</strong>
-      <span>Bu link Ctrl+F5 və normal yenilənmələrdə dəyişmir. QR kod generatoruna məhz bu linki ver.</span>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;width:100%;margin-top:10px">
-        <input id="access-mobile-gate-url" class="ui-input" value="${escapeHtml(url)}" readonly style="min-width:min(100%,540px);flex:1">
-        <button id="access-mobile-gate-copy" class="ui-button ui-button--ghost" type="button">Linki kopyala</button>
+      <strong>QR / NFC üçün sabit giriş açarı hazırdır</strong>
+      <span>Token Ctrl+F5 və normal yenilənmələrdə dəyişmir. Yalnız “QR / NFC linkini yenilə” düyməsini özün basanda dəyişir.</span>
+      <div class="access-gate-link-grid">
+        <div class="ui-field">
+          <label class="ui-field__label">QR kod üçün URL</label>
+          <div class="access-gate-link-row">
+            <input id="access-mobile-gate-qr-url" class="ui-input" value="${escapeHtml(qrUrl)}" readonly>
+            <button id="access-mobile-gate-qr-copy" class="ui-button ui-button--ghost" type="button">QR linkini kopyala</button>
+          </div>
+          <small>QR generatorunda URL/Static QR kimi məhz bu linkdən istifadə et.</small>
+        </div>
+        <div class="ui-field">
+          <label class="ui-field__label">NFC sticker üçün URL</label>
+          <div class="access-gate-link-row">
+            <input id="access-mobile-gate-nfc-url" class="ui-input" value="${escapeHtml(nfcUrl)}" readonly>
+            <button id="access-mobile-gate-nfc-copy" class="ui-button ui-button--ghost" type="button">NFC linkini kopyala</button>
+          </div>
+          <small>NFC Kit/NFC Tools proqramında New Record → URL/URI (və ya Custom URL) seçib bu linki Write NFC ilə sticker-ə yaz.</small>
+        </div>
       </div>
-      <small>QR şəkli və ya link yayılarsa “QR / NFC linkini yenilə” bas. Köhnə QR dərhal etibarsız olacaq. Girişdə üzv hesabı, kart bağlantısı, blok və son tarix ayrıca yoxlanılır.</small>
+      <small>Sticker və QR üzv məlumatı saxlamır. Kimin daxil olduğunu telefonda login olmuş SKyFit hesabı müəyyən edir. Link yayılarsa tokeni yenilə; köhnə QR və NFC linki dərhal etibarsız olur.</small>
     `;
 
-    byId('access-mobile-gate-copy')?.addEventListener('click', async () => {
-      try {
-        await navigator.clipboard.writeText(url);
-        notify.success('QR / NFC linki kopyalandı.');
-      } catch {
-        byId('access-mobile-gate-url')?.select();
-        notify.info('Link seçildi. Ctrl+C ilə kopyala.');
-      }
-    });
+    const bindCopy = (buttonId, inputId, label) => {
+      byId(buttonId)?.addEventListener('click', async () => {
+        const input = byId(inputId);
+        try {
+          await navigator.clipboard.writeText(input?.value || '');
+          notify.success(`${label} kopyalandı.`);
+        } catch {
+          input?.select();
+          notify.info('Link seçildi. Ctrl+C ilə kopyala.');
+        }
+      });
+    };
+    bindCopy('access-mobile-gate-qr-copy', 'access-mobile-gate-qr-url', 'QR linki');
+    bindCopy('access-mobile-gate-nfc-copy', 'access-mobile-gate-nfc-url', 'NFC linki');
   }
 
   async function loadMobileGateToken() {
@@ -768,93 +788,20 @@ export function createAdminAccessController({ state }) {
       return;
     }
 
-    let currentHardware = { enabled:false, type:'disabled', serialPort:'COM2', baudRate:9600, serialHex:'', relayOnHex:'', relayOffHex:'', pulseMs:700, relayDirection:'R-OP', tcpHost:'', tcpPort:4370, tcpHex:'', httpUrl:'', httpMethod:'POST' };
-    try {
-      const response = await window.skyfitDesktop.getTurnstileHardwareConfig?.();
-      if (response?.hardwareAdapter) currentHardware = { ...currentHardware, ...response.hardwareAdapter };
-    } catch {}
-
     const content = document.createElement('div');
     content.innerHTML = `
       <div class="ui-field"><label class="ui-field__label">Bridge rejimi</label><select id="access-bridge-mode" class="ui-select"><option value="test">TEST — kopya MDB</option><option value="live">LIVE — zalın real MDB bazası</option></select></div>
-      <label class="ui-field"><span class="ui-field__label">Canlı yazma təsdiqi</span><span><input id="access-bridge-live-confirm" type="checkbox"> LIVE seçsəm real MDB-yə yazma əmrlərinin tətbiqinə icazə verirəm.</span></label>
-      <hr style="border:0;border-top:1px solid var(--border);margin:16px 0">
-      <h4 style="margin:0 0 8px">Fiziki controller adapteri</h4>
-      <p class="admin-section__description">Turniket controller-də uzaqdan açılış üçün <strong>R-OP / L-OP / COM</strong> terminalları təsdiqlənib. Tövsiyə olunan yol quru kontakt verən USB relay-dir. Relay özü bu terminallara gərginlik verməməlidir; yalnız kontaktı qısa müddət bağlamalıdır.</p>
-      <label class="ui-field"><span class="ui-field__label">Adapter aktiv</span><span><input id="access-hw-enabled" type="checkbox" ${currentHardware.enabled ? 'checked' : ''}> Fiziki açma əmrlərinə icazə ver</span></label>
-      <div class="ui-field"><label class="ui-field__label">Protokol</label><select id="access-hw-type" class="ui-select">
-        <option value="disabled">Söndürülüb</option><option value="relay_serial">USB Relay / Dry Contact</option><option value="serial_hex">Serial / RS-232 HEX</option><option value="tcp_hex">TCP socket HEX</option><option value="http">HTTP relay/controller</option>
-      </select></div>
-      <div id="access-hw-serial">
-        <div class="ui-field"><label class="ui-field__label">COM port</label><input id="access-hw-com" class="ui-input" value="${escapeHtml(currentHardware.serialPort || 'COM2')}"></div>
-        <div class="ui-field"><label class="ui-field__label">Baud rate</label><input id="access-hw-baud" class="ui-input" type="number" value="${Number(currentHardware.baudRate)||9600}"></div>
-        <div class="ui-field"><label class="ui-field__label">Açma frame-i (HEX)</label><input id="access-hw-serial-hex" class="ui-input" value="${escapeHtml(currentHardware.serialHex || '')}" placeholder="Məs: AA0101... — yalnız controller sənədindən"></div>
+      <label class="ui-field"><span class="ui-field__label">Canlı yazma təsdiqi</span><span><input id="access-bridge-live-confirm" type="checkbox"> LIVE seçsəm real MDB-yə üzv/kart/müddət dəyişikliklərinin tətbiqinə icazə verirəm.</span></label>
+      <div class="admin-empty-state" style="margin-top:16px">
+        <strong>QR / NFC yaxınlıq sistemi ayrıca işləyir</strong>
+        <span>Bu versiyada USB Relay, TCP/HEX və naməlum controller adapterləri istifadə edilmir. Turniketin mövcud MIFARE kart sistemi toxunulmadan qalır. QR/NFC üzvün yaxınlığını və giriş icazəsini yoxlayır; hazırkı avadanlıqda notebookdan turniketə avtomatik fiziki açma kanalı yoxdur.</span>
       </div>
-      <div id="access-hw-relay">
-        <div class="ui-field"><label class="ui-field__label">USB relay COM port</label><input id="access-hw-relay-com" class="ui-input" value="${escapeHtml(currentHardware.serialPort || 'COM2')}"></div>
-        <div class="ui-field"><label class="ui-field__label">Baud rate</label><input id="access-hw-relay-baud" class="ui-input" type="number" value="${Number(currentHardware.baudRate)||9600}"></div>
-        <div class="ui-field"><label class="ui-field__label">Turniket istiqaməti</label><select id="access-hw-relay-direction" class="ui-select"><option value="R-OP">R-OP + COM</option><option value="L-OP">L-OP + COM</option></select></div>
-        <div class="ui-field"><label class="ui-field__label">Kontakt impulsu (ms)</label><input id="access-hw-pulse-ms" class="ui-input" type="number" min="150" max="5000" value="${Number(currentHardware.pulseMs)||700}"></div>
-        <div class="ui-field"><label class="ui-field__label">Relay ON frame-i (HEX)</label><input id="access-hw-relay-on" class="ui-input" value="${escapeHtml(currentHardware.relayOnHex || '')}" placeholder="USB relay sənədindəki ON əmri"></div>
-        <div class="ui-field"><label class="ui-field__label">Relay OFF frame-i (HEX)</label><input id="access-hw-relay-off" class="ui-input" value="${escapeHtml(currentHardware.relayOffHex || '')}" placeholder="USB relay sənədindəki OFF əmri"></div>
-        <p class="admin-section__description">Bu sahədəki ON/OFF HEX dəyərləri turniket controller-in deyil, alınacaq USB relay modulunun sənədindən götürülür.</p>
-      </div>
-      <div id="access-hw-tcp">
-        <div class="ui-field"><label class="ui-field__label">Controller IP</label><input id="access-hw-host" class="ui-input" value="${escapeHtml(currentHardware.tcpHost || '')}" placeholder="192.168.x.x"></div>
-        <div class="ui-field"><label class="ui-field__label">TCP port</label><input id="access-hw-port" class="ui-input" type="number" value="${Number(currentHardware.tcpPort)||4370}"></div>
-        <div class="ui-field"><label class="ui-field__label">Açma frame-i (HEX)</label><input id="access-hw-tcp-hex" class="ui-input" value="${escapeHtml(currentHardware.tcpHex || '')}" placeholder="Controller protokolundakı real frame"></div>
-      </div>
-      <div id="access-hw-http">
-        <div class="ui-field"><label class="ui-field__label">Relay/controller URL</label><input id="access-hw-url" class="ui-input" value="${escapeHtml(currentHardware.httpUrl || '')}" placeholder="http://192.168.x.x/open"></div>
-        <div class="ui-field"><label class="ui-field__label">HTTP metod</label><select id="access-hw-method" class="ui-select"><option value="POST">POST</option><option value="GET">GET</option></select></div>
-      </div>
-      <p class="admin-section__description">Bu hissə Database.mdb-dən ayrıdır. QR/NFC və admin “Turniketi aç” sorğusu yalnız adapter uğurla controller-ə açma əmri göndərəndə təsdiqlənəcək.</p>
     `;
-    const typeSelect = content.querySelector('#access-hw-type');
-    typeSelect.value = currentHardware.type || 'disabled';
-    content.querySelector('#access-hw-method').value = currentHardware.httpMethod || 'POST';
-    content.querySelector('#access-hw-relay-direction').value = currentHardware.relayDirection || 'R-OP';
-    const syncHardwareFields = () => {
-      const type = typeSelect.value;
-      content.querySelector('#access-hw-serial').hidden = type !== 'serial_hex';
-      content.querySelector('#access-hw-relay').hidden = type !== 'relay_serial';
-      content.querySelector('#access-hw-tcp').hidden = type !== 'tcp_hex';
-      content.querySelector('#access-hw-http').hidden = type !== 'http';
-    };
-    typeSelect.addEventListener('change', syncHardwareFields);
-    syncHardwareFields();
 
     const footer = document.createElement('div');
     footer.className = 'modal-form__actions';
-    footer.innerHTML = '<button type="button" class="ui-button ui-button--ghost" data-bridge-cancel>Ləğv et</button><button type="button" class="ui-button ui-button--secondary" data-hardware-test>Fiziki açma TEST</button><button type="button" class="ui-button ui-button--primary" data-bridge-save>Bridge-i aktiv et</button>';
+    footer.innerHTML = '<button type="button" class="ui-button ui-button--ghost" data-bridge-cancel>Ləğv et</button><button type="button" class="ui-button ui-button--primary" data-bridge-save>Bridge-i aktiv et</button>';
     footer.querySelector('[data-bridge-cancel]')?.addEventListener('click', () => closeModal());
-    const readHardwareForm = () => ({
-      enabled: Boolean(content.querySelector('#access-hw-enabled')?.checked),
-      type: content.querySelector('#access-hw-type')?.value || 'disabled',
-      serialPort: (content.querySelector('#access-hw-type')?.value === 'relay_serial' ? content.querySelector('#access-hw-relay-com')?.value : content.querySelector('#access-hw-com')?.value) || 'COM2',
-      baudRate: Number(content.querySelector('#access-hw-type')?.value === 'relay_serial' ? content.querySelector('#access-hw-relay-baud')?.value : content.querySelector('#access-hw-baud')?.value) || 9600,
-      serialHex: content.querySelector('#access-hw-serial-hex')?.value || '',
-      relayOnHex: content.querySelector('#access-hw-relay-on')?.value || '',
-      relayOffHex: content.querySelector('#access-hw-relay-off')?.value || '',
-      pulseMs: Number(content.querySelector('#access-hw-pulse-ms')?.value) || 700,
-      relayDirection: content.querySelector('#access-hw-relay-direction')?.value || 'R-OP',
-      tcpHost: content.querySelector('#access-hw-host')?.value || '',
-      tcpPort: Number(content.querySelector('#access-hw-port')?.value) || 4370,
-      tcpHex: content.querySelector('#access-hw-tcp-hex')?.value || '',
-      httpUrl: content.querySelector('#access-hw-url')?.value || '',
-      httpMethod: content.querySelector('#access-hw-method')?.value || 'POST',
-    });
-    footer.querySelector('[data-hardware-test]')?.addEventListener('click', async () => {
-      try {
-        const saved = await window.skyfitDesktop.saveTurnstileHardwareConfig(readHardwareForm());
-        if (!saved?.ok) throw new Error(saved?.error || 'Adapter saxlanmadı.');
-        const confirmed = window.confirm('Fiziki controller-ə real AÇMA əmri göndəriləcək. Turniketin yanında təhlükəsiz şəkildə test etməyə hazırsan?');
-        if (!confirmed) return;
-        const result = await window.skyfitDesktop.testTurnstileHardware();
-        if (!result?.ok) throw new Error(result?.error || 'Fiziki açma alınmadı.');
-        notify.success('Controller açma əmri uğurla göndərildi. Turniketin fiziki açıldığını yoxla.');
-      } catch (error) { notify.error(getErrorMessage(error, 'Controller testi alınmadı.')); }
-    });
 
     footer.querySelector('[data-bridge-save]')?.addEventListener('click', async () => {
       const mode = byId('access-bridge-mode')?.value === 'live' ? 'live' : 'test';
@@ -881,8 +828,6 @@ export function createAdminAccessController({ state }) {
           allowLiveWrites,
         });
         if (!desktop?.ok) throw new Error(desktop?.error || 'Desktop bridge konfiqurasiyası saxlanmadı.');
-        const hardware = await window.skyfitDesktop.saveTurnstileHardwareConfig(readHardwareForm());
-        if (!hardware?.ok) throw new Error(hardware?.error || 'Controller adapteri saxlanmadı.');
 
         closeModal();
         notify.success(`Turniket Bridge ${mode.toUpperCase()} rejimində aktiv edildi.`);

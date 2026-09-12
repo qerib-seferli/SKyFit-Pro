@@ -4,16 +4,16 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
 // ============================================================
-// Auth storage resilience
+// Auth storage
 //
-// Bəzi Windows kompüterlərində browser/Electron refresh zamanı əsas
-// Supabase storage açarı qısa müddətə itə bilir. Sessiyanı ayrıca
-// recovery mirror-da saxlayırıq və yalnız istifadəçi açıq şəkildə
-// çıxış etdikdə tam təmizləyirik.
+// Supabase sessiyasını yalnız bir stabil localStorage açarında saxlayırıq.
+// Ayrı recovery mirror + setSession dövrəsi bəzi Windows kompüterlərində
+// refresh-token rate limit yaradırdı. Electron artıq skyfit://app vahid
+// origin istifadə etdiyi üçün əlavə mirror lazım deyil.
 // ============================================================
 
 const AUTH_STORAGE_KEY = 'skyfit-pro-auth';
-const AUTH_RECOVERY_KEY = 'skyfit-pro-auth-recovery-v1';
+const LEGACY_AUTH_RECOVERY_KEY = 'skyfit-pro-auth-recovery-v1';
 
 function safeGet(storage, key) {
   try { return storage?.getItem(key) || null; } catch { return null; }
@@ -29,32 +29,24 @@ function safeRemove(storage, key) {
 
 const resilientAuthStorage = {
   getItem(key) {
-    const primary = safeGet(window.localStorage, key);
-    if (primary) return primary;
-
-    if (key === AUTH_STORAGE_KEY) {
-      return safeGet(window.localStorage, AUTH_RECOVERY_KEY);
-    }
-
-    return null;
+    return safeGet(window.localStorage, key);
   },
   setItem(key, value) {
     safeSet(window.localStorage, key, value);
-    if (key === AUTH_STORAGE_KEY && value) {
-      safeSet(window.localStorage, AUTH_RECOVERY_KEY, value);
-    }
   },
   removeItem(key) {
     safeRemove(window.localStorage, key);
   },
 };
 
+// Köhnə importları qırmamaq üçün compatibility funksiyaları saxlanılır.
+// Recovery session artıq avtomatik setSession etmir.
 export function readAuthRecoveryStorage() {
-  return safeGet(window.localStorage, AUTH_RECOVERY_KEY);
+  return null;
 }
 
 export function clearAuthRecoveryStorage() {
-  [AUTH_STORAGE_KEY, AUTH_RECOVERY_KEY].forEach(key => {
+  [AUTH_STORAGE_KEY, LEGACY_AUTH_RECOVERY_KEY].forEach(key => {
     safeRemove(window.localStorage, key);
   });
 }
@@ -83,7 +75,7 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 export const APP_CONFIG = Object.freeze({
   name: 'SKy Fit Pro',
   shortName: 'SKy Fit',
-  version: '1.7.7',
+  version: '1.7.8',
   developer: 'Qərib Səfərli',
   developerTitle: 'Senior Full Stack Developer',
   locale: 'az-AZ',

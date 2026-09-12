@@ -420,7 +420,7 @@ function mobileEntryReasonMessage(code, fallback = '') {
     access_expired: 'Giriş müddətin bitib.',
     access_date_missing: 'Giriş üçün son tarix məlumatı yoxdur.',
     account_inactive: 'Hesab deaktivdir.',
-    hardware_not_ready: 'Telefonla giriş üçün turniket controller adapteri hələ aktiv deyil.',
+    hardware_not_ready: 'QR/NFC ilə giriş icazən təsdiqləndi, lakin mövcud avadanlıqda telefon sorğusunu turniketin fiziki açılışına ötürən kanal yoxdur.',
     hardware_error: 'Turniket controller-i açma əmrini icra edə bilmədi.',
     timeout: 'Turniketdən vaxtında təsdiq gəlmədi.',
   };
@@ -431,11 +431,11 @@ function renderMobileEntryResult({ ok, title, message }) {
   const content = createElement('div');
   content.style.cssText = 'display:grid;justify-items:center;gap:14px;text-align:center;padding:4px 0 8px';
 
-  if (ok) {
+  if (ok === true) {
     const img = createElement('img', { attrs: { src: './assets/foto/onaylandi_512.gif', alt: 'Giriş təsdiqləndi' } });
     img.style.cssText = 'width:150px;max-width:55vw;height:auto;object-fit:contain';
     content.append(img);
-  } else {
+  } else if (ok === false) {
     const img = createElement('img', { attrs: { src: './assets/foto/onaylanmadi_512.gif', alt: 'Giriş təsdiqlənmədi' } });
     img.style.cssText = 'width:150px;max-width:55vw;height:auto;object-fit:contain';
     img.addEventListener('error', () => {
@@ -444,6 +444,10 @@ function renderMobileEntryResult({ ok, title, message }) {
       img.replaceWith(failed);
     }, { once: true });
     content.append(img);
+  } else {
+    const badge = createElement('div', { text: '✓' });
+    badge.style.cssText = 'display:grid;place-items:center;width:96px;height:96px;border-radius:999px;background:rgba(250,204,21,.12);border:2px solid rgba(250,204,21,.55);color:#facc15;font-size:56px;line-height:1';
+    content.append(badge);
   }
 
   const text = createElement('p', { text: message });
@@ -520,14 +524,18 @@ async function requestMobileEntry(options = {}) {
       return;
     }
 
-    notify.info(`${entryMethod === 'nfc' ? 'NFC' : 'QR'} təsdiqləndi. Giriş sorğusu turniketə göndərildi...`);
-    const result = await waitForMobileEntryResult(requestId);
-    const approved = result?.status === 'approved';
+    // Server üzvü, turniket bağlantısını, blok statusunu və son tarixi artıq
+    // yoxlayıb. Hazırkı zal avadanlığında notebook -> turniket fiziki açma
+    // kanalı olmadığı üçün bunu "turniket açıldı" kimi göstərmirik.
     renderMobileEntryResult({
-      ok: approved,
-      title: approved ? 'Giriş təsdiqləndi' : 'Giriş təsdiqlənmədi',
-      message: approved ? 'Turniket açıldı. Xoş məşqlər!' : mobileEntryReasonMessage(result?.reason_code, result?.reason_message),
+      ok: null,
+      title: 'Giriş icazəsi təsdiqləndi',
+      message: `${entryMethod === 'nfc' ? 'NFC' : 'QR'} yaxınlığı və üzvlük məlumatların düzgündür. Fiziki turniketin avtomatik açılması üçün mövcud avadanlıqda proqram idarəetmə kanalı yoxdur; plastik kart sistemi əvvəlki kimi işləyir.`,
     });
+
+    // Bridge gələcəkdə real fiziki açılış kanalı ilə qoşularsa sorğunun statusu
+    // backend-də ayrıca tamamlanacaq. UI burada ikinci dəfə auth/poll dövrəsi yaratmır.
+    void requestId;
   } catch (error) {
     console.error('[SKy Fit Profile] Mobile entry:', error);
     renderMobileEntryResult({ ok: false, title: 'Giriş təsdiqlənmədi', message: getErrorMessage(error, 'Telefonla giriş sorğusu göndərilmədi.') });
@@ -565,7 +573,8 @@ function parseGateQrValue(rawValue) {
     throw new Error('QR kodun turniket açarı natamamdır.');
   }
 
-  return { gate, gateToken, entryMethod: 'qr' };
+  const method = normalizeString(params.get('entry'), 'qr').toLowerCase();
+  return { gate, gateToken, entryMethod: method === 'nfc' ? 'nfc' : 'qr' };
 }
 
 async function openQrEntryScanner(trigger = null) {
@@ -1681,9 +1690,7 @@ function bindAuthEvents() {
       try {
         const identity =
           event.detail?.identity ||
-          await getCurrentIdentity({
-            force: true,
-          });
+          await getCurrentIdentity();
 
         if (!identity?.authenticated) {
           return;
