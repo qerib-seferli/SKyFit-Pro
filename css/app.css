@@ -11505,3 +11505,64 @@ body[data-page="admin"] .access-table td small {
 
 .workout-nav-link{display:inline-flex;align-items:center;justify-content:center;padding:.65rem .9rem;border:1px solid #f9d80066;border-radius:12px;color:#ffe000;text-decoration:none;font-size:.85rem;font-weight:800;margin-right:12px;white-space:nowrap}
 .wp-page{max-width:1250px;margin:110px auto 130px;padding:0 18px;color:#f6f6f6}.wp-page h1{font-size:clamp(28px,4vw,48px);margin:8px 0}.wp-page p,.wp-muted{color:#a3a7af}.wp-toolbar,.wp-filters,.wp-tabs,.wp-days,.wp-actions{display:flex;gap:9px;flex-wrap:wrap;margin:16px 0}.wp-page button,.wp-page select,.wp-page input{font:inherit}.wp-page button{cursor:pointer}.wp-pill,.wp-tab,.wp-day,.wp-btn{background:#17191e;color:white;border:1px solid #363940;border-radius:12px;padding:10px 14px}.wp-pill.active,.wp-tab.active,.wp-day.active,.wp-btn.primary{background:#ffe000;color:#0a0a0a;border-color:#ffe000;font-weight:800}.wp-search{flex:1;min-width:200px;padding:13px;border-radius:12px;background:#15171c;color:white;border:1px solid #34363d}.wp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px}.wp-card,.wp-mini{background:#121419;border:1px solid #292d33;border-radius:16px;overflow:hidden}.wp-card img{width:100%;aspect-ratio:4/3;object-fit:contain;background:#0c0d10}.wp-card-body{padding:12px}.wp-card strong,.wp-card small{display:block}.wp-card small{color:#9ca3af;margin:5px 0}.wp-card .wp-actions{justify-content:space-between}.wp-mini{display:flex;align-items:center;gap:12px;padding:8px;margin:8px 0;cursor:pointer}.wp-mini img{width:72px;height:60px;object-fit:contain}.wp-mini strong{display:block}.wp-dialog{position:fixed;inset:0;z-index:100000;background:#000c;display:grid;place-items:center;padding:12px}.wp-dialog-panel{width:min(620px,100%);max-height:94vh;overflow:auto;background:#15171c;border:1px solid #404247;border-radius:20px;padding:20px;color:#fff}.wp-dialog-panel img{max-height:43vh;width:100%;object-fit:contain}.wp-dialog-panel label{display:block;margin:12px 0}.wp-dialog-panel input,.wp-dialog-panel select{width:100%;padding:10px;background:#24262b;border:1px solid #555;color:white;border-radius:9px}.wp-steps li{margin:10px 0;line-height:1.5}@media(max-width:600px){.workout-nav-link{font-size:12px;padding:8px}.wp-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.wp-card-body{padding:8px}.wp-page{margin-top:95px}}
+
+/* Workout planner refinement — isolated selectors */
+body:has(.wp-page) .wp-page{margin:22px auto 120px;padding:0 18px;max-width:1250px}
+body:has(.wp-page) .wp-page h1{margin:5px 0 8px}
+body:has(.wp-page) .wp-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:18px 0 14px}
+body:has(.wp-page) .wp-tab{min-width:0;padding:12px 5px;text-align:center}
+body:has(.wp-page) .wp-filters{display:grid;grid-template-columns:repeat(13,minmax(0,1fr));gap:6px;margin:12px 0}
+body:has(.wp-page) .wp-pill{padding:10px 3px;white-space:normal;font-size:12px}
+body:has(.wp-page) .wp-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:7px;margin:14px 0}
+body:has(.wp-page) .wp-day{min-width:0;min-height:48px;padding:8px 4px;font-size:12px}
+body:has(.wp-page) .wp-card{position:relative;display:flex;flex-direction:column;min-width:0}
+body:has(.wp-page) .wp-card-preview{display:block;border:0;padding:0;background:#0c0d10;width:100%;cursor:pointer}
+body:has(.wp-page) .wp-motion{position:relative;width:100%;aspect-ratio:4/3;overflow:hidden;background:#0b0d10}
+body:has(.wp-page) .wp-motion img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;max-height:none}
+body:has(.wp-page) .wp-motion img:nth-child(2){animation:wp-switch 1.5s steps(1,end) infinite}
+@keyframes wp-switch{0%,49.9%{opacity:0}50%,100%{opacity:1}}
+@media(prefers-reduced-motion:reduce){body:has(.wp-page) .wp-motion img:nth-child(2){animation:none;opacity:0}}
+body:has(.wp-page) .wp-heart{position:absolute;top:9px;right:9px;width:35px;height:35px;border:1px solid #ffffff55;border-radius:50%;background:#101216e8;color:white;font-size:25px;display:grid;place-items:center;z-index:2;padding:0}
+body:has(.wp-page) .wp-heart.is-favorite{color:#ff405d}
+body:has(.wp-page) .wp-card-body{display:flex;flex:1;flex-direction:column;gap:5px;padding:12px}
+body:has(.wp-page) .wp-card-title{border:0;background:none;color:white;font-weight:800;text-align:left;padding:0;line-height:1.45}
+body:has(.wp-page) .wp-card small{margin:0;overflow-wrap:anywhere}
+body:has(.wp-page) .wp-add-button{width:100%;margin-top:auto;min-height:44px;padding:9px 4px;font-size:13px}
+body.wp-modal-open{overflow:hidden!important;touch-action:none}
+.wp-dialog{overscroll-behavior:contain;touch-action:none}
+.wp-dialog-panel{position:relative;overscroll-behavior:contain;touch-action:pan-y;scrollbar-width:thin;scrollbar-color:#ffe000 #22252b;padding:20px;max-height:min(90dvh,820px)}
+.wp-dialog-panel::-webkit-scrollbar{width:6px}.wp-dialog-panel::-webkit-scrollbar-thumb{background:#ffe000;border-radius:10px}.wp-dialog-panel::-webkit-scrollbar-track{background:#22252b}
+.wp-dialog-close{position:sticky;top:0;float:right;z-index:4;width:36px;height:36px;border:1px solid #555;background:#202228;color:#fff;border-radius:50%;font-size:26px;line-height:1;cursor:pointer}
+.wp-dialog-panel h2{font-size:clamp(19px,3vw,26px);padding-right:42px;margin:7px 0 5px}.wp-detail-sub{color:#aeb4be;font-size:13px;margin:5px 0 12px}
+.wp-dialog-panel .wp-motion{max-height:300px;aspect-ratio:16/9;border-radius:12px}
+.wp-dialog-panel .wp-motion img{max-height:none}
+.wp-form-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:14px 0}
+.wp-form-grid label{display:block;min-width:0;margin:0!important;font-size:12px}
+.wp-form-grid input{margin-top:6px;min-width:0;height:44px}
+.wp-select{position:relative;margin-top:6px}.wp-select-trigger{width:100%;height:44px;background:#24262b;border:1px solid #555;border-radius:9px;color:white;display:flex;align-items:center;justify-content:space-between;padding:0 8px;gap:3px;font-size:12px}
+.wp-select-options{position:absolute;top:calc(100% + 4px);left:0;right:0;max-height:210px;overflow:auto;z-index:6;background:#1d2027;border:1px solid #555;border-radius:10px;box-shadow:0 12px 25px #000b;scrollbar-width:thin;scrollbar-color:#ffe000 #22252b}
+.wp-select-options[hidden]{display:none}.wp-select-options button{display:block;width:100%;padding:10px 8px;text-align:left;background:transparent;border:0;color:white;font-size:12px}.wp-select-options button.selected,.wp-select-options button:hover{background:#ffe000;color:#111}
+.wp-save{width:100%;min-height:46px;margin:8px 0}.wp-detail-navigation,.wp-confirm-actions{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:14px}.wp-confirm{padding:20px 4px}.wp-confirm-actions button{flex:1}
+.wp-no-image{padding:45px 6px;text-align:center;color:#999}
+/* Staff controls: both must remain visible without overlapping. */
+#global-quick-sale-fab.global-quick-sale-fab{display:flex!important;bottom:calc(104px + env(safe-area-inset-bottom,0px))!important}
+#global-gate-remote-fab.global-gate-remote-fab{display:flex!important;bottom:calc(166px + env(safe-area-inset-bottom,0px))!important}
+@media(max-width:700px){
+ body:has(.wp-page) .wp-page{margin:14px auto 115px;padding:0 12px}
+ body:has(.wp-page) .wp-tabs{gap:5px}
+ body:has(.wp-page) .wp-tab{font-size:clamp(10px,2.8vw,13px);padding:10px 2px;white-space:nowrap}
+ body:has(.wp-page) .wp-filters{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+ body:has(.wp-page) .wp-pill{min-height:40px;font-size:12px}
+ body:has(.wp-page) .wp-pill:first-child{grid-column:1/-1}
+ body:has(.wp-page) .wp-days{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+ body:has(.wp-page) .wp-day{font-size:11px;min-height:43px;padding:5px 3px}
+ body:has(.wp-page) .wp-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ body:has(.wp-page) .wp-card-body{padding:9px}
+ body:has(.wp-page) .wp-card-title{font-size:13px}
+ body:has(.wp-page) .wp-card small{font-size:11px}
+ body:has(.wp-page) .wp-add-button{font-size:11px;min-height:39px}
+ .wp-dialog{padding:9px}.wp-dialog-panel{padding:12px;max-height:88dvh}
+ .wp-form-grid{gap:5px}.wp-form-grid label{font-size:11px}.wp-form-grid input{padding:6px;font-size:13px}.wp-select-trigger{font-size:11px;padding:0 4px}
+ #global-quick-sale-fab.global-quick-sale-fab{bottom:calc(100px + env(safe-area-inset-bottom,0px))!important}
+ #global-gate-remote-fab.global-gate-remote-fab{bottom:calc(157px + env(safe-area-inset-bottom,0px))!important}
+}
