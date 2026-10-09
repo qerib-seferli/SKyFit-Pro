@@ -445,6 +445,7 @@ function renderHeader(identity = shellIdentity()) {
         </div>
 
         <div class="app-header__side app-header__side--end">
+          ${current.authenticated ? `<a href="./workout.html" class="workout-nav-link">🏋️ Məşq Proqramım</a>` : ''}
           ${current.authenticated ? `
             <a
               href="${APP_CONFIG.routes.profile}"

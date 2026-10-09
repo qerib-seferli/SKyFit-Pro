@@ -23,7 +23,7 @@
 // Frontenddə böyük dəyişiklik etdikdə yalnız APP_VERSION-u
 // artırmaq kifayətdir:
 //
-const APP_VERSION = 'skyfit-pro-v1.7.8-qr-nfc-auth-final';
+const APP_VERSION = 'skyfit-pro-v1.7.9-workout-shell';
 
 
 const STATIC_CACHE =
@@ -65,6 +65,7 @@ const APP_SHELL = [
   './profile.html',
   './admin.html',
   './favorites.html',
+  './workout.html',
   './reset-password.html',
   './update-password.html',
 
@@ -101,6 +102,7 @@ const APP_SHELL = [
   './js/core.js',
   './js/favorites.js',
   './js/layout.js',
+  './js/workout.js',
   './js/gate-remote.js',
   './js/profile.js',
   './js/quick-sale.js',
