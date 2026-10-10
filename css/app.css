@@ -11572,13 +11572,13 @@ body.wp-modal-open{overflow:hidden!important;touch-action:none}
    centered pagination and stable bottom footer. Other pages untouched. */
 body:has(.wp-page) .wp-motion img:nth-child(2){
   opacity:0;
-  animation:wp-soft-frame 3.2s ease-in-out infinite;
+  animation:wp-soft-frame 2.8s ease-in-out infinite;
   will-change:opacity;
 }
 @keyframes wp-soft-frame{
-  0%,12%{opacity:0}
-  42%,62%{opacity:1}
-  92%,100%{opacity:0}
+  0%,15%{opacity:0}
+  38%,62%{opacity:1}
+  85%,100%{opacity:0}
 }
 @media(prefers-reduced-motion:reduce){
   body:has(.wp-page) .wp-motion img:nth-child(2){animation:none;opacity:0;will-change:auto}
